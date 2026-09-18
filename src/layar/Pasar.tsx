@@ -1,0 +1,177 @@
+/**
+ * HALAMAN 1 — PASAR.
+ *
+ * Aturan saring dan urutnya disalin dari `DaftarPasar.tsx` di web, bukan
+ * dikarang ulang: dua permukaan yang mengurutkan daftar yang sama dengan cara
+ * berbeda membuat orang mengira salah satunya kehilangan pasar.
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ambilPasar, type Pasar } from '../data/api';
+import { angka, kategoriTersedia, labelJenis, labelKategori, ubah, volumeRingkas } from '../data/tampil';
+import { Kosong, Memuat } from '../komponen/dasar';
+import { W, H, J, R, ANGKA } from '../gaya/token';
+
+type Props = { buka: (p: Pasar) => void };
+
+export function LayarPasar({ buka }: Props) {
+  const [daftar, setDaftar] = useState<Pasar[]>([]);
+  const [keadaan, setKeadaan] = useState<'memuat' | 'ada' | 'gagal'>('memuat');
+  const [sebab, setSebab] = useState('');
+  const [cari, setCari] = useState('');
+  const [jenis, setJenis] = useState('semua');
+  const [kategori, setKategori] = useState('semua');
+  const [menyegarkan, setMenyegarkan] = useState(false);
+
+  const muat = useCallback(async (segarkan = false): Promise<void> => {
+    const j = await ambilPasar(segarkan);
+    if (j.ok) { setDaftar(j.isi.pasar); setKeadaan('ada'); }
+    else { setKeadaan('gagal'); setSebab(j.kalimat); }
+  }, []);
+
+  useEffect(() => { void muat(); }, [muat]);
+
+  const jenisAda = useMemo(() => ['semua', ...new Set(daftar.map((p) => p.jenis))], [daftar]);
+  const kategoriAda = useMemo(() => kategoriTersedia(daftar), [daftar]);
+
+  const terlihat = useMemo(() => {
+    const q = cari.trim().toUpperCase();
+    const saring = daftar.filter((p) =>
+      (jenis === 'semua' || p.jenis === jenis) &&
+      (kategori === 'semua' || p.kategori === kategori) &&
+      /* Substring, bukan awalan: "doge", "usdt", dan "arb" semuanya harus ketemu. */
+      (q === '' || p.simbol.toUpperCase().includes(q) || p.label.toUpperCase().includes(q)));
+    /* Volume 24 jam menurun — bukan abjad. Yang ramai dicari lebih sering. */
+    return [...saring].sort((a, b) => b.volume24hUsd - a.volume24hUsd);
+  }, [daftar, cari, jenis, kategori]);
+
+  if (keadaan === 'memuat') return <Memuat teks="Mengambil daftar pasar…" />;
+  if (keadaan === 'gagal') return <Kosong judul="Daftar pasar tidak terbaca" sebab={sebab} aksi={() => { void muat(true); }} />;
+
+  return (
+    <View style={g.akar}>
+      <TextInput
+        style={g.cari}
+        value={cari}
+        onChangeText={setCari}
+        placeholder={`Cari dari ${String(daftar.length)} pasar…`}
+        placeholderTextColor={W.teksSamar}
+        autoCorrect={false}
+        autoCapitalize="characters"
+      />
+
+      {jenisAda.length > 2 && (
+        <Saringan pilihan={jenisAda} nilai={jenis} pilih={setJenis} label={(k) => (k === 'semua' ? 'semua' : labelJenis(k))} />
+      )}
+      {kategoriAda.length > 2 && (
+        <Saringan pilihan={kategoriAda} nilai={kategori} pilih={setKategori} label={(k) => (k === 'semua' ? 'semua' : labelKategori(k))} />
+      )}
+
+      <FlatList
+        data={terlihat}
+        keyExtractor={(p) => p.simbol}
+        initialNumToRender={14}
+        windowSize={7}
+        refreshControl={
+          <RefreshControl
+            refreshing={menyegarkan}
+            tintColor={W.teksRedup}
+            onRefresh={() => {
+              setMenyegarkan(true);
+              void muat(true).finally(() => { setMenyegarkan(false); });
+            }}
+          />
+        }
+        ListEmptyComponent={
+          <Kosong
+            judul="Tidak ada pasar yang cocok"
+            sebab={`Tidak ada yang cocok dengan "${cari}"${kategori === 'semua' ? '' : ` di ${labelKategori(kategori)}`}.`}
+          />
+        }
+        ListFooterComponent={
+          terlihat.length === 0 ? null : (
+            <Text style={g.kaki}>
+              {terlihat.length} dari {daftar.length} pasar · urut volume 24 jam
+            </Text>
+          )
+        }
+        renderItem={({ item }) => <BarisPasar p={item} tekan={() => { buka(item); }} />}
+      />
+    </View>
+  );
+}
+
+function Saringan({ pilihan, nilai, pilih, label }: {
+  pilihan: string[]; nilai: string; pilih: (k: string) => void; label: (k: string) => string;
+}) {
+  return (
+    <FlatList
+      horizontal
+      data={pilihan}
+      keyExtractor={(k) => k}
+      showsHorizontalScrollIndicator={false}
+      style={g.saringBaris}
+      contentContainerStyle={g.saringIsi}
+      renderItem={({ item }) => {
+        const on = item === nilai;
+        return (
+          <Pressable onPress={() => { pilih(item); }} style={[g.chip, on && g.chipOn]}>
+            {/* Terpilih memakai PUTIH, bukan emas. Emas cuma untuk AM+. */}
+            <Text style={[g.chipTeks, on && g.chipTeksOn]}>{label(item)}</Text>
+          </Pressable>
+        );
+      }}
+    />
+  );
+}
+
+function BarisPasar({ p, tekan }: { p: Pasar; tekan: () => void }) {
+  const u = p.ubah24hPersen;
+  const warna = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
+  return (
+    <Pressable onPress={tekan} style={({ pressed }) => [g.baris, pressed && g.barisTekan]}>
+      <View style={g.barisKiri}>
+        <Text style={g.simbol} numberOfLines={1}>{p.simbol}</Text>
+        <Text style={g.tag} numberOfLines={1}>{p.label}</Text>
+      </View>
+      <View style={g.barisKanan}>
+        {/* null = tidak diketahui (emas & forex tidak berharga di endpoint ini) */}
+        <Text style={g.harga}>{angka(p.harga, p.desimal)}</Text>
+        <Text style={[g.ubah, { color: warna }]}>{ubah(u)}</Text>
+      </View>
+      <Text style={g.volume}>{volumeRingkas(p.volume24hUsd)}</Text>
+    </Pressable>
+  );
+}
+
+const g = StyleSheet.create({
+  akar: { flex: 1, backgroundColor: W.latar },
+  cari: {
+    margin: J.x3, marginBottom: J.x2, paddingHorizontal: J.x3, height: 40,
+    backgroundColor: W.kartu, borderRadius: R.besar, borderWidth: 1, borderColor: W.garis,
+    color: W.teksKuat, fontSize: 16,
+  },
+  saringBaris: { flexGrow: 0, marginBottom: J.x2 },
+  saringIsi: { paddingHorizontal: J.x3, gap: 6 },
+  chip: {
+    paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang,
+    borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu,
+  },
+  chipOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
+  chipTeks: { fontSize: H.kontrol, color: W.teksRedup },
+  chipTeksOn: { color: W.latar, fontWeight: '500' },
+  baris: {
+    flexDirection: 'row', alignItems: 'center', minHeight: 56,
+    paddingHorizontal: J.x3, gap: J.x3,
+    borderBottomWidth: 1, borderBottomColor: W.garisSamar,
+  },
+  barisTekan: { backgroundColor: W.kartu },
+  barisKiri: { flex: 1, minWidth: 0 },
+  simbol: { fontSize: H.nilai, fontWeight: '700', color: W.teksKuat },
+  tag: { fontSize: H.label, color: W.teksSamar, marginTop: 2 },
+  barisKanan: { alignItems: 'flex-end', minWidth: 96 },
+  harga: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, ...ANGKA },
+  ubah: { fontSize: H.label, marginTop: 2, ...ANGKA },
+  volume: { fontSize: H.label, color: W.teksSamar, width: 56, textAlign: 'right', ...ANGKA },
+  kaki: { fontSize: H.label, color: W.teksSamar, textAlign: 'center', padding: J.x4 },
+});

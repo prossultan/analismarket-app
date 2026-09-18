@@ -72,3 +72,65 @@ jeda 20 detik itu sekitar **4 MB per jam** kuota HP untuk satu medan.
 Jedanya disamakan dengan `proxy_cache_valid 200 20s` di nginx, jadi ongkos
 SERVER-nya nol; yang mahal kuota HP. Sebelum app ini dipakai orang banyak,
 yang benar adalah endpoint harga kecil, bukan jeda yang lebih panjang.
+
+## Sepuluh halaman
+
+| # | halaman | sumber data |
+|---|---|---|
+| 1 | Pasar — 131 pasar, cari, saring jenis+kategori, urut volume | `/api/pasar` |
+| 2 | Chart — WebView `/chart-embed`, tab timeframe per pasar | WebView |
+| 3 | Bacaan — keputusan, arah, entry/SL/TP, RR bersih, biaya, konteks | `/api/bacaan` |
+| 4 | Banding Mesin — kelima mesin bersebelahan | muatan yang sama |
+| 5 | Syarat — syarat WAJIB, yang gagal dulu | muatan yang sama |
+| 6 | Zona & Level | muatan yang sama |
+| 7 | Kalender — jadwal berita 14 hari per hari WIB | `/api/jadwal-berita` |
+| 8 | Belajar — tiga keadaan kartu + 16 istilah | statis |
+| 9 | AM+ — isi paket, tanpa harga | statis |
+| 10 | Lainnya — pilihan terakhir, dokumen, tentang | lokal |
+
+Halaman 3–6 berdiri di atas SATU muatan `/api/bacaan`. Pindah mesin dan
+membuka Banding tidak memanggil jaringan sama sekali.
+
+## Kenapa ada antrean permintaan
+
+`/api/bacaan`, `/api/pasar`, dan `/api/jadwal-berita` berbagi satu zona nginx
+`1r/s burst=5` yang dikunci pada **alamat IP**. Operator seluler memakai
+CGNAT, jadi banyak user berbagi satu alamat: app yang boros tidak cuma
+memperlambat dirinya, ia membuat 429 untuk orang lain.
+
+`src/data/antrian.ts` menjawabnya dengan empat lapis — antrean 1.100 ms,
+single-flight per kunci, simpanan 20 detik (sama dengan `proxy_cache_valid`),
+dan mundur bertahap yang menghormati `Retry-After`.
+
+**Terukur** (`npm run ukur-laju`), jalur dingin buka-Pasar → ketuk → Chart →
+Bacaan → Banding → Syarat → Zona → Kalender:
+
+```
+panggilan modul : 8
+permintaan HTTP : 3
+ditolak 429     : 0
+jejak           : +0,12s /api/pasar · +3,42s /api/bacaan · +3,56s /api/jadwal-berita
+```
+
+Diuji-mutasi: single-flight dicabut → 4 permintaan, merah. Simpanan dicabut →
+4 permintaan, merah.
+
+## Penjaga
+
+```bash
+npm run periksa     # tsc + penjaga teks
+npm run ukur-laju   # batas laju, butuh jaringan
+```
+
+`skrip/periksa-teks.mjs` menolak empat hal: kata arah diketik di kode, kata
+kepatuhan, nama pemroses pembayaran web, dan tautan keluar. Ia memindai
+dirinya sendiri — kata-katanya dirakit dari potongan — jadi tidak butuh
+pengecualian. Keempatnya sudah diuji-mutasi dan keempatnya merah.
+
+## Yang belum bisa dibangun, dan kenapa
+
+`/api/saya/*` punya 15 fungsi; 13 menolak tanpa identitas Telegram. Jadi
+pantauan, kabar otomatis, setelan akun, kredit, cek-banyak, dan berlangganan
+dari app **tidak ada di sini** — bukan lupa. Layar Lainnya menyebutkannya
+apa adanya, karena menyembunyikannya membuat orang mencari menu yang tidak
+ada.

@@ -1,178 +1,201 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator, AppState, Platform, Pressable, SafeAreaView,
-  StatusBar, StyleSheet, Text, View,
-} from 'react-native';
-import { WebView } from 'react-native-webview';
-
 /**
- * LAYAR PERTAMA — CHART SAJA.
+ * Analis Market — app native.
  *
- * Satu WebView memuat `/chart-embed` di web, dan satu bilah kecil di atasnya
- * memegang simbol, harga, dan timeframe. Yang penting di sini bukan apa yang
- * ada, melainkan pembagian tugasnya:
+ * Tab bawah lima, dengan Pasar sebagai tumpukan: Pasar → Chart → Bacaan →
+ * (Banding | Syarat | Zona). Tumpukan, bukan tab, karena keempat layar itu
+ * SELALU tentang pasar dan timeframe yang sedang dibuka — kalau mereka jadi
+ * tab, orang bisa berdiri di "Syarat" untuk pasar yang sudah ia tinggalkan.
  *
- *   chart   ← WebView, digambar komponen web yang sudah dipakai ribuan kali
- *   harga   ← React Native, ditarik sendiri dari /api/bacaan
- *
- * Harga TIDAK diambil dari dalam WebView. Kalau ia diambil dari sana, angka
- * di bilah atas baru bisa muncul sesudah seluruh chart selesai diunduh dan
- * digambar — dan tiap kali timeframe diganti ia akan kosong lagi selama
- * WebView memuat ulang. Bilahnya harus tetap benar walau chart-nya belum ada.
+ * Yang belum ada di sini dan alasannya ada di layar Lainnya: pantauan, kabar
+ * otomatis, dan setelan akun butuh identitas yang belum lepas dari Telegram.
  */
+import { useCallback, useEffect, useState } from 'react';
+import { StatusBar, Text } from 'react-native';
+import { NavigationContainer, DarkTheme, type Theme } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-const ASAL = 'https://analismarket.com';
-const PASAR = 'XAU/USD';
-const DESIMAL = 2;
-/** Yang ditawarkan di layar pertama. m1/m5 sengaja tidak ada: emas berkuota. */
-const TIMEFRAME = ['m15', 'm30', 'h1', 'h4', 'd1'] as const;
-type Tf = (typeof TIMEFRAME)[number];
-const TF_AWAL: Tf = 'h1';
+import { LayarPasar } from './src/layar/Pasar';
+import { LayarChart } from './src/layar/Chart';
+import { LayarBacaan } from './src/layar/Bacaan';
+import { LayarBanding } from './src/layar/Banding';
+import { LayarSyarat } from './src/layar/Syarat';
+import { LayarZona } from './src/layar/Zona';
+import { LayarKalender } from './src/layar/Kalender';
+import { LayarBelajar } from './src/layar/Belajar';
+import { LayarAmPlus } from './src/layar/AmPlus';
+import { LayarLainnya } from './src/layar/Lainnya';
+import { LayarDokumen } from './src/layar/Dokumen';
+import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
+import type { Bacaan, Mesin, Pasar } from './src/data/api';
+import { W, H } from './src/gaya/token';
 
-/**
- * 20 detik — disamakan dengan `proxy_cache_valid 200 20s` di nginx. Lebih
- * rapat dari itu cuma mengunduh salinan cache yang sama sekali lagi; lebih
- * jarang membuat harga di bilah tertinggal dari harga di dalam chart.
- */
-const JEDA_HARGA_MS = 20_000;
+const VERSI = '0.2.0';
 
-const WARNA = {
-  latar: '#0C0B09',
-  chart: '#0B0B0D',
-  garis: '#252321',
-  teks: '#CFCECB',
-  teksKuat: '#E8E7E5',
-  teksRedup: '#A7A4A1',
-  teksSamar: '#84827E',
+export type DaftarPasarParam = {
+  Pasar: undefined;
+  Chart: { pasar: Pasar };
+  Bacaan: { pasar: Pasar; tf: string };
+  Banding: { bacaan: Bacaan; desimal: number };
+  Syarat: { mesin: Mesin };
+  Zona: { mesin: Mesin; desimal: number };
+};
+export type DaftarLainParam = {
+  Lainnya: undefined;
+  Dokumen: { kunci: 'syarat' | 'privasi' };
 };
 
-/**
- * Angka gaya Indonesia tanpa `Intl`. Hermes tidak selalu membawa data ICU
- * penuh, dan angka harga yang jatuh ke format Amerika (4,359.77) di sebagian
- * HP adalah bentuk lain dari dua permukaan yang berkata berbeda.
- */
-function angka(n: number, desimal: number): string {
-  const tetap = Math.abs(n).toFixed(desimal);
-  const [bulat, pecahan] = tetap.split('.');
-  const dikelompok = (bulat ?? '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  const tanda = n < 0 ? '-' : '';
-  return pecahan === undefined ? `${tanda}${dikelompok}` : `${tanda}${dikelompok},${pecahan}`;
-}
+const TumpukanPasar = createNativeStackNavigator<DaftarPasarParam>();
+const TumpukanLain = createNativeStackNavigator<DaftarLainParam>();
+const Tab = createBottomTabNavigator();
 
-type Jawaban = { harga?: number };
+/** Tema gelap yang memakai palet kita, bukan abu-abu bawaan react-navigation. */
+const TEMA: Theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: W.latar,
+    card: W.latar,
+    text: W.teksKuat,
+    border: W.garis,
+    primary: W.teksKuat,
+  },
+};
 
-export default function App() {
-  const [tf, setTf] = useState<Tf>(TF_AWAL);
-  const [harga, setHarga] = useState<number | null>(null);
-  const [memuat, setMemuat] = useState(true);
-  const url = `${ASAL}/chart-embed?pair=${encodeURIComponent(PASAR)}&tf=${tf}`;
+/** Berlaku untuk kepala mana pun — tab maupun tumpukan. */
+const OPSI_KEPALA = {
+  headerStyle: { backgroundColor: W.latar },
+  headerTitleStyle: { color: W.teksKuat, fontSize: H.nama, fontWeight: '700' as const },
+  headerTintColor: W.teksKuat,
+  headerShadowVisible: false,
+};
+/** `contentStyle` cuma dikenal tumpukan; menempelkannya di tab cuma bikin peringatan. */
+const OPSI_TUMPUKAN = { ...OPSI_KEPALA, contentStyle: { backgroundColor: W.latar } };
 
-  /** Jawaban yang datang sesudah timeframe diganti tidak boleh menimpa yang baru. */
-  const tfRef = useRef<Tf>(tf);
-  tfRef.current = tf;
-
-  const tarikHarga = useCallback(async (untuk: Tf): Promise<void> => {
-    try {
-      const res = await fetch(`${ASAL}/api/bacaan?pasar=${encodeURIComponent(PASAR)}&tf=${untuk}`);
-      if (!res.ok) return;
-      const j = (await res.json()) as Jawaban;
-      if (tfRef.current !== untuk) return;
-      if (typeof j.harga === 'number' && j.harga > 0) setHarga(j.harga);
-    } catch {
-      /* Jaringan putus bukan alasan mengosongkan angka yang sudah benar tadi. */
-    }
-  }, []);
-
-  useEffect(() => {
-    void tarikHarga(tf);
-    const jam = setInterval(() => {
-      /* Aplikasi di latar belakang tidak menarik apa-apa: yang dilihat orang
-         saat kembali adalah tarikan pertama sesudah ia kembali, bukan antrean
-         tarikan yang terjadi saat layarnya mati. */
-      if (AppState.currentState !== 'active') return;
-      void tarikHarga(tf);
-    }, JEDA_HARGA_MS);
-    const langganan = AppState.addEventListener('change', (k) => {
-      if (k === 'active') void tarikHarga(tf);
-    });
-    return () => { clearInterval(jam); langganan.remove(); };
-  }, [tf, tarikHarga]);
-
+function AlurPasar({ setelan, simpan }: { setelan: Setelan; simpan: (s: Setelan) => void }) {
   return (
-    <SafeAreaView style={gaya.akar}>
-      <StatusBar barStyle="light-content" backgroundColor={WARNA.latar} />
-
-      <View style={gaya.bilah}>
-        <View style={gaya.barisAtas}>
-          <Text style={gaya.simbol}>{PASAR}</Text>
-          <Text style={gaya.harga}>{harga === null ? '—' : angka(harga, DESIMAL)}</Text>
-        </View>
-
-        <View style={gaya.tabs}>
-          {TIMEFRAME.map((t) => (
-            <Pressable
-              key={t}
-              onPress={() => { setTf(t); setMemuat(true); }}
-              style={[gaya.tab, t === tf && gaya.tabAktif]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: t === tf }}
-            >
-              <Text style={[gaya.tabTeks, t === tf && gaya.tabTeksAktif]}>{t.toUpperCase()}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <View style={gaya.wadahChart}>
-        <WebView
-          source={{ uri: url }}
-          style={gaya.web}
-          /* Latarnya disamakan dengan chart supaya saat memuat yang terlihat
-             bukan kilatan putih di antara dua layar gelap. */
-          backgroundColor={WARNA.chart}
-          onLoadStart={() => { setMemuat(true); }}
-          onLoadEnd={() => { setMemuat(false); }}
-          /* Cubit-zoom dan geser milik chart, bukan milik WebView: kalau
-             WebView ikut menzum halaman, yang membesar adalah gambar chart
-             berikut hurufnya, bukan skala harganya. */
-          scalesPageToFit={false}
-          setBuiltInZoomControls={false}
-          bounces={false}
-          overScrollMode="never"
-          scrollEnabled={false}
-          /* Soket harga chart butuh ini di Android; tanpa keduanya WebView
-             menahan koneksi campur dan chart diam tanpa satu pesan galat. */
-          javaScriptEnabled
-          domStorageEnabled
-          allowsInlineMediaPlayback
-          originWhitelist={['https://*']}
-        />
-        {memuat && (
-          <View style={gaya.tunggu} pointerEvents="none">
-            <ActivityIndicator color={WARNA.teksRedup} />
-          </View>
+    <TumpukanPasar.Navigator screenOptions={OPSI_TUMPUKAN}>
+      <TumpukanPasar.Screen name="Pasar" options={{ title: 'Pasar' }}>
+        {({ navigation }) => (
+          <LayarPasar buka={(p) => { navigation.navigate('Chart', { pasar: p }); }} />
         )}
-      </View>
-    </SafeAreaView>
+      </TumpukanPasar.Screen>
+
+      <TumpukanPasar.Screen name="Chart" options={({ route }) => ({ title: route.params.pasar.simbol })}>
+        {({ route, navigation }) => {
+          const { pasar } = route.params;
+          /* Timeframe tersimpan dipakai kalau pasar ini memang membacanya;
+             kalau tidak, jatuh ke tfMinimum pasar itu — dan itu keputusan
+             pasar, bukan tebakan app. */
+          const punya = pasar.timeframes.map((t) => t.toLowerCase());
+          const tfAwal = punya.includes(setelan.tf) ? setelan.tf : (punya[0] ?? 'h1');
+          return (
+            <LayarChart
+              pasar={pasar}
+              tf={tfAwal}
+              gantiTf={(t) => { simpan({ ...setelan, pasar: pasar.simbol, tf: t }); }}
+              bukaBacaan={() => { navigation.navigate('Bacaan', { pasar, tf: tfAwal }); }}
+            />
+          );
+        }}
+      </TumpukanPasar.Screen>
+
+      <TumpukanPasar.Screen name="Bacaan" options={({ route }) => ({ title: `${route.params.pasar.simbol} ${route.params.tf.toUpperCase()}` })}>
+        {({ route, navigation }) => {
+          const { pasar, tf } = route.params;
+          return (
+            <LayarBacaan
+              pasar={pasar}
+              tf={tf}
+              mesinDipilih={setelan.mesin}
+              pilihMesin={(k) => { simpan({ ...setelan, mesin: k }); }}
+              bukaBanding={(b) => { navigation.navigate('Banding', { bacaan: b, desimal: pasar.desimal }); }}
+              bukaSyarat={(m) => { navigation.navigate('Syarat', { mesin: m }); }}
+              bukaZona={(m) => { navigation.navigate('Zona', { mesin: m, desimal: pasar.desimal }); }}
+            />
+          );
+        }}
+      </TumpukanPasar.Screen>
+
+      <TumpukanPasar.Screen name="Banding" options={{ title: 'Banding mesin' }}>
+        {({ route }) => <LayarBanding bacaan={route.params.bacaan} desimal={route.params.desimal} />}
+      </TumpukanPasar.Screen>
+
+      <TumpukanPasar.Screen name="Syarat" options={{ title: 'Syarat' }}>
+        {({ route }) => <LayarSyarat m={route.params.mesin} />}
+      </TumpukanPasar.Screen>
+
+      <TumpukanPasar.Screen name="Zona" options={{ title: 'Zona & level' }}>
+        {({ route }) => <LayarZona m={route.params.mesin} desimal={route.params.desimal} />}
+      </TumpukanPasar.Screen>
+    </TumpukanPasar.Navigator>
   );
 }
 
-const gaya = StyleSheet.create({
-  akar: { flex: 1, backgroundColor: WARNA.latar, paddingTop: Platform.OS === 'android' ? 24 : 0 },
-  bilah: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: WARNA.garis },
-  barisAtas: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  simbol: { color: WARNA.teksRedup, fontSize: 11, fontWeight: '600', letterSpacing: 0.7 },
-  harga: {
-    color: WARNA.teksKuat, fontSize: 20, fontWeight: '700',
-    /* Monospace supaya angka tidak bergeser tiap kali digitnya berubah. */
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  tabs: { flexDirection: 'row', gap: 6, marginTop: 10 },
-  tab: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, borderWidth: 1, borderColor: WARNA.garis },
-  tabAktif: { backgroundColor: '#1A1815', borderColor: '#3A3733' },
-  tabTeks: { color: WARNA.teksSamar, fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
-  tabTeksAktif: { color: WARNA.teks },
-  wadahChart: { flex: 1, backgroundColor: WARNA.chart },
-  web: { flex: 1, backgroundColor: WARNA.chart },
-  tunggu: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-});
+function AlurLain({ setelan }: { setelan: Setelan }) {
+  return (
+    <TumpukanLain.Navigator screenOptions={OPSI_TUMPUKAN}>
+      <TumpukanLain.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
+        {({ navigation }) => (
+          <LayarLainnya
+            setelan={setelan}
+            versi={VERSI}
+            bukaDokumen={(k) => { navigation.navigate('Dokumen', { kunci: k }); }}
+          />
+        )}
+      </TumpukanLain.Screen>
+      <TumpukanLain.Screen name="Dokumen" options={({ route }) => ({ title: route.params.kunci === 'syarat' ? 'Syarat & Ketentuan' : 'Kebijakan Privasi' })}>
+        {({ route }) => <LayarDokumen kunci={route.params.kunci} />}
+      </TumpukanLain.Screen>
+    </TumpukanLain.Navigator>
+  );
+}
+
+/** Ikon tab berupa huruf: nol aset, nol paket ikon, dan tetap terbaca di 10px. */
+function ikonTab(huruf: string) {
+  return ({ color }: { color: string }) => (
+    <Text style={{ color, fontSize: 15, fontWeight: '700' }}>{huruf}</Text>
+  );
+}
+
+export default function App() {
+  const [setelan, setSetelan] = useState<Setelan>(SETELAN_BAWAAN);
+
+  useEffect(() => { void bacaSetelan().then(setSetelan); }, []);
+
+  const simpan = useCallback((s: Setelan): void => {
+    setSetelan(s);
+    void simpanSetelan(s);
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <StatusBar barStyle="light-content" backgroundColor={W.latar} />
+      <NavigationContainer theme={TEMA}>
+        <Tab.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarStyle: { backgroundColor: W.latar, borderTopColor: W.garis },
+            /* Terpilih PUTIH, bukan emas. Emas cuma untuk AM+ — dan tab AM+
+               di bawah sengaja tidak dikecualikan: yang emas isinya, bukan
+               tombolnya. */
+            tabBarActiveTintColor: W.teksKuat,
+            tabBarInactiveTintColor: W.teksSamar,
+            tabBarLabelStyle: { fontSize: H.label, fontWeight: '500' },
+          }}
+        >
+          <Tab.Screen name="pasar" options={{ title: 'Pasar', tabBarIcon: ikonTab('◧') }}>
+            {() => <AlurPasar setelan={setelan} simpan={simpan} />}
+          </Tab.Screen>
+          <Tab.Screen name="kalender" component={LayarKalender} options={{ title: 'Kalender', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('▤') }} />
+          <Tab.Screen name="belajar" component={LayarBelajar} options={{ title: 'Belajar', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('◈') }} />
+          <Tab.Screen name="amplus" component={LayarAmPlus} options={{ title: 'AM+', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('✦') }} />
+          <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('☰') }}>
+            {() => <AlurLain setelan={setelan} />}
+          </Tab.Screen>
+        </Tab.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+}
