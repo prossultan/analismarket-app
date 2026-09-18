@@ -180,9 +180,9 @@ function Sel({ label, nilai }: { label: string; nilai: string }) {
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   mesinBaris: { gap: 6, paddingHorizontal: J.x3, paddingBottom: J.x3 },
-  chip: { paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu },
+  chip: { paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, minHeight: 30, justifyContent: 'center' },
   chipOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
-  chipTeks: { fontSize: H.kontrol, color: W.teksRedup },
+  chipTeks: { fontSize: H.kontrol, lineHeight: 16, color: W.teksRedup },
   chipTeksOn: { color: W.latar, fontWeight: '500' },
   kepalaBaris: { flexDirection: 'row', alignItems: 'baseline', gap: J.x2, flexWrap: 'wrap' },
   status: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.3 },

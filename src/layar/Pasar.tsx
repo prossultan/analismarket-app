@@ -6,7 +6,7 @@
  * berbeda membuat orang mengira salah satunya kehilangan pasar.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ambilPasar, type Pasar } from '../data/api';
 import { angka, kategoriTersedia, labelJenis, labelKategori, ubah, volumeRingkas } from '../data/tampil';
 import { Kosong, Memuat } from '../komponen/dasar';
@@ -101,27 +101,43 @@ export function LayarPasar({ buka }: Props) {
   );
 }
 
+/**
+ * Baris saringan.
+ *
+ * `ScrollView`, BUKAN `FlatList`. Versi pertama memakai FlatList horizontal
+ * ber-`flexGrow: 0`, dan tinggi barisnya diturunkan dari pengukuran
+ * virtualisasi — huruf berekor ("g" di "emas & forex", "p" di "kripto")
+ * terpangkas di bawah. Terlihat di tangkapan layar HP, tidak terlihat sama
+ * sekali dari kode.
+ *
+ * Dua hal yang membuat tingginya sekarang pasti, dan keduanya perlu:
+ *   - `lineHeight` eksplisit, jadi kotak teksnya tidak ditebak platform
+ *   - `minHeight` yang dihitung dari padding + lineHeight, bukan angka bulat
+ *     yang kebetulan cukup di satu HP
+ *
+ * Jumlah chip-nya paling banyak sembilan, jadi virtualisasi memang tidak
+ * pernah dibutuhkan — ia cuma membawa cara gagal yang baru.
+ */
 function Saringan({ pilihan, nilai, pilih, label }: {
   pilihan: string[]; nilai: string; pilih: (k: string) => void; label: (k: string) => string;
 }) {
   return (
-    <FlatList
+    <ScrollView
       horizontal
-      data={pilihan}
-      keyExtractor={(k) => k}
       showsHorizontalScrollIndicator={false}
       style={g.saringBaris}
       contentContainerStyle={g.saringIsi}
-      renderItem={({ item }) => {
+    >
+      {pilihan.map((item) => {
         const on = item === nilai;
         return (
-          <Pressable onPress={() => { pilih(item); }} style={[g.chip, on && g.chipOn]}>
+          <Pressable key={item} onPress={() => { pilih(item); }} style={[g.chip, on && g.chipOn]}>
             {/* Terpilih memakai PUTIH, bukan emas. Emas cuma untuk AM+. */}
-            <Text style={[g.chipTeks, on && g.chipTeksOn]}>{label(item)}</Text>
+            <Text numberOfLines={1} style={[g.chipTeks, on && g.chipTeksOn]}>{label(item)}</Text>
           </Pressable>
         );
-      }}
-    />
+      })}
+    </ScrollView>
   );
 }
 
@@ -151,14 +167,17 @@ const g = StyleSheet.create({
     backgroundColor: W.kartu, borderRadius: R.besar, borderWidth: 1, borderColor: W.garis,
     color: W.teksKuat, fontSize: 16,
   },
-  saringBaris: { flexGrow: 0, marginBottom: J.x2 },
-  saringIsi: { paddingHorizontal: J.x3, gap: 6 },
+  /* 6 + 6 padding + 16 lineHeight + 2 garis = 30. Diturunkan dari isinya,
+     bukan angka yang kebetulan cukup di satu HP. */
+  saringBaris: { flexGrow: 0, flexShrink: 0, marginBottom: J.x2 },
+  saringIsi: { paddingHorizontal: J.x3, gap: 6, alignItems: 'center' },
   chip: {
     paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang,
     borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu,
+    minHeight: 30, justifyContent: 'center',
   },
   chipOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
-  chipTeks: { fontSize: H.kontrol, color: W.teksRedup },
+  chipTeks: { fontSize: H.kontrol, lineHeight: 16, color: W.teksRedup },
   chipTeksOn: { color: W.latar, fontWeight: '500' },
   baris: {
     flexDirection: 'row', alignItems: 'center', minHeight: 56,

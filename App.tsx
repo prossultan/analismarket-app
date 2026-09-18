@@ -24,6 +24,7 @@ import { LayarSyarat } from './src/layar/Syarat';
 import { LayarZona } from './src/layar/Zona';
 import { LayarKalender } from './src/layar/Kalender';
 import { LayarBelajar } from './src/layar/Belajar';
+import { LayarChartTerakhir } from './src/layar/ChartTerakhir';
 import { LayarAmPlus } from './src/layar/AmPlus';
 import { LayarLainnya } from './src/layar/Lainnya';
 import { LayarDokumen } from './src/layar/Dokumen';
@@ -36,7 +37,7 @@ const VERSI = '0.2.0';
 export type DaftarPasarParam = {
   Pasar: undefined;
   Chart: { pasar: Pasar };
-  Bacaan: { pasar: Pasar; tf: string };
+  Bacaan: { pasar: Pasar; tf: string; mesin: string };
   Banding: { bacaan: Bacaan; desimal: number };
   Syarat: { mesin: Mesin };
   Zona: { mesin: Mesin; desimal: number };
@@ -44,6 +45,7 @@ export type DaftarPasarParam = {
 export type DaftarLainParam = {
   Lainnya: undefined;
   Dokumen: { kunci: 'syarat' | 'privasi' };
+  Belajar: undefined;
 };
 
 const TumpukanPasar = createNativeStackNavigator<DaftarPasarParam>();
@@ -95,7 +97,7 @@ function AlurPasar({ setelan, simpan }: { setelan: Setelan; simpan: (s: Setelan)
               pasar={pasar}
               tf={tfAwal}
               gantiTf={(t) => { simpan({ ...setelan, pasar: pasar.simbol, tf: t }); }}
-              bukaBacaan={() => { navigation.navigate('Bacaan', { pasar, tf: tfAwal }); }}
+              bukaBacaan={(m) => { navigation.navigate('Bacaan', { pasar, tf: tfAwal, mesin: m }); }}
             />
           );
         }}
@@ -103,13 +105,16 @@ function AlurPasar({ setelan, simpan }: { setelan: Setelan; simpan: (s: Setelan)
 
       <TumpukanPasar.Screen name="Bacaan" options={({ route }) => ({ title: `${route.params.pasar.simbol} ${route.params.tf.toUpperCase()}` })}>
         {({ route, navigation }) => {
-          const { pasar, tf } = route.params;
+          const { pasar, tf, mesin } = route.params;
           return (
             <LayarBacaan
               pasar={pasar}
               tf={tf}
-              mesinDipilih={setelan.mesin}
-              pilihMesin={(k) => { simpan({ ...setelan, mesin: k }); }}
+              /* Mesin datang dari tab di layar Chart — pilihan SEKALI LIHAT,
+                 bukan setelan. Menyimpannya berarti mengubah bawaan orang
+                 setiap kali ia mengintip mesin lain. */
+              mesinDipilih={mesin}
+              pilihMesin={() => { /* pilihan mesin hidup di layar Chart */ }}
               bukaBanding={(b) => { navigation.navigate('Banding', { bacaan: b, desimal: pasar.desimal }); }}
               bukaSyarat={(m) => { navigation.navigate('Syarat', { mesin: m }); }}
               bukaZona={(m) => { navigation.navigate('Zona', { mesin: m, desimal: pasar.desimal }); }}
@@ -142,9 +147,11 @@ function AlurLain({ setelan }: { setelan: Setelan }) {
             setelan={setelan}
             versi={VERSI}
             bukaDokumen={(k) => { navigation.navigate('Dokumen', { kunci: k }); }}
+            bukaBelajar={() => { navigation.navigate('Belajar'); }}
           />
         )}
       </TumpukanLain.Screen>
+      <TumpukanLain.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar' }} />
       <TumpukanLain.Screen name="Dokumen" options={({ route }) => ({ title: route.params.kunci === 'syarat' ? 'Syarat & Ketentuan' : 'Kebijakan Privasi' })}>
         {({ route }) => <LayarDokumen kunci={route.params.kunci} />}
       </TumpukanLain.Screen>
@@ -189,7 +196,9 @@ export default function App() {
             {() => <AlurPasar setelan={setelan} simpan={simpan} />}
           </Tab.Screen>
           <Tab.Screen name="kalender" component={LayarKalender} options={{ title: 'Kalender', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('▤') }} />
-          <Tab.Screen name="belajar" component={LayarBelajar} options={{ title: 'Belajar', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('◈') }} />
+          <Tab.Screen name="chart" options={{ title: 'Chart', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('◈') }}>
+            {() => <LayarChartTerakhir setelan={setelan} simpan={simpan} />}
+          </Tab.Screen>
           <Tab.Screen name="amplus" component={LayarAmPlus} options={{ title: 'AM+', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('✦') }} />
           <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('☰') }}>
             {() => <AlurLain setelan={setelan} />}

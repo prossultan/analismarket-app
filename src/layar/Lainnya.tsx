@@ -16,6 +16,7 @@ import type { Setelan } from '../data/simpan';
 type Props = {
   setelan: Setelan;
   bukaDokumen: (k: 'syarat' | 'privasi') => void;
+  bukaBelajar: () => void;
   versi: string;
 };
 
@@ -26,9 +27,21 @@ const BELUM: ReadonlyArray<{ nama: string; sebab: string }> = [
   { nama: 'Berlangganan dari app', sebab: 'menyusul' },
 ];
 
-export function LayarLainnya({ setelan, bukaDokumen, versi }: Props) {
+export function LayarLainnya({ setelan, bukaDokumen, bukaBelajar, versi }: Props) {
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ paddingVertical: J.x3 }}>
+      {/* Belajar pindah ke sini dari tab: isinya berharga, tapi ia dibaca
+          sekali-dua kali, bukan tiap hari — dan satu dari lima tab adalah
+          tempat yang mahal untuk sesuatu yang dibaca sekali. */}
+      <Kartu judul="Belajar">
+        <Pressable onPress={bukaBelajar} style={g.tautan}>
+          <Text style={g.tautanTeks}>Cara baca kartu & istilah di chart</Text>
+        </Pressable>
+        <Text style={[g.catatan, { marginTop: J.x1 }]}>
+          Tiga keadaan kartu, bar biaya, jarak entry, dan 16 istilah — dijelaskan menurut apa yang mesin ini maksud.
+        </Text>
+      </Kartu>
+
       <Kartu judul="Pilihan terakhirmu">
         <Baris kiri="Pasar" kanan={setelan.pasar} />
         <Baris kiri="Timeframe" kanan={setelan.tf.toUpperCase()} />

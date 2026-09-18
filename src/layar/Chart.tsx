@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { ASAL } from '../data/antrian';
-import { ambilBacaan, type Pasar } from '../data/api';
+import { ambilBacaan, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import { angka } from '../data/tampil';
 import { W, H, J, R, ANGKA } from '../gaya/token';
 
@@ -46,23 +46,42 @@ const SUNTIK = `
 true;
 `;
 
-type Props = { pasar: Pasar; tf: string; gantiTf: (tf: string) => void; bukaBacaan: () => void };
+type Props = {
+  pasar: Pasar;
+  tf: string;
+  gantiTf: (tf: string) => void;
+  bukaBacaan: (mesin: string) => void;
+};
 
 export function LayarChart({ pasar, tf, gantiTf, bukaBacaan }: Props) {
   const [harga, setHarga] = useState<number | null>(null);
   /** Harga dari dalam chart menang; dari API cuma pengisi awal. */
   const dariChart = useRef(false);
   const [memuat, setMemuat] = useState(true);
+  const [daftarMesin, setDaftarMesin] = useState<Mesin[]>([]);
+  /**
+   * Mesin yang sedang dilihat — state LAYAR, bukan setelan tersimpan.
+   *
+   * Sengaja tidak menulis ke `simpan.ts`: menengok mesin lain sebentar bukan
+   * pernyataan "ini pilihanku sekarang", dan setelan yang berubah tiap kali
+   * orang mengintip adalah setelan yang tidak pernah ia pilih.
+   */
+  const [mesin, setMesin] = useState('');
 
-  const url = `${ASAL}/chart-embed?pair=${encodeURIComponent(pasar.simbol)}&tf=${encodeURIComponent(tf)}`;
+  const url = `${ASAL}/chart-embed?pair=${encodeURIComponent(pasar.simbol)}&tf=${encodeURIComponent(tf)}`
+    + (mesin === '' ? '' : `&mesin=${encodeURIComponent(mesin)}`);
 
   useEffect(() => {
     dariChart.current = false;
     setHarga(null);
+    setDaftarMesin([]);
+    setMesin('');
     let batal = false;
     void ambilBacaan(pasar.simbol, tf).then((j) => {
-      if (batal || dariChart.current) return;
-      if (j.ok && j.isi.harga > 0) setHarga(j.isi.harga);
+      if (batal) return;
+      if (!j.ok) return;
+      setDaftarMesin(j.isi.mesin);
+      if (!dariChart.current && j.isi.harga > 0) setHarga(j.isi.harga);
     });
     return () => { batal = true; };
   }, [pasar.simbol, tf]);
@@ -98,6 +117,34 @@ export function LayarChart({ pasar, tf, gantiTf, bukaBacaan }: Props) {
             );
           })}
         </ScrollView>
+
+        {/* BARIS MESIN. Statusnya dibaca dari jawaban yang SAMA dengan yang
+            menggambar chart — nol perhitungan di sisi app, dan nol panggilan
+            tambahan. Angka "n/m" cuma menghitung syarat WAJIB, sama dengan
+            kartu bot; ikut menghitung bonus akan membuat dua permukaan
+            menyebut angka berbeda untuk keadaan yang sama. */}
+        {daftarMesin.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.mesinBaris}>
+            {daftarMesin.map((x) => {
+              const on = x.mesin === (mesin === '' ? daftarMesin[0]?.mesin : mesin);
+              const wajib = syaratWajib(x);
+              const lolos = wajib.filter((c) => c.lolos).length;
+              const setup = x.status.toUpperCase() === 'SETUP';
+              return (
+                <Pressable
+                  key={x.mesin}
+                  onPress={() => { setMesin(x.mesin); setMemuat(true); }}
+                  style={[g.mesinTab, on && g.mesinTabOn]}
+                >
+                  <Text style={[g.mesinNama, on && g.mesinNamaOn]}>{x.mesin}</Text>
+                  <Text style={[g.mesinStatus, setup && g.mesinStatusSetup]}>
+                    {x.status.toLowerCase()} {lolos}/{wajib.length}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       <View style={g.wadah}>
@@ -130,7 +177,7 @@ export function LayarChart({ pasar, tf, gantiTf, bukaBacaan }: Props) {
         )}
       </View>
 
-      <Pressable onPress={bukaBacaan} style={g.bacaTombol}>
+      <Pressable onPress={() => { bukaBacaan(mesin === '' ? (daftarMesin[0]?.mesin ?? '') : mesin); }} style={g.bacaTombol}>
         <Text style={g.bacaTeks}>Baca analisanya</Text>
       </Pressable>
     </View>
@@ -145,10 +192,22 @@ const g = StyleSheet.create({
   label: { fontSize: H.label, color: W.teksSamar, marginTop: 1 },
   harga: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, ...ANGKA },
   tabs: { gap: 6, paddingTop: J.x2 },
-  tab: { paddingVertical: 5, paddingHorizontal: J.x3, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu },
+  tab: { paddingVertical: 5, paddingHorizontal: J.x3, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, minHeight: 28, justifyContent: 'center' },
   tabOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
-  tabTeks: { fontSize: H.kontrol, color: W.teksRedup },
+  tabTeks: { fontSize: H.kontrol, lineHeight: 16, color: W.teksRedup },
   tabTeksOn: { color: W.latar, fontWeight: '500' },
+  mesinBaris: { gap: 6, paddingTop: 6 },
+  /* Tinggi TIDAK dipatok: dua baris teks di dalam satu tab akan terpotong
+     kalau tingginya ditebak. Padding yang menentukan, isinya yang mengukur. */
+  mesinTab: {
+    paddingVertical: 5, paddingHorizontal: J.x3, borderRadius: R.sedang,
+    borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, minWidth: 74,
+  },
+  mesinTabOn: { borderColor: W.teksRedup, backgroundColor: W.kartuTerang },
+  mesinNama: { fontSize: H.kontrol, color: W.teksRedup, lineHeight: 16 },
+  mesinNamaOn: { color: W.teksKuat, fontWeight: '500' },
+  mesinStatus: { fontSize: H.label, color: W.teksSamar, lineHeight: 14, marginTop: 1 },
+  mesinStatusSetup: { color: W.naik },
   wadah: { flex: 1, backgroundColor: '#0B0B0D' },
   web: { flex: 1, backgroundColor: '#0B0B0D' },
   tunggu: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
