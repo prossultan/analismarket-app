@@ -16,6 +16,27 @@ dipakai supaya HP tidak perlu satu jaringan dengan mesin yang menjalankan
 Metro. `@expo/ngrok` sudah terpasang sebagai devDependency, jadi tidak ada
 pertanyaan "install globally?" di tengah jalan.
 
+### WAJIB LOGIN DI KEDUA SISI
+
+`npx expo login` di mesin Metro, **dan** akun yang sama di Expo Go. Tanpa itu
+Expo Go menolak dengan *"There was a problem running the requested project —
+You need to be signed in to Expo Go and Expo CLI"*, dan tunnelnya lahir
+bernama `…-anonymous-…`.
+
+Yang TIDAK menolong, dan sempat dicoba 18 Sep sampai memakan waktu:
+
+- **Keluar dari akun di Expo Go** supaya "anonim ketemu anonim" — Expo Go
+  menuntut login, bukan menerima ketiadaannya.
+- **Melewati tunnel lewat IP publik VPS** (`REACT_NATIVE_PACKAGER_HOSTNAME=
+  103.150.227.163 npx expo start`). Manifestnya memang terjangkau dari luar —
+  terukur HTTP 200 dengan alamat bundel yang benar — tapi Expo Go tetap minta
+  login. Jadi cara itu menukar satu syarat dengan risiko baru (Metro terbuka
+  ke internet; `ufw` di VPS ini `inactive`) tanpa menyelesaikan apa pun.
+
+Dan satu jebakan di layar errornya: tombol **"Try again"** mengulang URL yang
+SAMA, jadi ia tidak akan pernah berhasil sesudah alamatnya diganti. Tekan
+**"Go home"**, lalu masuk lagi lewat QR atau *Enter URL manually*.
+
 ## Pembagian tugasnya
 
 ```
