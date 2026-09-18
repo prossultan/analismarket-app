@@ -145,7 +145,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
         <Text style={[g.ubahTeks, { color: warnaUbah }]}>{ubah(u)}</Text>
       </View>
 
-      {/* ── SATU BARIS KENDALI: timeframe │ mesin │ alat ───────────────── */}
+      {/* ── BARIS 1: timeframe + alat ─────────────────────────────────── */}
       <View style={g.kendali}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.kendaliIsi}>
           {pasar.timeframes.map((t) => {
@@ -154,17 +154,6 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
             return (
               <Pressable key={t} onPress={() => { setTf(k); simpan({ ...setelan, pasar: pasar.simbol, tf: k }); setMemuatChart(true); }} style={[g.kTombol, on && g.kTombolOn]}>
                 <Text style={[g.kTeks, on && g.kTeksOn]}>{k}</Text>
-              </Pressable>
-            );
-          })}
-
-          <View style={g.pisah} />
-
-          {(bacaan?.mesin ?? []).map((x) => {
-            const on = x.mesin === aktif;
-            return (
-              <Pressable key={x.mesin} onPress={() => { setMesin(x.mesin); setMemuatChart(true); }} style={[g.kTombol, on && g.kTombolOn]}>
-                <Text style={[g.kTeks, on && g.kTeksOn]}>{x.mesin}</Text>
               </Pressable>
             );
           })}
@@ -181,6 +170,35 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
           })}
         </ScrollView>
       </View>
+
+      {/* ── BARIS 2: MESIN, pita sendiri di bawah timeframe ───────────────
+          Sebelumnya mesin berdesakan di satu baris bersama timeframe dan
+          alat. Di 390px itu berarti nama mesin ketiga sudah di luar layar —
+          dan mesin adalah kendali UTAMA halaman ini, bukan kendali ketiga.
+          Bentuknya sama dengan pita mesin di desktop. */}
+      {(bacaan?.mesin ?? []).length > 0 && (
+        <View style={g.pitaMesin}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {(bacaan?.mesin ?? []).map((x) => {
+              const on = x.mesin === aktif;
+              const w = syaratWajib(x);
+              const l = w.filter((c) => c.lolos).length;
+              const setup = x.status.toUpperCase() === 'SETUP';
+              return (
+                <Pressable key={x.mesin} onPress={() => { setMesin(x.mesin); setMemuatChart(true); }} style={[g.mesinTab, on && g.mesinTabOn]}>
+                  <View style={g.mesinKepala}>
+                    {on && <View style={g.mesinTitik} />}
+                    <Text style={[g.mesinNama, on && g.mesinNamaOn]} numberOfLines={1}>{x.mesin.toUpperCase()}</Text>
+                  </View>
+                  <Text style={[g.mesinStatus, setup && g.mesinStatusSetup]} numberOfLines={1}>
+                    {x.status.toLowerCase()} {l}/{w.length}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       {/* ── CHART ──────────────────────────────────────────────────────── */}
       <View style={g.wadahChart}>
@@ -233,12 +251,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
               </Pressable>
             </View>
             {m !== null && bacaan !== null && (
-              <IsiBacaan
-                bacaan={bacaan}
-                m={m}
-                desimal={pasar.desimal}
-                gantiMesin={(k) => { setMesin(k); setMemuatChart(true); }}
-              />
+              <IsiBacaan m={m} desimal={pasar.desimal} />
             )}
           </View>
         </View>
@@ -321,6 +334,25 @@ const g = StyleSheet.create({
   kTeks: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup },
   kTeksOn: { color: W.teksKuat, fontWeight: '500' },
   pisah: { width: 1, height: 16, backgroundColor: W.garis, marginHorizontal: 6 },
+
+  /* Pita mesin — tinggi TIDAK dipatok: dua baris teks yang tingginya ditebak
+     akan terpotong. Padding yang menentukan, isinya yang mengukur. */
+  pitaMesin: { borderBottomWidth: 1, borderBottomColor: W.garis, backgroundColor: W.latar900 },
+  mesinTab: {
+    paddingHorizontal: 13, paddingVertical: 7,
+    borderRightWidth: 1, borderRightColor: W.garis,
+    borderBottomWidth: 2, borderBottomColor: 'transparent',
+  },
+  mesinTabOn: { backgroundColor: W.kartu, borderBottomColor: W.teksKuat },
+  mesinKepala: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  mesinTitik: { width: 5, height: 5, borderRadius: R.bulat, backgroundColor: W.teksKuat },
+  mesinNama: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup, letterSpacing: 0.3 },
+  mesinNamaOn: { color: W.teksKuat, fontWeight: '500' },
+  mesinStatus: {
+    fontSize: H.label, lineHeight: 13, color: W.teksSamar,
+    letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 2,
+  },
+  mesinStatusSetup: { color: W.naik },
 
   wadahChart: { flex: 1, backgroundColor: W.chart },
   web: { flex: 1, backgroundColor: W.chart },

@@ -9,15 +9,13 @@
  * syarat, level, konteks. Orang yang pindah dari web tidak perlu belajar
  * ulang letak apa pun.
  */
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
-import { arahTurun, syaratWajib, type Bacaan, type Mesin } from '../data/api';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { arahTurun, syaratWajib, type Mesin } from '../data/api';
 import { angka } from '../data/tampil';
 import { BarBiaya, Kartu, Pisah } from './dasar';
 import { W, H, J, R, ANGKA, SENTUH, gayaLabel, TALANG } from '../gaya/token';
 
-export function IsiBacaan({ bacaan, m, desimal, gantiMesin }: {
-  bacaan: Bacaan; m: Mesin; desimal: number; gantiMesin: (kode: string) => void;
-}) {
+export function IsiBacaan({ m, desimal }: { m: Mesin; desimal: number }) {
   const turun = arahTurun(m);
   /* Warna arah dari ANGKA, bukan dari katanya. Tanpa rencana, kata tetap putih. */
   const warnaArah = turun === null ? W.teksKuat : turun ? W.turun : W.naik;
@@ -28,25 +26,11 @@ export function IsiBacaan({ bacaan, m, desimal, gantiMesin }: {
 
   return (
     <ScrollView contentContainerStyle={{ paddingVertical: J.x3 }}>
-      <View style={g.mesinBaris}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {bacaan.mesin.map((x) => {
-            const on = x.mesin === m.mesin;
-            const w = syaratWajib(x);
-            const l = w.filter((c) => c.lolos).length;
-            return (
-              <Pressable key={x.mesin} onPress={() => { gantiMesin(x.mesin); }} style={[g.mesinTab, on && g.mesinTabOn]}>
-                <View style={g.mesinKepala}>
-                  {on && <View style={g.mesinTitik} />}
-                  <Text style={[g.mesinNama, on && g.mesinNamaOn]} numberOfLines={1}>{x.mesin.toUpperCase()}</Text>
-                </View>
-                <Text style={g.mesinStatus} numberOfLines={1}>{x.status.toLowerCase()} {l}/{w.length}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
+      {/* TAB MESIN TIDAK DIGAMBAR DI SINI.
+          Pita mesin di layar Analisis tetap terlihat dan tetap hidup saat
+          lapisan ini terbuka — mengetuk mesin lain menukar bacaannya di
+          tempat. Menggambarnya lagi berarti dua kendali untuk satu hal,
+          dan dua kendali yang sama akan menyimpang. */}
       <Kartu
         judul="STATUS RENCANA"
         kanan={m.rrBersih > 0 ? <Text style={g.rr}>RR bersih 1:{angka(m.rrBersih, 1)}</Text> : undefined}
@@ -156,18 +140,6 @@ function BarisKV({ k, v }: { k: string; v: string }) {
 }
 
 const g = StyleSheet.create({
-  mesinBaris: { borderBottomWidth: 1, borderBottomColor: W.garis, marginBottom: J.x3 },
-  mesinTab: {
-    paddingHorizontal: TALANG, paddingVertical: 7,
-    borderRightWidth: 1, borderRightColor: W.garis,
-    borderBottomWidth: 2, borderBottomColor: 'transparent', minWidth: 96,
-  },
-  mesinTabOn: { borderBottomColor: W.teksKuat, backgroundColor: W.kartu },
-  mesinKepala: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  mesinTitik: { width: 5, height: 5, borderRadius: R.bulat, backgroundColor: W.teksKuat },
-  mesinNama: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup, letterSpacing: 0.4 },
-  mesinNamaOn: { color: W.teksKuat, fontWeight: '500' },
-  mesinStatus: { fontSize: H.label, lineHeight: 13, color: W.teksSamar, letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 2 },
   rr: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
   kepalaBaris: { flexDirection: 'row', alignItems: 'baseline', gap: J.x2, marginBottom: J.x2 },
   status: { fontSize: H.status, fontWeight: '700', color: W.teksKuat },

@@ -92,6 +92,16 @@
   --w-sedang: 500;
   --w-tebal: 700;
 
+  /* Tangga WEB DESKTOP — `terminal.css`. Ditulis di akhir berkas itu supaya
+     menang atas aturan sebelumnya; enam ukuran, sama seperti mobile, tapi
+     satu tingkat lebih besar di tiap anak tangga. */
+  --d-harga: 20px;
+  --d-status: 18px;
+  --d-nama: 14px;
+  --d-nilai: 13px;
+  --d-kontrol: 12px;
+  --d-label: 10px;
+
   /* Tangga KARTU BOT, kanvas logis 880px. Frekuensi nyata di page.ts:
      11px 17x · 10px 17x · 9px 15x · 12px 11x · 13px 7x, lalu sekali-sekali
      28/27/24/22/20/17 untuk angka besar dan judul pita. */
@@ -123,6 +133,12 @@
   --chip: 30px;          /* 6+6 padding + 16 lineHeight + 2 garis */
   --tab-kendali: 40px;   /* tombol di baris kendali chart */
   --bilah-bawah: 58px;   /* bilah navigasi */
+
+  /* Web desktop — lebar kolom, terukur dari terminal 1440px. */
+  --kolom-pasar: 250px;  /* daftar pasar di kiri */
+  --kolom-bacaan: 300px; /* kolom bacaan di kanan */
+  --strip-skala: 119px;  /* penggaris ATR — tinggi DITAHAN supaya chart tidak
+                            mengecil dua kali sesudah bacaan datang */
   --bar-biaya: 6px;      /* tinggi bar biaya */
 
   /* Tinggi pita KARTU BOT, jumlahnya WAJIB tepat 1200 (ada ujinya). */
