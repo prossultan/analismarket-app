@@ -13,7 +13,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ikon } from '../komponen/Ikon';
 import { Kartu, Pisah } from '../komponen/dasar';
-import { W, H, J, R } from '../gaya/token';
+import { W, H, J, R, TALANG } from '../gaya/token';
 
 function Terkunci({ ikon, judul, kalimat, isi }: {
   ikon: 'profil' | 'kabar'; judul: string; kalimat: string; isi: ReadonlyArray<string>;
@@ -84,7 +84,7 @@ export function LayarKabar() {
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  kepala: { alignItems: 'center', paddingHorizontal: 14, paddingBottom: J.x4 },
+  kepala: { alignItems: 'center', paddingHorizontal: TALANG, paddingBottom: J.x4 },
   lingkaran: {
     width: 52, height: 52, borderRadius: R.bulat, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, marginBottom: J.x3,

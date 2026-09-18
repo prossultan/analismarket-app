@@ -15,7 +15,7 @@
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Mesin } from '../data/api';
-import { W, H, J, R, ANGKA } from '../gaya/token';
+import { W, H, J, R, ANGKA, TALANG } from '../gaya/token';
 
 /** Ujung skala. Sama dengan web: 3 ATR. */
 const UJUNG = 3;
@@ -82,7 +82,7 @@ export function SkalaJarum({ daftar, aktif, pilih }: {
 }
 
 const g = StyleSheet.create({
-  akar: { paddingHorizontal: 14, paddingTop: J.x2, paddingBottom: J.x3, borderTopWidth: 1, borderTopColor: W.garis },
+  akar: { paddingHorizontal: TALANG, paddingTop: J.x2, paddingBottom: J.x3, borderTopWidth: 1, borderTopColor: W.garis },
   kepala: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
   kini: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.1, textTransform: 'uppercase' },
   diLuar: { fontSize: H.label, color: W.teksSamar },

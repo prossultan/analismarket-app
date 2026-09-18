@@ -33,7 +33,7 @@ export function Nilai({ children, warna }: { children: ReactNode; warna?: string
 export type NadaPil = 'netral' | 'naik' | 'turun' | 'plus';
 export function Pil({ teks, nada = 'netral' }: { teks: string; nada?: NadaPil }) {
   const warna = nada === 'naik' ? W.naik : nada === 'turun' ? W.turun : nada === 'plus' ? W.plus : W.teksRedup;
-  const latar = nada === 'plus' ? W.plusRedup : 'rgba(255,255,255,0.05)';
+  const latar = nada === 'plus' ? W.plusRedup : W.isiSamar;
   return (
     <View style={[g.pil, { backgroundColor: latar }]}>
       <Text style={[g.pilTeks, { color: warna }]}>{teks}</Text>
@@ -135,6 +135,6 @@ const g = StyleSheet.create({
     borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartuTerang,
   },
   tombolTeks: { fontSize: H.kontrol, color: W.teks },
-  barLuar: { height: 6, borderRadius: R.bulat, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
+  barLuar: { height: 6, borderRadius: R.bulat, backgroundColor: W.isiSamarKuat, overflow: 'hidden' },
   barDalam: { height: 6, borderRadius: R.bulat },
 });

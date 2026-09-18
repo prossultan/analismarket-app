@@ -13,7 +13,7 @@ import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Pasar } from '../data/api';
 import { angka, kategoriTersedia, labelJenis, labelKategori, ubah } from '../data/tampil';
-import { W, H, J, R, ANGKA, SENTUH, TINGGI_BARIS } from '../gaya/token';
+import { W, H, J, R, ANGKA, SENTUH, TINGGI_BARIS, TALANG, SELA_CHIP, TINGGI_CHIP } from '../gaya/token';
 
 type Props = {
   daftar: Pasar[];
@@ -128,28 +128,28 @@ function Saring({ pilihan, nilai, pilih, label }: {
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  kepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, minHeight: SENTUH },
+  kepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH },
   judul: { fontSize: H.status, fontWeight: '700', color: W.teksKuat },
   tutup: { minHeight: SENTUH, paddingHorizontal: J.x2, justifyContent: 'center' },
   tutupTeks: { fontSize: H.nilai, color: W.teksRedup },
   cari: {
-    marginHorizontal: 14, marginBottom: J.x2, paddingHorizontal: J.x3, height: SENTUH,
+    marginHorizontal: TALANG, marginBottom: J.x2, paddingHorizontal: J.x3, height: SENTUH,
     backgroundColor: W.latar900, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis,
     color: W.teksKuat, fontSize: 16,
   },
   saringBaris: { flexGrow: 0, flexShrink: 0, marginBottom: J.x2 },
-  saringIsi: { paddingHorizontal: 14, gap: 6, alignItems: 'center' },
+  saringIsi: { paddingHorizontal: TALANG, gap: SELA_CHIP, alignItems: 'center' },
   chip: {
     paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang,
     borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu,
-    minHeight: 30, justifyContent: 'center',
+    minHeight: TINGGI_CHIP, justifyContent: 'center',
   },
   chipOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
   chipTeks: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup },
   chipTeksOn: { color: W.latar, fontWeight: '500' },
   baris: {
     flexDirection: 'row', alignItems: 'center', minHeight: TINGGI_BARIS,
-    paddingHorizontal: 14, gap: J.x2,
+    paddingHorizontal: TALANG, gap: J.x2,
     borderBottomWidth: 1, borderBottomColor: W.kartu,
     borderLeftWidth: 2, borderLeftColor: 'transparent',
   },

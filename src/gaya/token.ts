@@ -1,9 +1,13 @@
 /**
- * SATU SUMBER untuk warna, huruf, dan jarak.
+ * CERMINAN TypeScript dari sistem desain.
  *
- * Nilainya disalin dari `analismarket-web/src/gaya/dasar.css` dan
- * `terminal.css` — bukan ditebak supaya "mirip". Dua permukaan yang memakai
- * dua palet adalah cara tercepat membuat app terbaca seperti tiruan.
+ * YANG KANONIS berkas CSS-nya:
+ *   opendesign/design-systems/analismarket/tokens/colors_and_type.css
+ *
+ * React Native tidak membaca CSS, jadi nilainya ada dua kali. Kalau keduanya
+ * berbeda, yang salah BERKAS INI — bukan yang CSS. Aturan lengkapnya (enam
+ * butir, masing-masing lahir dari sesuatu yang pernah rusak) ada di
+ * `SKILL.md` sebelah berkas itu.
  */
 
 export const W = {
@@ -34,6 +38,20 @@ export const W = {
    */
   plus: '#C9A961',
   plusRedup: 'rgba(201,169,97,0.14)',
+
+  /* ── Warna yang sebelumnya diketik mentah di layar ────────────────────
+     Enam nilai tersebar di lima berkas. Yang tersebar akan menyimpang. */
+  /** HANYA di balik kanvas chart — bukan latar halaman. */
+  chart: '#0B0B0D',
+  /** Tepi dan latar blok "yang belum lolos". */
+  turunTepi: 'rgba(244,63,94,0.25)',
+  turunLatar: 'rgba(244,63,94,0.08)',
+  /** Tirai di belakang lapisan bacaan. Tipis, supaya kendali di baliknya
+      tetap terbaca — keduanya masih hidup saat lapisan terbuka. */
+  tirai: 'rgba(0,0,0,0.45)',
+  /** Isian chip netral dan bar biaya kosong. */
+  isiSamar: 'rgba(255,255,255,0.05)',
+  isiSamarKuat: 'rgba(255,255,255,0.06)',
 } as const;
 
 /**
@@ -64,11 +82,31 @@ export const H = {
   kontrol: 12,
 } as const;
 
-/** Sasaran sentuh minimum, sama dengan `--sentuh` di web. */
+/**
+ * TINGGI KOMPONEN — diturunkan dari isinya, bukan angka bulat yang kebetulan
+ * cukup di satu HP. Tinggi yang ditebak memotong huruf berekor, dan itu
+ * tidak terlihat dari kode.
+ */
 export const SENTUH = 44;
-
-/** Tinggi baris pasar di mobile web. */
 export const TINGGI_BARIS = 52;
+/** 6+6 padding + 16 lineHeight + 2 garis. */
+export const TINGGI_CHIP = 30;
+/** Tombol di baris kendali chart. */
+export const TINGGI_KENDALI = 40;
+/** Bilah navigasi bawah. */
+export const TINGGI_BILAH = 58;
+/** Bar biaya. */
+export const TINGGI_BAR = 6;
+
+/**
+ * TALANG TEPI LAYAR — satu angka untuk seluruh app.
+ *
+ * Terukur sebelum ditokenkan: angka 14 diketik mentah di 18 tempat. Talang
+ * yang berbeda antar layar terbaca sebagai layar yang bergeser saat dipindah.
+ */
+export const TALANG = 14;
+/** Jarak antar chip dan antar tab. Terukur diketik mentah di 16 tempat. */
+export const SELA_CHIP = 6;
 
 export const J = { x1: 4, x2: 8, x3: 12, x4: 18, x5: 26 } as const;
 export const R = { kecil: 4, sedang: 6, besar: 8, kartu: 12, bulat: 999 } as const;

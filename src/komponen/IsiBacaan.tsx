@@ -13,7 +13,7 @@ import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { arahTurun, syaratWajib, type Bacaan, type Mesin } from '../data/api';
 import { angka } from '../data/tampil';
 import { BarBiaya, Kartu, Pisah } from './dasar';
-import { W, H, J, R, ANGKA, SENTUH, gayaLabel } from '../gaya/token';
+import { W, H, J, R, ANGKA, SENTUH, gayaLabel, TALANG } from '../gaya/token';
 
 export function IsiBacaan({ bacaan, m, desimal, gantiMesin }: {
   bacaan: Bacaan; m: Mesin; desimal: number; gantiMesin: (kode: string) => void;
@@ -158,7 +158,7 @@ function BarisKV({ k, v }: { k: string; v: string }) {
 const g = StyleSheet.create({
   mesinBaris: { borderBottomWidth: 1, borderBottomColor: W.garis, marginBottom: J.x3 },
   mesinTab: {
-    paddingHorizontal: 14, paddingVertical: 7,
+    paddingHorizontal: TALANG, paddingVertical: 7,
     borderRightWidth: 1, borderRightColor: W.garis,
     borderBottomWidth: 2, borderBottomColor: 'transparent', minWidth: 96,
   },
@@ -176,7 +176,7 @@ const g = StyleSheet.create({
   selNilai: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, marginTop: 3, ...ANGKA },
   alasan: { fontSize: 11, color: W.teksRedup, lineHeight: 17 },
   blokGagal: {
-    borderWidth: 1, borderColor: 'rgba(244,63,94,0.25)', backgroundColor: 'rgba(244,63,94,0.08)',
+    borderWidth: 1, borderColor: W.turunTepi, backgroundColor: W.turunLatar,
     borderRadius: R.besar, padding: J.x3, marginBottom: J.x3,
   },
   judulGagal: { fontSize: H.label, color: W.turun, letterSpacing: 1.1, textTransform: 'uppercase', marginBottom: J.x2 },
@@ -194,5 +194,5 @@ const g = StyleSheet.create({
   kv: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5, gap: J.x3 },
   kvK: { fontSize: 11, color: W.teksRedup, flexShrink: 1 },
   kvV: { fontSize: 11, color: W.teksKuat, fontWeight: '500', ...ANGKA },
-  kaki: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: 14, paddingBottom: J.x4, lineHeight: 14 },
+  kaki: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: TALANG, paddingBottom: J.x4, lineHeight: 14 },
 });

@@ -32,7 +32,7 @@ import { LembarPasar } from '../komponen/LembarPasar';
 import { SkalaJarum } from '../komponen/SkalaJarum';
 import { BarBiaya, Kosong, Memuat } from '../komponen/dasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
-import { W, H, J, R, ANGKA, SENTUH } from '../gaya/token';
+import { W, H, J, R, ANGKA, SENTUH, TALANG, TINGGI_KENDALI } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
 const SUNTIK = `
@@ -188,7 +188,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
           key={url}
           source={{ uri: url }}
           style={g.web}
-          backgroundColor="#0B0B0D"
+          backgroundColor={W.chart}
           onLoadStart={() => { setMemuatChart(true); }}
           onLoadEnd={() => { setMemuatChart(false); }}
           onMessage={pesan}
@@ -306,7 +306,7 @@ function Strip({ mesin, gagal, cobaLagi }: { mesin: Mesin | null; gagal: string;
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  kepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, minHeight: SENTUH, gap: J.x2 },
+  kepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH, gap: J.x2 },
   pasarTombol: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: SENTUH },
   simbol: { fontSize: H.pasar, fontWeight: '700', color: W.teksKuat },
   tanda: { fontSize: H.label, color: W.teksSamar },
@@ -316,19 +316,19 @@ const g = StyleSheet.create({
 
   kendali: { borderTopWidth: 1, borderTopColor: W.garis, borderBottomWidth: 1, borderBottomColor: W.garis },
   kendaliIsi: { alignItems: 'center', paddingHorizontal: 8 },
-  kTombol: { paddingHorizontal: 9, minHeight: 40, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  kTombol: { paddingHorizontal: 9, minHeight: TINGGI_KENDALI, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
   kTombolOn: { borderBottomColor: W.teksKuat },
   kTeks: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup },
   kTeksOn: { color: W.teksKuat, fontWeight: '500' },
   pisah: { width: 1, height: 16, backgroundColor: W.garis, marginHorizontal: 6 },
 
-  wadahChart: { flex: 1, backgroundColor: '#0B0B0D' },
-  web: { flex: 1, backgroundColor: '#0B0B0D' },
+  wadahChart: { flex: 1, backgroundColor: W.chart },
+  web: { flex: 1, backgroundColor: W.chart },
   tunggu: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
 
   strip: {
     flexDirection: 'row', alignItems: 'center', gap: J.x2,
-    minHeight: SENTUH, paddingHorizontal: 14,
+    minHeight: SENTUH, paddingHorizontal: TALANG,
     borderTopWidth: 1, borderTopColor: W.garis, backgroundColor: W.latar900,
   },
   stripStatus: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, flexShrink: 0 },
@@ -340,14 +340,14 @@ const g = StyleSheet.create({
   stripTunggu: { fontSize: H.nilai, color: W.teksSamar },
   cobaLagi: { fontSize: H.nilai, color: W.teksKuat, textDecorationLine: 'underline' },
 
-  mikro: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: 14, paddingVertical: 6, lineHeight: 13 },
+  mikro: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: TALANG, paddingVertical: 6, lineHeight: 13 },
 
   lapisLuar: { flex: 1, justifyContent: 'flex-end' },
   /* Tirai tipis, bukan gelap penuh: kepala dan kendali di belakangnya harus
      tetap TERBACA, karena keduanya masih hidup saat lapisan terbuka. */
-  lapisTirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)' },
+  lapisTirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: W.tirai },
   lapis: { maxHeight: '88%', backgroundColor: W.latar, borderTopLeftRadius: R.kartu, borderTopRightRadius: R.kartu, borderTopWidth: 1, borderColor: W.garis },
-  lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, minHeight: SENTUH, borderBottomWidth: 1, borderBottomColor: W.garis },
+  lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH, borderBottomWidth: 1, borderBottomColor: W.garis },
   lapisMerek: { fontSize: H.label, color: W.teksSamar, letterSpacing: 0.5 },
   tutup: { minHeight: SENTUH, justifyContent: 'center', paddingHorizontal: J.x2 },
   tutupTeks: { fontSize: H.nilai, color: W.teksRedup },

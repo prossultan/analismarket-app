@@ -15,7 +15,7 @@ import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '..
 import { angka, ubah } from '../data/tampil';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
 import { Kartu, Memuat, Pil } from '../komponen/dasar';
-import { W, H, J, R, ANGKA, SENTUH } from '../gaya/token';
+import { W, H, J, R, ANGKA, SENTUH, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
 type Props = {
@@ -131,7 +131,7 @@ const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   kartuPasar: {
     backgroundColor: W.kartu, borderRadius: R.kartu, borderWidth: 1, borderColor: W.garis,
-    padding: 14, marginHorizontal: 14, marginBottom: J.x3,
+    padding: TALANG, marginHorizontal: TALANG, marginBottom: J.x3,
   },
   barisAtas: { flexDirection: 'row', alignItems: 'baseline', gap: J.x2 },
   simbol: { fontSize: H.pasar, fontWeight: '700', color: W.teksKuat },
@@ -146,7 +146,7 @@ const g = StyleSheet.create({
   ajak: { fontSize: H.label, color: W.teksSamar, marginTop: J.x3 },
   tombolPasar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: J.x2,
-    marginHorizontal: 14, marginBottom: J.x3, minHeight: SENTUH,
+    marginHorizontal: TALANG, marginBottom: J.x3, minHeight: SENTUH,
     borderRadius: R.besar, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartuTerang,
   },
   tombolPasarTeks: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500' },
@@ -154,5 +154,5 @@ const g = StyleSheet.create({
   menuGaris: { borderTopWidth: 1, borderTopColor: W.garisSamar },
   menuNama: { fontSize: H.nilai, color: W.teksKuat },
   menuKet: { fontSize: H.label, color: W.teksSamar },
-  kaki: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: 14, paddingVertical: J.x4, lineHeight: 14 },
+  kaki: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: TALANG, paddingVertical: J.x4, lineHeight: 14 },
 });

@@ -1,0 +1,241 @@
+/* ===========================================================================
+   ANALIS MARKET — TOKEN SISTEM DESAIN
+   Ditarik dari kode, bukan dikarang. Dua sumber:
+
+     KARTU BOT   ~/apps/analisa/src/render/theme.ts   (TV, BAND, ROW, W, H)
+     APP EXPO    ~/analismarket-app/src/gaya/token.ts (W, H, J, R, SENTUH)
+                 yang sendiri disalin dari analismarket-web/src/gaya/mobil.css
+
+   TIGA HAL YANG TIDAK BISA DISATUKAN, DAN ITU DISENGAJA
+   ------------------------------------------------------------------------
+   1. TEMA BERBEDA. Kartu bot TERANG (#FFFFFF, teks #172B42). App dan web
+      GELAP (#0C0B09, teks #E8E7E5). Bukan kelalaian: kartu dibagikan ulang
+      di chat, sering di layar terang dan sering dicetak ulang oleh orang
+      lain; app dibaca sendirian, sering malam. Yang disatukan PERAN
+      warnanya, bukan nilainya — `--peran-naik` berarti hal yang sama di
+      keduanya meski heksanya berbeda.
+
+   2. SKALA HURUF BERBEDA, dan membandingkannya langsung salah. Kartu
+      digambar di kanvas logis 880x1200 lalu dirender 2x jadi gambar; app
+      hidup di layar ~390px. Angka 11 di kartu bukan angka 11 di app.
+      Yang disatukan URUTAN dan PERANnya: satu angka terbesar, satu kata
+      status, nilai, kontrol, label.
+
+   3. RADIUS DAN BAYANGAN tidak ada di kartu. SVG kartu memakai persegi
+      dan garis; radius adalah bahasa app dan web saja.
+   =========================================================================== */
+
+:root {
+  /* ── PERAN WARNA — berlaku di KEDUA permukaan ─────────────────────────
+     Nama peran dulu, nilai belakangan. Ini yang membuat "hijau" berarti
+     satu hal di kartu dan di app.                                        */
+  --peran-naik: "harga naik, dan sisi rencana yang menguntungkan";
+  --peran-turun: "harga turun, dan sisi rencana yang merugikan";
+  --peran-entry: "titik masuk — satu-satunya biru di seluruh produk";
+  --peran-waspada: "biaya tinggi, data tertinggal, batas terlampaui";
+  --peran-plus: "AnalisMarket+ dan TIDAK ADA YANG LAIN";
+
+  /* ── APP & WEB (gelap) ───────────────────────────────────────────────── */
+  --bg-1: #0C0B09;          /* obsidian hangat — latar halaman */
+  --bg-2: #11100D;          /* latar kolom/lembar */
+  --bg-3: #161512;          /* permukaan kartu */
+  --bg-4: #1C1A17;          /* permukaan terangkat */
+  --bg-chart: #0B0B0D;      /* HANYA di balik kanvas chart */
+  --border-1: #252321;      /* garis 1px biasa */
+  --border-2: rgba(255, 255, 255, 0.06); /* garis samar */
+
+  --fg-1: #E8E7E5;          /* nilai, angka, judul — 14:1 */
+  --fg-2: #CFCECB;          /* badan teks — 11:1 */
+  --fg-3: #A7A4A1;          /* sekunder — 7:1 */
+  --fg-4: #84827E;          /* paling samar, masih AA 4,53:1 */
+
+  --naik: #10B981;
+  --turun: #F43F5E;
+  --tanda: #FD9829;         /* penanda struktur di chart */
+  --plus: #C9A961;          /* champagne — AM+ SAJA */
+  --plus-redup: rgba(201, 169, 97, 0.14);
+  --ivory: #EEECEA;         /* satu-satunya isian tombol utama */
+
+  --turun-tepi: rgba(244, 63, 94, 0.25);  /* tepi blok gagal */
+  --turun-latar: rgba(244, 63, 94, 0.08); /* latar blok gagal */
+  --tirai: rgba(0, 0, 0, 0.45);           /* tirai di belakang lapisan */
+
+  /* ── KARTU BOT (terang) — nilai lain, peran sama ─────────────────────── */
+  --kartu-bg: #FFFFFF;
+  --kartu-panel: #F3F6FA;
+  --kartu-panel-dalam: #F8FAFC;
+  --kartu-garis: #DFE5EC;
+  --kartu-fg-1: #172B42;
+  --kartu-fg-2: #354B63;
+  --kartu-fg-3: #52657A;
+  --kartu-fg-4: #64748B;
+  --kartu-naik: #087F70;
+  --kartu-turun: #C63D4A;
+  --kartu-entry: #245DD8;
+  --kartu-waspada: #9A6207;
+
+  /* ── HURUF ────────────────────────────────────────────────────────────
+     Dua keluarga, dan pembagiannya keras: apa pun yang ANGKA memakai mono
+     dengan tabular-nums, supaya digit tidak bergeser saat berubah.        */
+  --font-teks: Inter, system-ui, sans-serif;
+  --font-angka: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Tangga APP & WEB MOBILE — enam ukuran, tiga bobot, tidak lebih. */
+  --t-harga: 19px;   /* satu-satunya angka terbesar di layar */
+  --t-status: 15px;  /* kata status */
+  --t-pasar: 13px;   /* nama pasar */
+  --t-nilai: 12px;   /* entry, sl, tp, ATR, RR, timeframe, nama mesin */
+  --t-alat: 10px;    /* toolbar, label tab */
+  --t-label: 9px;    /* label soft dan mikro */
+
+  --w-biasa: 400;
+  --w-sedang: 500;
+  --w-tebal: 700;
+
+  /* Tangga KARTU BOT, kanvas logis 880px. Frekuensi nyata di page.ts:
+     11px 17x · 10px 17x · 9px 15x · 12px 11x · 13px 7x, lalu sekali-sekali
+     28/27/24/22/20/17 untuk angka besar dan judul pita. */
+  --k-harga: 28px;
+  --k-judul: 20px;
+  --k-nilai: 13px;
+  --k-badan: 11px;
+  --k-label: 10px;
+  --k-mikro: 9px;
+
+  /* Label TIDAK PERNAH lebih tebal daripada nilainya. 9/400 lawan 12/500. */
+  --label-spasi: 1.1px;
+
+  /* ── JARAK ────────────────────────────────────────────────────────────
+     Terukur dari app: 14 dipakai 18x sebagai talang tepi, 6 dipakai 16x
+     sebagai jarak antar-chip. Keduanya dinaikkan jadi token.             */
+  --sela-1: 4px;
+  --sela-2: 8px;
+  --sela-3: 12px;
+  --sela-4: 18px;
+  --sela-5: 26px;
+  --talang: 14px;    /* talang tepi layar — SATU angka untuk seluruh app */
+  --sela-chip: 6px;  /* antar chip dan antar tab */
+
+  /* ── TINGGI KOMPONEN ──────────────────────────────────────────────────
+     Diturunkan dari isinya, bukan angka bulat yang kebetulan cukup.      */
+  --sentuh: 44px;        /* sasaran sentuh minimum — bilah, tombol, baris menu */
+  --baris-pasar: 52px;   /* baris daftar pasar */
+  --chip: 30px;          /* 6+6 padding + 16 lineHeight + 2 garis */
+  --tab-kendali: 40px;   /* tombol di baris kendali chart */
+  --bilah-bawah: 58px;   /* bilah navigasi */
+  --bar-biaya: 6px;      /* tinggi bar biaya */
+
+  /* Tinggi pita KARTU BOT, jumlahnya WAJIB tepat 1200 (ada ujinya). */
+  --k-lebar: 880px;
+  --k-tinggi: 1200px;
+  --k-header: 104px;
+  --k-konteks: 92px;
+  --k-panel-atas: 130px;
+  --k-kaki: 80px;
+
+  /* ── RADIUS — bahasa app dan web saja, kartu tidak punya ──────────────── */
+  --r-kecil: 4px;
+  --r: 6px;
+  --r-besar: 8px;
+  --r-kartu: 12px;
+  --r-bulat: 999px;
+
+  /* ── GERAK ────────────────────────────────────────────────────────────── */
+  --tempo-mikro: 140ms;
+  --tempo-lembar: 240ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-lembar: cubic-bezier(0.32, 0.72, 0, 1);
+  --tekan: 0.96;        /* chip dan tombol */
+  --tekan-besar: 0.99;  /* baris selebar layar */
+
+  /* ── SEMANTIK — inilah yang dipakai komponen ──────────────────────────── */
+  --surface-page: var(--bg-1);
+  --surface-card: var(--bg-3);
+  --surface-raised: var(--bg-4);
+  --border-subtle: var(--border-2);
+  --border-default: var(--border-1);
+  --text-value: var(--fg-1);
+  --text-body: var(--fg-2);
+  --text-secondary: var(--fg-3);
+  --text-faint: var(--fg-4);
+
+  --h1: var(--t-harga);
+  --h2: var(--t-status);
+  --body: var(--t-nilai);
+  --caption: var(--t-label);
+}
+
+/* ===========================================================================
+   GAYA TOMBOL — TIGA, DAN HANYA TIGA
+   ------------------------------------------------------------------------
+   Satu tingkat per keperluan. Tombol keempat berarti ada dua yang berebut
+   arti yang sama.
+   =========================================================================== */
+
+/* UTAMA — satu per layar, tidak pernah dua. Isian ivory, teks gelap. */
+.tombol-utama {
+  min-height: var(--sentuh);
+  padding: 0 var(--sela-4);
+  border-radius: var(--r-besar);
+  background: var(--ivory);
+  color: var(--bg-1);
+  font-size: var(--t-nilai);
+  font-weight: var(--w-sedang);
+  border: 0;
+}
+
+/* KEDUA — tindakan biasa. Permukaan terangkat, garis tegas. */
+.tombol-kedua {
+  min-height: var(--sentuh);
+  padding: 0 var(--sela-4);
+  border-radius: var(--r-besar);
+  background: var(--bg-4);
+  color: var(--fg-1);
+  font-size: var(--t-nilai);
+  font-weight: var(--w-sedang);
+  border: 1px solid var(--border-1);
+}
+
+/* TERPILIH — chip/tab yang aktif. PUTIH, bukan emas.
+   Emas dipakai PLUS+ di baris yang sama; kalau keduanya emas, keduanya
+   berebut dan PLUS+ berhenti menonjol. */
+.chip { 
+  min-height: var(--chip);
+  padding: 0 var(--sela-3);
+  border-radius: var(--r);
+  background: var(--bg-3);
+  color: var(--fg-3);
+  border: 1px solid var(--border-1);
+  font-size: var(--t-nilai);
+  line-height: 16px;
+}
+.chip[aria-pressed="true"] {
+  background: var(--fg-1);
+  color: var(--bg-1);
+  border-color: var(--fg-1);
+  font-weight: var(--w-sedang);
+}
+
+/* TAB BERGARIS BAWAH — timeframe, mesin, alat. Tanpa kotak. */
+.tab-garis {
+  min-height: var(--tab-kendali);
+  padding: 0 9px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--fg-3);
+  font-size: var(--t-nilai);
+  line-height: 16px;
+}
+.tab-garis[aria-pressed="true"] {
+  border-bottom-color: var(--fg-1);
+  color: var(--fg-1);
+  font-weight: var(--w-sedang);
+}
+
+/* ANGKA — dipasang di TIAP harga, level, RR, dan persen. */
+.angka {
+  font-family: var(--font-angka);
+  font-variant-numeric: tabular-nums;
+}
