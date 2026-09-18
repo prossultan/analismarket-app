@@ -1,0 +1,45 @@
+/**
+ * Ikon bilah bawah — PATH-NYA DISALIN PERSIS dari `MenuBawah.tsx` di web.
+ *
+ * Bukan ikon yang "mirip". Bilah bawah adalah permukaan yang paling sering
+ * dilihat orang, dan dua set ikon yang berbeda sedikit membuat app terasa
+ * seperti tiruan web, bukan web yang sama di tempat lain.
+ *
+ * Gayanya juga ikut: 20x20, garis saja tanpa isian, tebal 1,8, ujung bulat.
+ */
+import Svg, { Path } from 'react-native-svg';
+
+/** Satu-satunya yang TIDAK ada di web — web tidak punya Home. */
+const RUMAH = 'M3 10.5L12 3l9 7.5M5.5 9.5V21h13V9.5';
+const PASAR = 'M3 3v18h18M7 16l4-4 4 4 5-6';
+const ANALISIS = 'M9 19V9m6 10V5m6 14v-8M3 19v-4';
+const PLUS = 'M12 3l2.4 5.3 5.6.6-4.2 3.9 1.2 5.7L12 15.6 6.999 18.5l1.2-5.7L4 8.9l5.6-.6L12 3z';
+const KABAR = 'M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0';
+const PROFIL = 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z';
+const LAINNYA = 'M4 7h16M4 12h16M4 17h16';
+const KALENDER = 'M7 3v3m10-3v3M4 9h16M5 6h14v15H5z';
+const BUKU = 'M4 5a2 2 0 012-2h13v18H6a2 2 0 01-2-2zM19 17H6';
+
+export const JALUR = {
+  rumah: RUMAH, pasar: PASAR, analisis: ANALISIS, plus: PLUS,
+  kabar: KABAR, profil: PROFIL, lainnya: LAINNYA, kalender: KALENDER, buku: BUKU,
+} as const;
+
+export type NamaIkon = keyof typeof JALUR;
+
+export function Ikon({ nama, warna, ukuran = 20, isi }: {
+  nama: NamaIkon; warna: string; ukuran?: number; isi?: string;
+}) {
+  return (
+    <Svg width={ukuran} height={ukuran} viewBox="0 0 24 24">
+      <Path
+        d={JALUR[nama]}
+        fill={isi ?? 'none'}
+        stroke={warna}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}

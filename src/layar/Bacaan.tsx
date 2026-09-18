@@ -14,7 +14,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 import { ambilBacaan, arahTurun, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
 import { angka } from '../data/tampil';
 import { BarBiaya, Baris, Kartu, Kosong, Label, Memuat, Pil, Pisah } from '../komponen/dasar';
-import { W, H, J, R, ANGKA } from '../gaya/token';
+import { W, H, J, R, ANGKA, SENTUH } from '../gaya/token';
 
 export type MuatanBacaan = { bacaan: Bacaan; mesin: Mesin };
 
@@ -78,18 +78,27 @@ export function LayarBacaan({ pasar, tf, mesinDipilih, pilihMesin, bukaBanding, 
         />
       }
     >
-      {/* Pemilih mesin. Semua mesin sudah ada di muatan ini — pindah mesin
-          tidak memanggil jaringan sama sekali. */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.mesinBaris}>
-        {bacaan.mesin.map((x) => {
-          const on = x.mesin === m.mesin;
-          return (
-            <Pressable key={x.mesin} onPress={() => { pilihMesin(x.mesin); }} style={[g.chip, on && g.chipOn]}>
-              <Text style={[g.chipTeks, on && g.chipTeksOn]}>{x.mesin}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      {/* Tab mesin dua baris — bentuk yang sama dengan lembar bacaan web.
+          Semua mesin sudah ada di muatan ini, jadi pindah mesin tidak
+          memanggil jaringan sama sekali. */}
+      <View style={g.mesinBaris}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {bacaan.mesin.map((x) => {
+            const on = x.mesin === m.mesin;
+            const w = syaratWajib(x);
+            const l = w.filter((c) => c.lolos).length;
+            return (
+              <Pressable key={x.mesin} onPress={() => { pilihMesin(x.mesin); }} style={[g.mesinTab, on && g.mesinTabOn]}>
+                <View style={g.mesinKepala}>
+                  {on && <View style={g.mesinTitik} />}
+                  <Text style={[g.mesinNama, on && g.mesinNamaOn]} numberOfLines={1}>{x.mesin.toUpperCase()}</Text>
+                </View>
+                <Text style={g.mesinStatus} numberOfLines={1}>{x.status.toLowerCase()} {l}/{w.length}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <Kartu>
         <View style={g.kepalaBaris}>
@@ -109,8 +118,8 @@ export function LayarBacaan({ pasar, tf, mesinDipilih, pilihMesin, bukaBanding, 
       )}
 
       <Kartu
-        judul="Rencana"
-        kanan={m.rrBersih > 0 ? <Pil teks={`RR bersih 1:${angka(m.rrBersih, 1)}`} /> : undefined}
+        judul="STATUS RENCANA"
+        kanan={m.rrBersih > 0 ? <Text style={g.rr}>RR bersih 1:{angka(m.rrBersih, 1)}</Text> : undefined}
       >
         {punyaRencana ? (
           <View style={g.plan}>
@@ -133,7 +142,7 @@ export function LayarBacaan({ pasar, tf, mesinDipilih, pilihMesin, bukaBanding, 
         )}
       </Kartu>
 
-      <Kartu judul="Biaya">
+      <Kartu judul="BIAYA">
         <BarBiaya porsi={m.biayaPorsi} />
       </Kartu>
 
@@ -148,13 +157,17 @@ export function LayarBacaan({ pasar, tf, mesinDipilih, pilihMesin, bukaBanding, 
         </Pressable>
       </Kartu>
 
-      <Kartu judul="Konteks atas">
+      <Kartu judul="KONTEKS ATAS">
         <Text style={g.alasan}>{m.konteksAtas}</Text>
         <Pisah />
         <Baris kiri={m.htfTimeframe === null ? 'Bias' : `Bias ${m.htfTimeframe}`} kanan={m.htfBias} />
         <Baris kiri="ATR" kanan={angka(m.atr, pasar.desimal)} />
         <Baris kiri="Jarak entry" kanan={m.jarakEntryAtr === null ? '—' : `${angka(m.jarakEntryAtr, 2)} ATR`} />
       </Kartu>
+
+      <Text style={g.penafian}>
+        Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.
+      </Text>
 
       <View style={g.aksi}>
         <Pressable onPress={() => { bukaBanding(bacaan); }} style={g.aksiTombol}>
@@ -179,14 +192,23 @@ function Sel({ label, nilai }: { label: string; nilai: string }) {
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  mesinBaris: { gap: 6, paddingHorizontal: J.x3, paddingBottom: J.x3 },
-  chip: { paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, minHeight: 30, justifyContent: 'center' },
-  chipOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
-  chipTeks: { fontSize: H.kontrol, lineHeight: 16, color: W.teksRedup },
-  chipTeksOn: { color: W.latar, fontWeight: '500' },
+  mesinBaris: { borderBottomWidth: 1, borderBottomColor: W.garis, marginBottom: J.x3 },
+  mesinTab: {
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRightWidth: 1, borderRightColor: W.garis,
+    borderBottomWidth: 2, borderBottomColor: 'transparent', minWidth: 96,
+  },
+  mesinTabOn: { borderBottomColor: W.teksKuat, backgroundColor: W.kartu },
+  mesinKepala: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  mesinTitik: { width: 5, height: 5, borderRadius: R.bulat, backgroundColor: W.teksKuat },
+  mesinNama: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup, letterSpacing: 0.4 },
+  mesinNamaOn: { color: W.teksKuat, fontWeight: '500' },
+  mesinStatus: { fontSize: H.label, lineHeight: 13, color: W.teksSamar, letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 2 },
+  rr: { fontSize: H.label, color: W.teksSamar, letterSpacing: 0.4, ...ANGKA },
+  penafian: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: 14, paddingBottom: J.x3, lineHeight: 14 },
   kepalaBaris: { flexDirection: 'row', alignItems: 'baseline', gap: J.x2, flexWrap: 'wrap' },
-  status: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.3 },
-  arah: { fontSize: H.status, fontWeight: '700', letterSpacing: -0.3 },
+  status: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.2 },
+  arah: { fontSize: H.status, fontWeight: '700', letterSpacing: -0.2 },
   sub: { fontSize: 11, color: W.teksRedup, marginTop: J.x1 },
   alasan: { fontSize: 11, color: W.teksRedup, lineHeight: 17 },
   plan: { flexDirection: 'row', gap: J.x3 },
@@ -194,8 +216,8 @@ const g = StyleSheet.create({
   selNilai: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, marginTop: 3, ...ANGKA },
   tanpaAngka: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, marginBottom: J.x1 },
   tautan: { marginTop: J.x3 },
-  tautanTeks: { fontSize: H.kontrol, color: W.teks, textDecorationLine: 'underline' },
+  tautanTeks: { fontSize: H.nilai, color: W.teks, textDecorationLine: 'underline' },
   aksi: { flexDirection: 'row', gap: J.x3, marginHorizontal: J.x3, marginBottom: J.x4 },
-  aksiTombol: { flex: 1, paddingVertical: J.x3, borderRadius: R.besar, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartuTerang, alignItems: 'center' },
-  aksiTeks: { fontSize: H.kontrol, color: W.teksKuat, fontWeight: '500' },
+  aksiTombol: { flex: 1, minHeight: SENTUH, justifyContent: 'center', borderRadius: R.besar, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartuTerang, alignItems: 'center' },
+  aksiTeks: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500' },
 });

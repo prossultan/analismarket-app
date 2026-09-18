@@ -37,17 +37,38 @@ export const W = {
 } as const;
 
 /**
- * TANGGA HURUF — enam ukuran, tiga bobot, dan tidak lebih.
- * 20 harga · 18 status · 14 nama · 13 nilai · 12 kontrol · 10 label.
+ * TANGGA HURUF MOBILE — disalin dari `.mobil` di `mobil.css`, bukan
+ * diturunkan dari tangga desktop.
+ *
+ * Web punya DUA tangga: desktop (20/18/14/13/12/10) dan mobile
+ * (19/15/13/12/10/9). App adalah permukaan mobile, jadi yang benar tangga
+ * yang kedua. Memakai yang pertama membuat app terbaca satu tingkat lebih
+ * besar daripada web di HP yang sama — dan "kurang lebih sama" adalah cara
+ * paling halus membuat dua permukaan terasa bukan satu produk.
  */
 export const H = {
-  harga: 20,
-  status: 18,
-  nama: 14,
-  nilai: 13,
+  /** satu-satunya angka terbesar */
+  harga: 19,
+  /** kata status */
+  status: 15,
+  /** nama pasar */
+  pasar: 13,
+  /** entry, sl, tp, ATR, RR, timeframe, nama mesin */
+  nilai: 12,
+  /** toolbar */
+  alat: 10,
+  /** label soft, dan mikro */
+  label: 9,
+  /* Nama lama, dipertahankan supaya layar yang belum disamakan tidak pecah. */
+  nama: 13,
   kontrol: 12,
-  label: 10,
 } as const;
+
+/** Sasaran sentuh minimum, sama dengan `--sentuh` di web. */
+export const SENTUH = 44;
+
+/** Tinggi baris pasar di mobile web. */
+export const TINGGI_BARIS = 52;
 
 export const J = { x1: 4, x2: 8, x3: 12, x4: 18, x5: 26 } as const;
 export const R = { kecil: 4, sedang: 6, besar: 8, kartu: 12, bulat: 999 } as const;
@@ -58,12 +79,15 @@ export const R = { kecil: 4, sedang: 6, besar: 8, kartu: 12, bulat: 999 } as con
  */
 export const ANGKA = { fontVariant: ['tabular-nums' as const] };
 
-/** Label tidak pernah lebih tebal daripada nilainya. */
+/**
+ * Label: 9px/400, huruf besar, jarak 0,12em — persis `.mobil .plan .lbl`.
+ * Label tidak pernah lebih tebal daripada nilainya.
+ */
 export const gayaLabel = {
   fontSize: H.label,
   fontWeight: '400' as const,
   color: W.teksSamar,
-  letterSpacing: 0.6,
+  letterSpacing: 1.1,
   textTransform: 'uppercase' as const,
 };
 
@@ -73,3 +97,6 @@ export const gayaNilai = {
   color: W.teksKuat,
   ...ANGKA,
 };
+
+/** Ivory — satu-satunya isian tombol utama di web. Bukan putih murni. */
+export const IVORY = '#EEECEA';

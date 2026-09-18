@@ -8,13 +8,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ambilPasar, type Pasar } from '../data/api';
-import { angka, kategoriTersedia, labelJenis, labelKategori, ubah, volumeRingkas } from '../data/tampil';
+import { angka, kategoriTersedia, labelJenis, labelKategori, ubah } from '../data/tampil';
 import { Kosong, Memuat } from '../komponen/dasar';
-import { W, H, J, R, ANGKA } from '../gaya/token';
+import { W, H, J, R, ANGKA, SENTUH, TINGGI_BARIS } from '../gaya/token';
 
-type Props = { buka: (p: Pasar) => void };
+type Props = { buka: (p: Pasar) => void; terpilih?: string };
 
-export function LayarPasar({ buka }: Props) {
+export function LayarPasar({ buka, terpilih }: Props) {
   const [daftar, setDaftar] = useState<Pasar[]>([]);
   const [keadaan, setKeadaan] = useState<'memuat' | 'ada' | 'gagal'>('memuat');
   const [sebab, setSebab] = useState('');
@@ -91,11 +91,11 @@ export function LayarPasar({ buka }: Props) {
         ListFooterComponent={
           terlihat.length === 0 ? null : (
             <Text style={g.kaki}>
-              {terlihat.length} dari {daftar.length} pasar · urut volume 24 jam
+              {terlihat.length} dari {daftar.length} pasar · urut volume 24 jam · harga dari satu panggilan bursa
             </Text>
           )
         }
-        renderItem={({ item }) => <BarisPasar p={item} tekan={() => { buka(item); }} />}
+        renderItem={({ item }) => <BarisPasar p={item} aktif={item.simbol === terpilih} tekan={() => { buka(item); }} />}
       />
     </View>
   );
@@ -141,21 +141,25 @@ function Saringan({ pilihan, nilai, pilih, label }: {
   );
 }
 
-function BarisPasar({ p, tekan }: { p: Pasar; tekan: () => void }) {
+/**
+ * Baris pasar — bentuk `.baris-pasar-m` di web mobile.
+ *
+ * Grid lima kolom, tinggi minimum 52, padding 14, garis kiri 2px yang menyala
+ * putih saat aktif. Kolom volume TIDAK ada di web, dan tidak ada di sini:
+ * daftarnya memang sudah diurut volume, jadi mencetak angkanya lagi di tiap
+ * baris menambah kolom tanpa menambah keputusan.
+ */
+function BarisPasar({ p, aktif, tekan }: { p: Pasar; aktif: boolean; tekan: () => void }) {
   const u = p.ubah24hPersen;
   const warna = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
   return (
-    <Pressable onPress={tekan} style={({ pressed }) => [g.baris, pressed && g.barisTekan]}>
-      <View style={g.barisKiri}>
-        <Text style={g.simbol} numberOfLines={1}>{p.simbol}</Text>
-        <Text style={g.tag} numberOfLines={1}>{p.label}</Text>
-      </View>
-      <View style={g.barisKanan}>
-        {/* null = tidak diketahui (emas & forex tidak berharga di endpoint ini) */}
-        <Text style={g.harga}>{angka(p.harga, p.desimal)}</Text>
-        <Text style={[g.ubah, { color: warna }]}>{ubah(u)}</Text>
-      </View>
-      <Text style={g.volume}>{volumeRingkas(p.volume24hUsd)}</Text>
+    <Pressable onPress={tekan} style={({ pressed }) => [g.baris, aktif && g.barisAktif, pressed && g.barisTekan]}>
+      <Text style={g.nm} numberOfLines={1}>{p.simbol}</Text>
+      <Text style={g.tag} numberOfLines={1}>{p.label}</Text>
+      <View style={{ flex: 1 }} />
+      {/* null = tidak diketahui (emas & forex tidak berharga di endpoint ini) */}
+      <Text style={g.harga}>{angka(p.harga, p.desimal)}</Text>
+      <Text style={[g.ubahTeks, { color: warna }]}>{ubah(u)}</Text>
     </Pressable>
   );
 }
@@ -163,14 +167,14 @@ function BarisPasar({ p, tekan }: { p: Pasar; tekan: () => void }) {
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   cari: {
-    margin: J.x3, marginBottom: J.x2, paddingHorizontal: J.x3, height: 40,
+    marginHorizontal: 14, marginTop: J.x3, marginBottom: J.x2, paddingHorizontal: J.x3, height: SENTUH,
     backgroundColor: W.kartu, borderRadius: R.besar, borderWidth: 1, borderColor: W.garis,
     color: W.teksKuat, fontSize: 16,
   },
   /* 6 + 6 padding + 16 lineHeight + 2 garis = 30. Diturunkan dari isinya,
      bukan angka yang kebetulan cukup di satu HP. */
   saringBaris: { flexGrow: 0, flexShrink: 0, marginBottom: J.x2 },
-  saringIsi: { paddingHorizontal: J.x3, gap: 6, alignItems: 'center' },
+  saringIsi: { paddingHorizontal: 14, gap: 6, alignItems: 'center' },
   chip: {
     paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang,
     borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu,
@@ -179,18 +183,18 @@ const g = StyleSheet.create({
   chipOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
   chipTeks: { fontSize: H.kontrol, lineHeight: 16, color: W.teksRedup },
   chipTeksOn: { color: W.latar, fontWeight: '500' },
+  /* 52px dan padding 14 — angka `.baris-pasar-m`, bukan angka baru. */
   baris: {
-    flexDirection: 'row', alignItems: 'center', minHeight: 56,
-    paddingHorizontal: J.x3, gap: J.x3,
-    borderBottomWidth: 1, borderBottomColor: W.garisSamar,
+    flexDirection: 'row', alignItems: 'center', minHeight: TINGGI_BARIS,
+    paddingHorizontal: 14, gap: J.x2,
+    borderBottomWidth: 1, borderBottomColor: W.kartu,
+    borderLeftWidth: 2, borderLeftColor: 'transparent',
   },
+  barisAktif: { backgroundColor: W.kartu, borderLeftColor: W.teksKuat },
   barisTekan: { backgroundColor: W.kartu },
-  barisKiri: { flex: 1, minWidth: 0 },
-  simbol: { fontSize: H.nilai, fontWeight: '700', color: W.teksKuat },
-  tag: { fontSize: H.label, color: W.teksSamar, marginTop: 2 },
-  barisKanan: { alignItems: 'flex-end', minWidth: 96 },
-  harga: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, ...ANGKA },
-  ubah: { fontSize: H.label, marginTop: 2, ...ANGKA },
-  volume: { fontSize: H.label, color: W.teksSamar, width: 56, textAlign: 'right', ...ANGKA },
+  nm: { fontSize: H.pasar, fontWeight: '500', color: W.teksKuat },
+  tag: { fontSize: H.label, color: W.teksRedup, flexShrink: 1 },
+  harga: { fontSize: H.pasar, color: W.teksKuat, ...ANGKA },
+  ubahTeks: { fontSize: H.label, minWidth: 44, textAlign: 'right', ...ANGKA },
   kaki: { fontSize: H.label, color: W.teksSamar, textAlign: 'center', padding: J.x4 },
 });

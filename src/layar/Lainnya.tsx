@@ -10,36 +10,39 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Pressable } from 'react-native';
 import { Kartu, Baris, Pisah } from '../komponen/dasar';
-import { W, H, J } from '../gaya/token';
+import { Ikon, type NamaIkon } from '../komponen/Ikon';
+import { W, H, J, SENTUH } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
 type Props = {
   setelan: Setelan;
   bukaDokumen: (k: 'syarat' | 'privasi') => void;
-  bukaBelajar: () => void;
+  bukaMenu: (kunci: string) => void;
   versi: string;
 };
 
-const BELUM: ReadonlyArray<{ nama: string; sebab: string }> = [
-  { nama: 'Pantauan', sebab: 'butuh akun yang tersambung' },
-  { nama: 'Kabar Otomatis', sebab: 'butuh akun yang tersambung' },
-  { nama: 'Setelan modal & risiko', sebab: 'tersimpan di akun, bukan di HP' },
-  { nama: 'Berlangganan dari app', sebab: 'menyusul' },
+type Menu = { kunci: string; nama: string; ikon: NamaIkon; ket: string; emas?: boolean };
+
+const MENU: ReadonlyArray<Menu> = [
+  { kunci: 'profil', nama: 'Profil & akun', ikon: 'profil', ket: 'keadaan akun' },
+  { kunci: 'kabar', nama: 'Kabar', ikon: 'kabar', ket: 'pantauan & kabar otomatis' },
+  { kunci: 'kalender', nama: 'Kalender berita', ikon: 'kalender', ket: '14 hari ke depan' },
+  { kunci: 'belajar', nama: 'Belajar', ikon: 'buku', ket: 'cara baca kartu & 16 istilah' },
+  { kunci: 'plus', nama: 'AnalisMarket+', ikon: 'plus', ket: 'apa isinya', emas: true },
 ];
 
-export function LayarLainnya({ setelan, bukaDokumen, bukaBelajar, versi }: Props) {
+export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi }: Props) {
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ paddingVertical: J.x3 }}>
-      {/* Belajar pindah ke sini dari tab: isinya berharga, tapi ia dibaca
-          sekali-dua kali, bukan tiap hari — dan satu dari lima tab adalah
-          tempat yang mahal untuk sesuatu yang dibaca sekali. */}
-      <Kartu judul="Belajar">
-        <Pressable onPress={bukaBelajar} style={g.tautan}>
-          <Text style={g.tautanTeks}>Cara baca kartu & istilah di chart</Text>
-        </Pressable>
-        <Text style={[g.catatan, { marginTop: J.x1 }]}>
-          Tiga keadaan kartu, bar biaya, jarak entry, dan 16 istilah — dijelaskan menurut apa yang mesin ini maksud.
-        </Text>
+      <Kartu judul="Menu">
+        {MENU.map((m, i) => (
+          <Pressable key={m.kunci} onPress={() => { bukaMenu(m.kunci); }} style={[g.menu, i > 0 && g.menuGaris]}>
+            <Ikon nama={m.ikon} warna={m.emas === true ? W.plus : W.teksRedup} ukuran={18} />
+            <Text style={[g.menuNama, m.emas === true && { color: W.plus }]}>{m.nama}</Text>
+            <View style={{ flex: 1 }} />
+            <Text style={g.menuKet} numberOfLines={1}>{m.ket}</Text>
+          </Pressable>
+        ))}
       </Kartu>
 
       <Kartu judul="Pilihan terakhirmu">
@@ -50,15 +53,6 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaBelajar, versi }: Props
         <Text style={g.catatan}>
           Disimpan di HP ini saja. App belum punya akun, jadi tidak ada tempat di server untuk menyimpannya — dan berpura-pura ikut pindah HP akan salah.
         </Text>
-      </Kartu>
-
-      <Kartu judul="Belum tersedia di app">
-        {BELUM.map((b, i) => (
-          <View key={b.nama} style={[g.belum, i > 0 && g.belumGaris]}>
-            <Text style={g.belumNama}>{b.nama}</Text>
-            <Text style={g.belumSebab}>{b.sebab}</Text>
-          </View>
-        ))}
       </Kartu>
 
       <Kartu judul="Dokumen">
@@ -85,10 +79,10 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaBelajar, versi }: Props
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   catatan: { fontSize: 11, color: W.teksRedup, lineHeight: 18 },
-  belum: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, gap: J.x3 },
-  belumGaris: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  belumNama: { fontSize: H.kontrol, color: W.teksRedup },
-  belumSebab: { fontSize: H.label, color: W.teksSamar, flexShrink: 1, textAlign: 'right' },
-  tautan: { paddingVertical: J.x1 },
-  tautanTeks: { fontSize: H.kontrol, color: W.teksKuat },
+  menu: { flexDirection: 'row', alignItems: 'center', gap: J.x3, minHeight: SENTUH },
+  menuGaris: { borderTopWidth: 1, borderTopColor: W.garisSamar },
+  menuNama: { fontSize: H.nilai, color: W.teksKuat },
+  menuKet: { fontSize: H.label, color: W.teksSamar, flexShrink: 1 },
+  tautan: { minHeight: SENTUH, justifyContent: 'center' },
+  tautanTeks: { fontSize: H.nilai, color: W.teksKuat },
 });

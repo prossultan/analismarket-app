@@ -21,8 +21,8 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { ASAL } from '../data/antrian';
 import { ambilBacaan, syaratWajib, type Mesin, type Pasar } from '../data/api';
-import { angka } from '../data/tampil';
-import { W, H, J, R, ANGKA } from '../gaya/token';
+import { angka, ubah } from '../data/tampil';
+import { W, H, J, R, ANGKA, SENTUH } from '../gaya/token';
 
 /**
  * Disuntikkan ke dalam halaman embed. Ia membaca kait uji yang SUDAH ADA di
@@ -86,6 +86,11 @@ export function LayarChart({ pasar, tf, gantiTf, bukaBacaan }: Props) {
     return () => { batal = true; };
   }, [pasar.simbol, tf]);
 
+  /** Mesin yang sedang aktif: pilihan layar, atau yang pertama dari jawaban. */
+  const aktif = mesin === '' ? (daftarMesin[0]?.mesin ?? '') : mesin;
+  const u = pasar.ubah24hPersen;
+  const warnaUbah = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
+
   const pesan = (e: WebViewMessageEvent): void => {
     try {
       const j = JSON.parse(e.nativeEvent.data) as { harga?: number };
@@ -95,57 +100,64 @@ export function LayarChart({ pasar, tf, gantiTf, bukaBacaan }: Props) {
 
   return (
     <View style={g.akar}>
+      {/* BILAH ATAS — bentuk yang sama dengan web mobile: simbol, titik hidup,
+          harga sebagai satu-satunya angka terbesar, lalu perubahan 24 jam. */}
       <View style={g.bilah}>
         <View style={g.bilahAtas}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
-            <Text style={g.label} numberOfLines={1}>{pasar.label}</Text>
-          </View>
+          <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
+          <View style={[g.titik, { backgroundColor: dariChart.current ? W.naik : W.teksSamar }]} />
           <Text style={g.harga}>{angka(harga, pasar.desimal)}</Text>
+          <Text style={[g.ubah, { color: warnaUbah }]}>{ubah(pasar.ubah24hPersen)}</Text>
         </View>
+      </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.tabs}>
-          {/* Timeframe yang DITAWARKAN mengikuti pasar ini, bukan daftar global:
-              emas dan forex tidak membaca timeframe yang sama dengan kripto. */}
+      {/* TIMEFRAME — bergaris bawah, bukan chip berkotak. Deret angka yang
+          dibaca sebagai deret, persis `.tfrow` di web. */}
+      <View style={g.barisAlat}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.tfIsi}>
           {pasar.timeframes.map((t) => {
             const k = t.toLowerCase();
             const on = k === tf;
             return (
-              <Pressable key={t} onPress={() => { gantiTf(k); setMemuat(true); }} style={[g.tab, on && g.tabOn]}>
-                <Text style={[g.tabTeks, on && g.tabTeksOn]}>{t.toUpperCase()}</Text>
+              <Pressable key={t} onPress={() => { gantiTf(k); setMemuat(true); }} style={[g.tf, on && g.tfOn]}>
+                <Text style={[g.tfTeks, on && g.tfTeksOn]}>{k}</Text>
               </Pressable>
             );
           })}
         </ScrollView>
+      </View>
 
-        {/* BARIS MESIN. Statusnya dibaca dari jawaban yang SAMA dengan yang
-            menggambar chart — nol perhitungan di sisi app, dan nol panggilan
-            tambahan. Angka "n/m" cuma menghitung syarat WAJIB, sama dengan
-            kartu bot; ikut menghitung bonus akan membuat dua permukaan
-            menyebut angka berbeda untuk keadaan yang sama. */}
-        {daftarMesin.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.mesinBaris}>
+      {/* TAB MESIN — dua baris: nama di atas, status di bawah. Yang aktif
+          diberi titik dan garis bawah putih, sama dengan `.m-tab` di web.
+          Emas tidak dipakai di sini; emas cuma untuk AnalisMarket+. */}
+      {daftarMesin.length > 0 && (
+        <View style={g.barisMesin}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {daftarMesin.map((x) => {
-              const on = x.mesin === (mesin === '' ? daftarMesin[0]?.mesin : mesin);
+              const on = x.mesin === aktif;
               const wajib = syaratWajib(x);
               const lolos = wajib.filter((c) => c.lolos).length;
-              const setup = x.status.toUpperCase() === 'SETUP';
               return (
                 <Pressable
                   key={x.mesin}
                   onPress={() => { setMesin(x.mesin); setMemuat(true); }}
                   style={[g.mesinTab, on && g.mesinTabOn]}
                 >
-                  <Text style={[g.mesinNama, on && g.mesinNamaOn]}>{x.mesin}</Text>
-                  <Text style={[g.mesinStatus, setup && g.mesinStatusSetup]}>
+                  <View style={g.mesinKepala}>
+                    {on && <View style={g.mesinTitik} />}
+                    <Text style={[g.mesinNama, on && g.mesinNamaOn]} numberOfLines={1}>
+                      {x.mesin.toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text style={g.mesinStatus} numberOfLines={1}>
                     {x.status.toLowerCase()} {lolos}/{wajib.length}
                   </Text>
                 </Pressable>
               );
             })}
           </ScrollView>
-        )}
-      </View>
+        </View>
+      )}
 
       <View style={g.wadah}>
         <WebView
@@ -177,7 +189,7 @@ export function LayarChart({ pasar, tf, gantiTf, bukaBacaan }: Props) {
         )}
       </View>
 
-      <Pressable onPress={() => { bukaBacaan(mesin === '' ? (daftarMesin[0]?.mesin ?? '') : mesin); }} style={g.bacaTombol}>
+      <Pressable onPress={() => { bukaBacaan(aktif); }} style={g.bacaTombol}>
         <Text style={g.bacaTeks}>Baca analisanya</Text>
       </Pressable>
     </View>
@@ -186,31 +198,46 @@ export function LayarChart({ pasar, tf, gantiTf, bukaBacaan }: Props) {
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  bilah: { paddingHorizontal: J.x3, paddingTop: J.x2, paddingBottom: J.x2, borderBottomWidth: 1, borderBottomColor: W.garis },
-  bilahAtas: { flexDirection: 'row', alignItems: 'flex-end', gap: J.x3 },
-  simbol: { fontSize: H.nama, fontWeight: '700', color: W.teksKuat },
-  label: { fontSize: H.label, color: W.teksSamar, marginTop: 1 },
-  harga: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, ...ANGKA },
-  tabs: { gap: 6, paddingTop: J.x2 },
-  tab: { paddingVertical: 5, paddingHorizontal: J.x3, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, minHeight: 28, justifyContent: 'center' },
-  tabOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
-  tabTeks: { fontSize: H.kontrol, lineHeight: 16, color: W.teksRedup },
-  tabTeksOn: { color: W.latar, fontWeight: '500' },
-  mesinBaris: { gap: 6, paddingTop: 6 },
-  /* Tinggi TIDAK dipatok: dua baris teks di dalam satu tab akan terpotong
-     kalau tingginya ditebak. Padding yang menentukan, isinya yang mengukur. */
+  bilah: { paddingHorizontal: 14, paddingVertical: J.x2 },
+  bilahAtas: { flexDirection: 'row', alignItems: 'center', gap: J.x2 },
+  simbol: { fontSize: H.pasar, fontWeight: '700', color: W.teksKuat, letterSpacing: 0.2 },
+  titik: { width: 6, height: 6, borderRadius: R.bulat },
+  /* Satu-satunya angka terbesar di layar ini — 19px, sama dengan web mobile. */
+  harga: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, flex: 1, textAlign: 'right', ...ANGKA },
+  ubah: { fontSize: H.label, ...ANGKA },
+
+  /* Tinggi sasaran sentuh penuh, sama dengan `--sentuh: 44px`. */
+  barisAlat: { height: SENTUH, borderTopWidth: 1, borderTopColor: W.garis, justifyContent: 'center' },
+  tfIsi: { paddingHorizontal: 10, alignItems: 'center' },
+  tf: { paddingHorizontal: 10, height: SENTUH, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tfOn: { borderBottomColor: W.teksKuat },
+  tfTeks: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup, letterSpacing: 0.6 },
+  tfTeksOn: { color: W.teksKuat, fontWeight: '500' },
+
+  barisMesin: { borderTopWidth: 1, borderTopColor: W.garis, borderBottomWidth: 1, borderBottomColor: W.garis },
+  /* Tinggi TIDAK dipatok — dua baris teks yang tingginya ditebak akan
+     terpotong. Padding yang menentukan, isinya yang mengukur. */
   mesinTab: {
-    paddingVertical: 5, paddingHorizontal: J.x3, borderRadius: R.sedang,
-    borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, minWidth: 74,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRightWidth: 1, borderRightColor: W.garis,
+    borderBottomWidth: 2, borderBottomColor: 'transparent', minWidth: 96,
   },
-  mesinTabOn: { borderColor: W.teksRedup, backgroundColor: W.kartuTerang },
-  mesinNama: { fontSize: H.kontrol, color: W.teksRedup, lineHeight: 16 },
+  mesinTabOn: { borderBottomColor: W.teksKuat, backgroundColor: W.kartu },
+  mesinKepala: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  mesinTitik: { width: 5, height: 5, borderRadius: R.bulat, backgroundColor: W.teksKuat },
+  mesinNama: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup, letterSpacing: 0.4 },
   mesinNamaOn: { color: W.teksKuat, fontWeight: '500' },
-  mesinStatus: { fontSize: H.label, color: W.teksSamar, lineHeight: 14, marginTop: 1 },
-  mesinStatusSetup: { color: W.naik },
+  mesinStatus: {
+    fontSize: H.label, lineHeight: 13, color: W.teksSamar,
+    letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 2,
+  },
+
   wadah: { flex: 1, backgroundColor: '#0B0B0D' },
   web: { flex: 1, backgroundColor: '#0B0B0D' },
   tunggu: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  bacaTombol: { margin: J.x3, paddingVertical: J.x3, borderRadius: R.besar, backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis, alignItems: 'center' },
-  bacaTeks: { fontSize: H.kontrol, color: W.teksKuat, fontWeight: '500' },
+  bacaTombol: {
+    marginHorizontal: 14, marginVertical: J.x3, minHeight: SENTUH, justifyContent: 'center',
+    borderRadius: R.besar, backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis, alignItems: 'center',
+  },
+  bacaTeks: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500' },
 });
