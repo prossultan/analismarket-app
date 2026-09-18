@@ -23,6 +23,10 @@ chart  ← WebView  → https://analismarket.com/chart-embed?pair=XAU/USD&tf=<tf
 harga  ← React Native → GET /api/bacaan?pasar=XAU/USD&tf=<tf>, medan `harga`
 ```
 
+Seluruh halaman embed cuma memakai tiga endpoint: `/api/bacaan` (lilin, pola,
+dan chip ikut di jawaban yang sama — tidak ada `/api/lilin`, dan memintanya
+dijawab 404), `/api/pasar`, dan `/api/harga-stream` untuk XAU/forex.
+
 Harga **tidak** diambil dari dalam WebView. Kalau ia diambil dari sana, angka
 di bilah atas baru muncul sesudah seluruh chart diunduh dan digambar, dan
 kosong lagi tiap kali timeframe diganti.
