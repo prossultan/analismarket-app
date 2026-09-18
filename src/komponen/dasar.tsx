@@ -93,9 +93,9 @@ export function Memuat({ teks }: { teks: string }) {
  * mesin. Warnanya mengikuti ambang itu, bukan gradasi bebas: tiga keadaan
  * yang punya arti, bukan sembilan yang tidak.
  */
-export function BarBiaya({ porsi }: { porsi: number | null }) {
+export function BarBiaya({ porsi, ringkas = false }: { porsi: number | null; ringkas?: boolean }) {
   if (porsi === null) {
-    return <Text style={g.kosongSebab}>Biaya belum tersedia; jangan menganggap transaksi tanpa biaya.</Text>;
+    return ringkas ? null : <Text style={g.kosongSebab}>Biaya belum tersedia; jangan menganggap transaksi tanpa biaya.</Text>;
   }
   const lebar = Math.max(2, Math.min(100, porsi * 100));
   const warna = porsi >= 1 ? W.turun : porsi >= 0.5 ? W.tanda : W.naik;
@@ -104,9 +104,11 @@ export function BarBiaya({ porsi }: { porsi: number | null }) {
       <View style={g.barLuar}>
         <View style={[g.barDalam, { width: `${String(lebar)}%` as `${number}%`, backgroundColor: warna }]} />
       </View>
-      <Text style={[g.kosongSebab, { marginTop: J.x2, textAlign: 'left' }]}>
-        Biaya {Math.round(porsi * 100)}% dari risiko · wajar di bawah 50%
-      </Text>
+      {!ringkas && (
+        <Text style={[g.kosongSebab, { marginTop: J.x2, textAlign: 'left' }]}>
+          Biaya {Math.round(porsi * 100)}% dari risiko · wajar di bawah 50%
+        </Text>
+      )}
     </View>
   );
 }
