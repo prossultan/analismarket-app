@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Klon skill pihak ketiga dan keluaran preview tidak ikut dilacak.
+# `opendesign/design-systems/` DILACAK — itu sistem desainnya.
+opendesign/index.html
+opendesign/manifest.json
