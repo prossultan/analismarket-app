@@ -19,10 +19,13 @@ const PROFIL = 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7
 const LAINNYA = 'M4 7h16M4 12h16M4 17h16';
 const KALENDER = 'M7 3v3m10-3v3M4 9h16M5 6h14v15H5z';
 const BUKU = 'M4 5a2 2 0 012-2h13v18H6a2 2 0 01-2-2zM19 17H6';
+/** Gir: lingkaran poros + enam gigi. Satu jalur, seperti yang lain. */
+const GIR = 'M12 9a3 3 0 100 6 3 3 0 000-6zM12 2v3m0 14v3M4.2 4.2l2.2 2.2m11.2 11.2l2.2 2.2'
+  + 'M2 12h3m14 0h3M4.2 19.8l2.2-2.2M17.6 6.4l2.2-2.2';
 
 export const JALUR = {
   rumah: RUMAH, pasar: PASAR, analisis: ANALISIS, plus: PLUS,
-  kabar: KABAR, profil: PROFIL, lainnya: LAINNYA, kalender: KALENDER, buku: BUKU,
+  kabar: KABAR, profil: PROFIL, lainnya: LAINNYA, kalender: KALENDER, buku: BUKU, gir: GIR,
 } as const;
 
 export type NamaIkon = keyof typeof JALUR;

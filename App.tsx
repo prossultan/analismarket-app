@@ -21,6 +21,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { LayarAnalisis } from './src/layar/Analisis';
 import { LayarBelajar } from './src/layar/Belajar';
+import { LayarPengaturan } from './src/layar/Pengaturan';
 import { LayarHome } from './src/layar/Home';
 import { LayarProfil, LayarKabar } from './src/layar/Profil';
 import { LayarKalender } from './src/layar/Kalender';
@@ -38,6 +39,7 @@ export type DaftarLainParam = {
   Lainnya: undefined;
   Dokumen: { kunci: 'syarat' | 'privasi' };
   Belajar: undefined;
+  Pengaturan: undefined;
   Profil: undefined;
   Kalender: undefined;
   AmPlus: undefined;
@@ -45,8 +47,8 @@ export type DaftarLainParam = {
 export type DaftarHomeParam = { Home: undefined };
 
 /** Kunci menu → nama layar. Satu peta, supaya Home dan Lainnya tidak menyimpang. */
-const KE_LAYAR: Record<string, 'Profil' | 'Kalender' | 'Belajar' | 'AmPlus'> = {
-  profil: 'Profil', kalender: 'Kalender', belajar: 'Belajar', plus: 'AmPlus',
+const KE_LAYAR: Record<string, 'Profil' | 'Kalender' | 'Belajar' | 'AmPlus' | 'Pengaturan'> = {
+  profil: 'Profil', kalender: 'Kalender', belajar: 'Belajar', plus: 'AmPlus', pengaturan: 'Pengaturan',
 };
 
 const TumpukanLain = createNativeStackNavigator<DaftarLainParam>();
@@ -78,7 +80,7 @@ const OPSI_KEPALA = {
 /** `contentStyle` cuma dikenal tumpukan; menempelkannya di tab cuma bikin peringatan. */
 const OPSI_TUMPUKAN = { ...OPSI_KEPALA, contentStyle: { backgroundColor: W.latar } };
 
-function AlurLain({ setelan }: { setelan: Setelan }) {
+function AlurLain({ setelan, simpan }: { setelan: Setelan; simpan: (s: Setelan) => void }) {
   return (
     <TumpukanLain.Navigator screenOptions={OPSI_TUMPUKAN}>
       <TumpukanLain.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
@@ -87,11 +89,18 @@ function AlurLain({ setelan }: { setelan: Setelan }) {
             setelan={setelan}
             versi={VERSI}
             bukaDokumen={(k) => { navigation.navigate('Dokumen', { kunci: k }); }}
-            bukaMenu={(k) => { navigation.navigate(KE_LAYAR[k] ?? 'Belajar'); }}
+            /* Kunci tak dikenal TIDAK membuka apa pun. Sebelumnya ia jatuh
+               ke 'Belajar', dan itu bentuk paling halus dari mengganti
+               pilihan orang diam-diam: menunya terbuka, isinya salah, dan
+               tidak ada satu pun tanda bahwa yang diminta bukan itu. */
+            bukaMenu={(k) => { const ke = KE_LAYAR[k]; if (ke !== undefined) navigation.navigate(ke); }}
           />
         )}
       </TumpukanLain.Screen>
       <TumpukanLain.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar' }} />
+      <TumpukanLain.Screen name="Pengaturan" options={{ title: 'Pengaturan' }}>
+        {() => <LayarPengaturan setelan={setelan} simpan={simpan} />}
+      </TumpukanLain.Screen>
       <TumpukanLain.Screen name="Profil" component={LayarProfil} options={{ title: 'Profil' }} />
       <TumpukanLain.Screen name="Kalender" component={LayarKalender} options={{ title: 'Kalender berita' }} />
       <TumpukanLain.Screen name="AmPlus" component={LayarAmPlus} options={{ title: 'AnalisMarket+' }} />
@@ -221,7 +230,7 @@ export default function App() {
           />
 
           <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('lainnya') }}>
-            {() => <AlurLain setelan={setelan} />}
+            {() => <AlurLain setelan={setelan} simpan={simpan} />}
           </Tab.Screen>
         </Tab.Navigator>
       </NavigationContainer>

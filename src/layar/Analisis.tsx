@@ -32,6 +32,7 @@ import { LembarPasar } from '../komponen/LembarPasar';
 import { SkalaJarum } from '../komponen/SkalaJarum';
 import { BarBiaya, Kosong, Memuat } from '../komponen/dasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
+import { BandingMesin } from '../komponen/BandingMesin';
 import { Kaca } from '../komponen/Kaca';
 import { W, H, J, R, ANGKA, SENTUH, TALANG, TINGGI_KENDALI } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
@@ -69,6 +70,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
   const [harga, setHarga] = useState<number | null>(null);
   const [memuatChart, setMemuatChart] = useState(true);
   const [lembarPasar, setLembarPasar] = useState(false);
+  const [lapisBanding, setLapisBanding] = useState(false);
   const [lapisBacaan, setLapisBacaan] = useState(false);
   const dariChart = useRef(false);
 
@@ -198,6 +200,21 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
               );
             })}
           </ScrollView>
+          <Pressable onPress={() => { setLapisBanding(true); }} style={g.bandingTombol} hitSlop={6}>
+            <Text style={g.bandingTeks}>banding</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* ── PASAR TUTUP ────────────────────────────────────────────────
+          `pasarTutupAlasan` sudah ada di muatan sejak awal dan TIDAK pernah
+          ditampilkan. Akibatnya harga yang berhenti bergerak terbaca sebagai
+          aplikasi yang rusak — dan yang paling sering terjadi justru itu:
+          emas dan forex libur Jumat 21.00 sampai Minggu 21.00 UTC. */}
+      {bacaan?.pasarTutupAlasan != null && bacaan.pasarTutupAlasan !== '' && (
+        <View style={g.pasarTutup}>
+          <Text style={g.pasarTutupJudul}>Pasar tutup</Text>
+          <Text style={g.pasarTutupSebab} numberOfLines={2}>{bacaan.pasarTutupAlasan}</Text>
         </View>
       )}
 
@@ -230,6 +247,32 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
       {bacaan !== null && (
         <SkalaJarum daftar={bacaan.mesin} aktif={aktif} pilih={(k) => { setMesin(k); setMemuatChart(true); }} />
       )}
+
+      {/* ── BANDING: kelima mesin bersebelahan, dari muatan yang SAMA.
+          Ia lapisan, bukan halaman: pertanyaan "mesin mana yang paling
+          layak" muncul saat sedang melihat chart, dan jawabannya tidak
+          boleh menuntut meninggalkan chart itu. */}
+      <Modal visible={lapisBanding} animationType="slide" transparent onRequestClose={() => { setLapisBanding(false); }}>
+        <View style={g.lapisLuar}>
+          <Pressable style={g.lapisTirai} onPress={() => { setLapisBanding(false); }} />
+          <Kaca tebal tepi="atas" gaya={g.lapis}>
+            <View style={g.lapisKepala}>
+              <Text style={g.lapisMerek}>banding mesin · {pasar.simbol} {tf}</Text>
+              <View style={{ flex: 1 }} />
+              <Pressable onPress={() => { setLapisBanding(false); }} style={g.tutup} hitSlop={8}>
+                <Text style={g.tutupTeks}>tutup</Text>
+              </Pressable>
+            </View>
+            {bacaan !== null && (
+              <BandingMesin
+                daftar={bacaan.mesin}
+                aktif={aktif}
+                pilih={(k) => { setMesin(k); setMemuatChart(true); setLapisBanding(false); }}
+              />
+            )}
+          </Kaca>
+        </View>
+      </Modal>
 
       {/* ── STRIP: status · mesin · biaya. Ditekan membuka bacaan. ─────── */}
       <Pressable onPress={() => { if (m !== null) setLapisBacaan(true); }} style={g.strip}>
@@ -378,6 +421,18 @@ const g = StyleSheet.create({
   lapisLuar: { flex: 1, justifyContent: 'flex-end' },
   /* Tirai tipis, bukan gelap penuh: kepala dan kendali di belakangnya harus
      tetap TERBACA, karena keduanya masih hidup saat lapisan terbuka. */
+  pasarTutup: {
+    marginHorizontal: TALANG, marginBottom: J.x2, paddingHorizontal: J.x3, paddingVertical: J.x2,
+    borderRadius: R.besar, borderWidth: 1, borderColor: 'rgba(201,169,97,0.32)',
+    backgroundColor: W.plusRedup,
+  },
+  pasarTutupJudul: { fontSize: H.nilai, fontWeight: '600', color: W.plus },
+  pasarTutupSebab: { fontSize: H.label, color: W.teksRedup, marginTop: 2, lineHeight: 13 },
+  bandingTombol: {
+    paddingHorizontal: J.x3, justifyContent: 'center', alignSelf: 'stretch',
+    borderLeftWidth: 1, borderLeftColor: W.garis,
+  },
+  bandingTeks: { fontSize: H.label, color: W.teksRedup },
   lapisTirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: W.tirai },
   /* TANPA backgroundColor: warnanya datang dari <Kaca>. Latar padat di sini
      membuat blur tidak punya apa pun untuk ditembus, dan kacanya kembali

@@ -26,7 +26,7 @@ type Menu = { kunci: string; nama: string; ikon: NamaIkon; ket: string; emas?: b
 
 const MENU: ReadonlyArray<Menu> = [
   { kunci: 'profil', nama: 'Profil & akun', ikon: 'profil', ket: 'keadaan akun' },
-  { kunci: 'kabar', nama: 'Kabar', ikon: 'kabar', ket: 'pantauan & kabar otomatis' },
+  { kunci: 'pengaturan', nama: 'Pengaturan', ikon: 'gir', ket: 'bawaan saat app dibuka' },
   { kunci: 'kalender', nama: 'Kalender berita', ikon: 'kalender', ket: '14 hari ke depan' },
   { kunci: 'belajar', nama: 'Belajar', ikon: 'buku', ket: 'cara baca kartu & 16 istilah' },
   { kunci: 'plus', nama: 'AnalisMarket+', ikon: 'plus', ket: 'apa isinya', emas: true },
