@@ -164,18 +164,34 @@ export function Butir({ ikon, simbol, nama, ket, ketMono = false, ketEmas = fals
   ikon?: NamaIkon; simbol?: string; nama: string; ket?: string; ketMono?: boolean; ketEmas?: boolean;
   onPress?: () => void; kanan?: ReactNode; pertama?: boolean;
 }) {
+  /**
+   * PANAH CUMA UNTUK BARIS YANG BENAR-BENAR MEMBUKA SESUATU.
+   *
+   * Sebelumnya `›` digambar TANPA SYARAT, jadi tiap baris mati menjanjikan
+   * ada layar di baliknya. Di Pengaturan ada tiga sekaligus — "Tema ›",
+   * "Bahasa ›", "Zona waktu ›" — yang ditekan dan diam. Ditemukan dari
+   * potret layar, bukan dari kode: di kode ketiganya terlihat seperti baris
+   * biasa, dan panahnya datang dari sini.
+   *
+   * Diperbaiki di komponennya, bukan di tiap pemanggil: "bisa ditekan" dan
+   * "terlihat bisa ditekan" sekarang satu hal yang sama, dan tidak ada yang
+   * bisa memisahkannya lagi dengan lupa.
+   */
+  const bisaDitekan = onPress !== undefined;
   return (
-    <Pressable onPress={onPress} disabled={onPress === undefined} style={[g.butir, !pertama && g.garisAtas]}>
+    <Pressable onPress={onPress} disabled={!bisaDitekan}
+      accessibilityRole={bisaDitekan ? 'button' : undefined}
+      style={[g.butir, !pertama && g.garisAtas]}>
       {simbol !== undefined
         ? <LambangPasar simbol={simbol} ukuran={18} />
         : ikon !== undefined && <Ikon nama={ikon} warna={W.teksSamar} ukuran={15} />}
       <Text style={g.butirNama} numberOfLines={1}>{nama}</Text>
       <View style={{ flex: 1 }} />
-      {kanan ?? (
+      {kanan ?? (ket === undefined && !bisaDitekan ? null : (
         <Text style={[g.butirKet, ketMono && ANGKA, ketEmas && { color: W.plus }]} numberOfLines={1}>
-          {ket !== undefined ? `${ket} ›` : '›'}
+          {`${ket ?? ''}${bisaDitekan ? (ket === undefined ? '›' : ' ›') : ''}`}
         </Text>
-      )}
+      ))}
     </Pressable>
   );
 }

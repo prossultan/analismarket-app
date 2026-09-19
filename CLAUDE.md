@@ -130,3 +130,26 @@ itu hanya terlihat dari manifesnya. Lambat (~1 menit), jadi tidak ikut
 `buildNumber` di `app.json` DIABAIKAN saat build — tapi tetap tercetak ke
 manifest lewat expo-constants. Dua angka untuk satu hal, dan yang terbaca app
 justru yang basi. Keduanya dicabut dari `app.json`.
+
+## Panah `›` adalah JANJI
+
+`Butir` dulu menggambar `›` tanpa syarat, jadi tiap baris mati berjanji ada
+layar di baliknya. Di Pengaturan ada tiga sekaligus — "Tema ›", "Bahasa ›",
+"Zona waktu ›" — yang ditekan dan diam. Ditemukan dari POTRET, bukan dari
+kode: di kode ketiganya baris biasa, dan panahnya datang dari komponennya.
+
+Diperbaiki di komponennya, bukan di tiap pemanggil: "bisa ditekan" dan
+"terlihat bisa ditekan" sekarang satu hal yang sama. `accessibilityRole`
+ikut — baris mati berhenti diumumkan sebagai tombol.
+
+Penjaganya di `periksa-kontrol.mjs`, dan ia butuh TIGA percobaan sebelum bisa
+merah. Dua kegagalan pertamanya layak diingat karena bentuknya umum:
+
+1. memeriksa `/bisaDitekan \?/` di SELURUH berkas — sudah dipenuhi baris
+   `accessibilityRole={bisaDitekan ? …}` di atasnya, jadi panah tanpa syarat
+   tetap hijau;
+2. mencari `{kanan ?? (` tanpa jangkar — menemukan milik `BarisPasar`, blok
+   yang sama sekali lain, jadi penjaganya memeriksa KOMPONEN YANG SALAH.
+
+Keduanya cuma ketahuan dari uji-mutasi. Penjaga yang belum pernah dituntut
+merah belum diketahui menjaga apa pun.

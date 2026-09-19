@@ -171,7 +171,7 @@ export function LayarSambung() {
       <Blok rapat gaya={{ paddingHorizontal: 10 }}>
         <Langkah no={1} judul={`Buka @${BOT} di Telegram`} ket="Namanya bisa disalin dari blok di bawah." pertama />
         <Langkah no={2} judul="Tekan “🌐 Buka akses web”" ket="Bot membalas dengan satu tombol tautan." />
-        <Langkah no={3} judul="Tekan lama tombolnya → Salin tautan" ket="Lalu kembali ke sini dan tempel." />
+        <Langkah no={3} judul="Tekan LAMA tombolnya → Salin tautan" ket="Jangan ditekan biasa: sekali terbuka di peramban, tautannya habis." />
       </Blok>
 
       <Blok>

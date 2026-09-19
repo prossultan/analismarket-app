@@ -40,6 +40,39 @@ for (const nama of layar) {
     masalah.push(`${nama}:${baris} — <${tag}> tanpa penangan dan tanpa tanda \`lencana\`: ia terlihat bisa ditekan tapi diam\n      ${isi.trim().replace(/\s+/g, ' ').slice(0, 84)}`);
   }
 }
+/* PANAH = JANJI. `Butir` boleh menggambar `›` HANYA kalau ia bisa ditekan;
+   kalau syarat itu dicabut dari komponennya, tiap baris mati di seluruh app
+   berjanji ada layar di baliknya lagi — dan itu tiga baris sekaligus cuma di
+   Pengaturan. Ditembak di komponennya karena di situ satu-satunya tempat
+   panahnya digambar. */
+const komponen = readFileSync('src/komponen/mockup.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+if (!/const bisaDitekan = onPress !== undefined;/.test(komponen)) {
+  masalah.push('mockup.tsx: `Butir` tidak lagi membedakan baris yang bisa ditekan — panahnya jadi janji kosong');
+} else {
+  /* Menembak BLOK PANAHNYA, bukan berkasnya.
+     Versi pertama memeriksa `/bisaDitekan \?/` di seluruh berkas — dan itu
+     sudah dipenuhi baris `accessibilityRole={bisaDitekan ? ...}` di atasnya,
+     jadi panah yang dibuat tanpa syarat lagi tetap HIJAU. Uji-mutasi yang
+     menemukannya, bukan mata. */
+  /* DIJANGKARKAN KE DALAM `Butir`. Percobaan sebelumnya mencari
+     `{kanan ?? (` di seluruh berkas dan menemukan milik `BarisPasar` — blok
+     yang sama sekali lain, tanpa panah, jadi penjaganya memeriksa komponen
+     yang salah dan selalu hijau. */
+  const mulaiButir = komponen.indexOf('export function Butir(');
+  const akhirButir = komponen.indexOf('export function', mulaiButir + 10);
+  const butir = mulaiButir < 0 ? '' : komponen.slice(mulaiButir, akhirButir < 0 ? undefined : akhirButir);
+  const blok = butir;
+  if (blok === '') {
+    masalah.push('mockup.tsx: blok panah `Butir` tidak ketemu — polanya berubah, penjaga ini tidak menembak apa pun');
+  } else {
+    for (const baris of blok.split('\n')) {
+      if (baris.includes('\u203a') && !baris.includes('bisaDitekan')) {
+        masalah.push(`mockup.tsx: panah digambar tanpa syarat \`bisaDitekan\` — tiap baris mati berjanji ada layar di baliknya\n      ${baris.trim()}`);
+      }
+    }
+  }
+}
+
 if (diperiksa < 10 && masalah.length === 0) masalah.push(`cuma ${diperiksa} kontrol ditemukan — polanya berubah, penjaga ini tidak menembak apa pun`);
 
 if (masalah.length > 0) {

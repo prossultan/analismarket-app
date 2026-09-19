@@ -116,7 +116,16 @@ function kalimatSebab(galat: string): { sebab: 'kedaluwarsa' | 'dipakai' | 'belu
     return { sebab: 'kedaluwarsa', kalimat: 'Tautannya sudah lewat 10 menit. Minta yang baru ke bot, lalu tempel lagi.' };
   }
   if (galat === 'dipakai') {
-    return { sebab: 'dipakai', kalimat: 'Tautan itu sudah dipakai sekali. Minta yang baru ke bot.' };
+    /* Sebabnya hampir selalu SATU hal: tombolnya ditekan biasa, peramban
+       terbuka, dan tautan sekali-pakai itu habis di sana. Menyebut sebabnya
+       mengubah pesan galat jadi perbaikan — tanpa itu orang mengulangi
+       persis gerakan yang sama dan gagal lagi. */
+    return {
+      sebab: 'dipakai',
+      kalimat: 'Tautan itu sudah dipakai sekali — biasanya karena tombolnya ditekan '
+        + 'biasa lalu terbuka di peramban. Minta yang baru ke bot, lalu TEKAN LAMA '
+        + 'tombolnya dan pilih Salin tautan.',
+    };
   }
   if (galat === 'belum-gabung') {
     return { sebab: 'belum-gabung', kalimat: 'Akunmu belum bergabung di grup dan channel. Gabung dulu lewat bot, lalu coba lagi.' };
