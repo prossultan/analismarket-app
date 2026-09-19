@@ -527,3 +527,26 @@ menjawab NOL untuk APK yang sebenarnya benar. Pemeriksaan pertama gue persis
 begitu dan melaporkan build yang sehat sebagai rusak — penjaga yang tidak
 pernah bisa HIJAU sama merusaknya dengan penjaga yang tidak pernah bisa
 merah. Pakai `grep -oE "1:[0-9]{6,}:android:[0-9a-f]+"`.
+
+## Keterbacaan tidak boleh bergantung pada blur (19 Sep)
+
+`expo-blur` di Android boleh GAGAL total tanpa satu pun galat — dan saat ia
+gagal, yang tersisa cuma warna latar kaca. Pada `rgba(26,24,21,0.44)` itu
+berarti 56% isi di baliknya tembus, dan di HP pemilik hasilnya: judul
+"Profil" terbaca menimpa kartu akun, kalimat kaki tertimpa bilah tab, kartu
+AM+ tembus lewat bilah. Tiga "bug tampilan" yang tampak terpisah, satu sebab.
+
+Sekarang kepekatan kaca BERBEDA per platform: iOS tetap 0,44 (di sana blur
+selalu ada, dan menaikkannya membuat kaca jadi tirai), Android 0,88/0,94.
+Blur di Android jadi penyedap, bukan penopang.
+
+Aturannya yang lebih umum, dan berlaku untuk efek apa pun sesudah ini:
+**kalau sebuah efek boleh gagal diam-diam, keadaan tanpa efek itu harus tetap
+layak pakai** — bukan sekadar "tidak crash". Dan keadaan itu harus DILIHAT,
+bukan dibayangkan; harness potret web memakai cabang non-iOS, jadi ia
+memperlihatkan persis apa yang dilihat pengguna Android saat blur mati.
+
+Cadangan nama juga diperbaiki di putaran yang sama: akun Telegram boleh tidak
+punya nama tampilan, dan itu SAH. Avatar tidak lagi mencetak '?' dan sapaan
+tidak lagi berbunyi "Halo" menggantung — keduanya terbaca seperti app yang
+kehilangan data, padahal tidak ada yang hilang.

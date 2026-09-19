@@ -112,3 +112,43 @@ export async function segarkanPendaftaran(
   if (t === null) return;
   await daftar(t, Platform.OS === 'ios' ? 'ios' : 'android');
 }
+
+/** Muatan yang dititipkan bot di tiap push kabar. */
+export type TujuanKabar = { pair: string; tf: string; mesin?: string };
+
+function bacaTujuan(data: unknown): TujuanKabar | null {
+  if (typeof data !== 'object' || data === null) return null;
+  const d = data as { pair?: unknown; tf?: unknown; mesin?: unknown };
+  if (typeof d.pair !== 'string' || d.pair === '') return null;
+  if (typeof d.tf !== 'string' || d.tf === '') return null;
+  return { pair: d.pair, tf: d.tf, mesin: typeof d.mesin === 'string' ? d.mesin : undefined };
+}
+
+/**
+ * KETUKAN NOTIFIKASI datang lewat DUA pintu, dan yang kedua mudah terlupa.
+ *
+ * `addNotificationResponseReceivedListener` cuma menangkap ketukan saat app
+ * sudah hidup — di latar belakang atau di depan. Kalau app benar-benar MATI
+ * dan ketukan itulah yang membangunkannya, peristiwanya sudah lewat sebelum
+ * satu baris React pun berjalan; yang menyimpannya
+ * `getLastNotificationResponseAsync`. Memasang yang pertama saja berarti
+ * notifikasi bekerja saat diuji (app baru saja dibuka) dan tidak bekerja
+ * dalam pemakaian nyata (app sudah lama tertutup) — kegagalan yang nyaris
+ * mustahil ditemukan dari kode.
+ *
+ * Mengembalikan fungsi pelepas, supaya pemanggilnya tidak membocorkan
+ * langganan tiap kali dipasang ulang.
+ */
+export function dengarKetukanKabar(buka: (t: TujuanKabar) => void): () => void {
+  let sudahDingin = false;
+  void Notifications.getLastNotificationResponseAsync().then((r) => {
+    if (sudahDingin || r === null) return;
+    const t = bacaTujuan(r.notification.request.content.data);
+    if (t !== null) { sudahDingin = true; buka(t); }
+  });
+  const langganan = Notifications.addNotificationResponseReceivedListener((r) => {
+    const t = bacaTujuan(r.notification.request.content.data);
+    if (t !== null) buka(t);
+  });
+  return () => { langganan.remove(); };
+}

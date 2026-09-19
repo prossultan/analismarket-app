@@ -18,7 +18,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StatusBar, Text, View } from 'react-native';
-import { NavigationContainer, DarkTheme, type Theme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, createNavigationContainerRef, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,7 +58,7 @@ import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH, TEPI_BILAH, ANGKAT_BILAH } from './src/gaya/token';
 import { TombolTab } from './src/komponen/TombolTab';
 import konfigApp from './app.json';
-import { segarkanPendaftaran } from './src/data/push';
+import { dengarKetukanKabar, segarkanPendaftaran } from './src/data/push';
 import { daftarkanPerangkat } from './src/data/saya';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -76,6 +76,13 @@ void SplashScreen.preventAutoHideAsync().catch(() => { /* web atau sudah tersemb
    tidak pernah dirilis. Angka yang dilihat orang harus angka yang dikirim ke
    toko. */
 const VERSI: string = konfigApp.expo.version;
+
+/**
+ * Ketukan notifikasi datang dari LUAR pohon React — bisa bahkan sebelum
+ * navigator terpasang. Ref ini satu-satunya cara memindahkan layar dari sana
+ * tanpa menitipkan `navigation` ke variabel global yang basi.
+ */
+const navRef = createNavigationContainerRef();
 
 /** "Jumat, 19 September" — tanggal hari ini, dalam bahasa produk. */
 function tanggalPendek(): string {
@@ -345,7 +352,34 @@ function Isi() {
     void segarkanPendaftaran(setelan.pushNyala, daftarkanPerangkat);
   }, [setelan, sesi]);
 
+
   const simpan = useCallback((s: Setelan): void => { setSetelan(s); void simpanSetelan(s); }, []);
+
+  /**
+   * KETUKAN NOTIFIKASI → CHART pasar yang dikabarkan.
+   *
+   * Pasar dan timeframe disimpan dulu lewat `simpan`, karena layar chart
+   * membaca keduanya dari setelan — bukan dari parameter rute. Menavigasi
+   * tanpa menyimpan akan membuka chart di pasar yang SEBELUMNYA dibuka, dan
+   * orang membaca kabar XAU sambil melihat kandil BTC.
+   *
+   * `isReady` dijaga: di buka dingin, ketukan sampai lebih dulu daripada
+   * navigator siap, dan `navigate` pada ref yang belum terpasang diam-diam
+   * tidak melakukan apa-apa.
+   */
+  useEffect(() => {
+    if (setelan === null || sesi === null) return undefined;
+    return dengarKetukanKabar((t) => {
+      simpan({ ...setelan, pasar: t.pair, tf: t.tf.toLowerCase() });
+      const pergi = (): void => { if (navRef.isReady()) navRef.navigate('pasar' as never); };
+      pergi();
+      /* Buka dingin: navigator bisa belum terpasang di tik ini. Satu
+         percobaan ulang pendek jauh lebih murah daripada ketukan yang
+         mendarat di Home tanpa sepatah kata. */
+      const t2 = setTimeout(pergi, 600);
+      return () => { clearTimeout(t2); };
+    });
+  }, [setelan, sesi, simpan]);
 
   /* Splash turun tepat saat gerbang terbuka — dan paling lambat 6 detik,
      supaya kegagalan membaca simpanan tidak mengurung orang di balik logo. */
@@ -362,7 +396,7 @@ function Isi() {
   if (sesi === null) return <LayarSambutan />;
 
   return (
-    <NavigationContainer theme={TEMA}>
+    <NavigationContainer theme={TEMA} ref={navRef}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,

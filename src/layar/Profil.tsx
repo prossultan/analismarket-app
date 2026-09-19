@@ -64,7 +64,11 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
         <View style={g.baris}>
           <View style={[g.avatar, sesi !== null && g.avatarAda]}>
             <Text style={[g.avatarHuruf, sesi !== null && { color: '#1A1508' }]}>
-              {nama === null ? '?' : nama.trim().charAt(0).toUpperCase()}
+              {/* BUKAN '?'. Akun Telegram boleh tidak punya nama tampilan, dan
+                  itu keadaan yang sah — bukan sesuatu yang app-nya tidak tahu.
+                  Tanda tanya membaca seolah ada yang rusak; lambang merek
+                  membaca sebagai "kamu, di app ini". */}
+              {nama === null ? 'A' : nama.trim().charAt(0).toUpperCase()}
             </Text>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>

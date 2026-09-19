@@ -10,7 +10,9 @@ import { W } from '../gaya/token';
 export function AvatarKepala({ onPress }: { onPress: () => void }) {
   const sesi = useSesi();
   const nama = sesi?.akun.nama ?? '';
-  const huruf = nama.trim().charAt(0).toUpperCase() || '·';
+  /* 'A' dari AnalisMarket, bukan '·': titik terbaca seperti avatar yang
+     gagal dimuat. Nama tampilan Telegram boleh kosong, dan itu sah. */
+  const huruf = nama.trim().charAt(0).toUpperCase() || 'A';
   const plus = sesi?.akun.langganan === 'plus';
   return (
     <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel="Profil"

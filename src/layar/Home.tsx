@@ -81,7 +81,7 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
       <View style={[g.akun, plus ? g.akunPlus : g.akunGratis]}>
         {plus && <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.18)', 'rgba(201,169,97,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={g.akunNama} numberOfLines={1}>{nama === null ? 'Halo' : `Halo, ${nama.split(' ')[0] ?? nama}`}</Text>
+          <Text style={g.akunNama} numberOfLines={1}>{nama === null ? 'Selamat datang' : `Halo, ${nama.split(' ')[0] ?? nama}`}</Text>
           <Text style={g.akunKet} numberOfLines={1}>
             {plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari lagi` : 'Paket gratis'} · {google ? 'Google' : 'Telegram'}
           </Text>

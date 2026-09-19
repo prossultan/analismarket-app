@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 /**
  * CERMINAN TypeScript dari sistem desain.
  *
@@ -139,15 +141,26 @@ export const SELA_CHIP = 6;
  * lewat di bawah bilahnya. Tanpa itu yang disaring cuma latar kosong, dan
  * hasilnya terlihat persis seperti panel abu biasa.
  */
+const IOS = Platform.OS === 'ios';
+
 export const KACA = {
   /** Bilah: isi di baliknya harus tetap terbaca. */
   /* Intensitas dinaikkan (34 → 68): mockup memakai blur(26px), dan di
      expo-blur angka 34 setara ~10px — separuhnya. Di HP pemilik kaca tidak
      terlihat sama sekali; sebagian karena ini, sebagian karena warnanya
      dicat DI ATAS blur (lihat Kaca.tsx). */
-  tipis: { intensitas: 68, warna: 'rgba(26,24,21,0.44)' },
+  /* KEPEKATAN ANDROID BERBEDA, dan itu bukan selera.
+     `expo-blur` di Android boleh GAGAL total tanpa satu pun galat — dan saat
+     ia gagal, yang tersisa cuma warna ini. Pada 0,44 itu berarti 56% isi di
+     baliknya tembus, dan di HP pemilik (19 Sep) judul "Profil" terbaca
+     menimpa kartu akun, kalimat kaki tertimpa bilah tab, dan kartu AM+
+     tembus lewat bilah. Keterbacaan tidak boleh bergantung pada fitur yang
+     boleh gagal; blur di sini penyedap, bukan penopang.
+     iOS tetap 0,44 — di sana blur-nya memang selalu ada, dan menaikkannya
+     cuma membuat kacanya jadi tirai. */
+  tipis: { intensitas: 68, warna: IOS ? 'rgba(26,24,21,0.44)' : 'rgba(18,17,15,0.88)' },
   /** Lembar: ia menutupi sesuatu, jadi lebih pekat. */
-  tebal: { intensitas: 84, warna: 'rgba(20,19,16,0.66)' },
+  tebal: { intensitas: 84, warna: IOS ? 'rgba(20,19,16,0.66)' : 'rgba(16,15,13,0.94)' },
   /** Garis rambut atas — kilau tepi yang membuat kaca punya ketebalan. */
   tepi: 'rgba(255,255,255,0.16)',
   rim: 'rgba(255,255,255,0.15)',
