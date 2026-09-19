@@ -94,8 +94,11 @@ export const TINGGI_CHIP = 30;
 /** Tombol di baris kendali chart. */
 export const TINGGI_KENDALI = 40;
 /** Bilah navigasi bawah. */
-/** Mockup `--tabbar-h: 52px` (di luar jarak aman). */
-export const TINGGI_BILAH = 52;
+/** Bilah tab PIL melayang (mockup home-2026/kisi): 64 tinggi, 12 dari tepi
+    kiri/kanan, 10 di atas jarak aman. */
+export const TINGGI_BILAH = 64;
+export const TEPI_BILAH = 12;
+export const ANGKAT_BILAH = 10;
 /** Bar biaya. */
 export const TINGGI_BAR = 6;
 

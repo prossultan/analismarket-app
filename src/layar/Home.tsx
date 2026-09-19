@@ -1,204 +1,139 @@
 /**
- * HOME — mockup 01.
+ * HOME — pusat menu, bukan pasar. Varian A di `opendesign/mockups/home-2026`.
  *
- * Kepala: kunci merek (di App.tsx). Isi: kartu pasar utama dengan lambang,
- * pita empat angka, daftar "Yang bergerak" yang memanjang sampai lewat di
- * bawah bilah tab — dan itu bukan kebetulan: daftar itulah bahan yang
- * dikaburkan kacanya.
+ * Keputusan pemilik 19 Sep: "pasar jangan taruh di home". Harga, kartu
+ * pasar, dan daftar "yang bergerak" pindah seluruhnya ke tab Pasar. Yang
+ * tinggal di sini: siapa yang masuk, apa yang sudah dipasang, dan pintu ke
+ * tiap fitur — supaya orang tidak perlu menebak menunya ada di mana.
  *
- * Tidak ada kartu Menu di sini. Menu punya rumah di tab Lainnya; mengulangnya
- * di Home berarti dua tempat yang bisa berbeda isi.
+ * Satu permintaan jaringan saja (`/api/saya`). Dulu Home menarik pasar DAN
+ * bacaan tiap dibuka; sekarang kedua permintaan itu milik tab Pasar.
  */
 import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah } from '../gaya/jarak';
-import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
+import { ambilRingkas, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
-import { angka, ubah } from '../data/tampil';
-import { LambangPasar } from '../komponen/LambangPasar';
-import { BarisPasar, Blok, Chip, Harga, Kosong, Lbl, Mikro, Nil, PitaBasi, Rangka } from '../komponen/mockup';
-import { W, H, TALANG } from '../gaya/token';
+import { useSesi } from './Akun';
+import { Ikon, type NamaIkon } from '../komponen/Ikon';
+import { Butir, Kosong, Lbl, Menu, Mikro, PitaBasi, Tombol } from '../komponen/mockup';
+import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
+import { ISTILAH } from '../data/istilah';
 
-type Props = { setelan: Setelan; bukaChart: (p: Pasar) => void; bukaPasar: () => void };
+export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'Kredit' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
+type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya') => void; bukaDokumen: (k: 'syarat' | 'privasi') => void };
 
-function Angka({ label, nilai, warna }: { label: string; nilai: string; warna?: string }) {
+/** Satu sel kisi: lencana di atas, ikon, label — mengikuti referensi pemilik. */
+function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
+  ikon: NamaIkon; label: string; lencana?: string; warnaLencana?: 'emas' | 'putih' | 'merah'; emas?: boolean; onPress: () => void;
+}) {
+  const lb = warnaLencana === 'merah' ? g.lencanaMerah : warnaLencana === 'putih' ? g.lencanaPutih : g.lencanaEmas;
+  const lbTeks = warnaLencana === 'putih' ? W.teksKuat : warnaLencana === 'merah' ? '#fff' : '#1A1508';
   return (
-    <View style={{ flex: 1 }}>
-      <Lbl>{label}</Lbl>
-      <Nil besar warna={warna} gaya={{ marginTop: 2 }}>{nilai}</Nil>
-    </View>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
+      style={({ pressed }) => [g.sel, pressed && { opacity: 0.6 }]}>
+      {lencana !== undefined && <View style={[g.lencana, lb]}><Text style={[g.lencanaTeks, { color: lbTeks }]}>{lencana}</Text></View>}
+      <Ikon nama={ikon} warna={emas ? W.plus : W.teksKuat} ukuran={26} />
+      <Text style={g.selLabel} numberOfLines={1}>{label}</Text>
+    </Pressable>
   );
 }
 
-/**
- * Satu muatan untuk seluruh layar.
- *
- * `ambilBacaan` boleh gagal SENDIRIAN — jatah laju dikunci alamat IP dan
- * dibagi banyak orang lewat CGNAT, jadi permintaan kedua bisa ditolak
- * sementara yang pertama lolos. Kalau itu membuat seluruh layar jadi layar
- * galat, daftar pasar yang sudah di tangan ikut dibuang tanpa sebab.
- *
- * Jadi ia turun derajat, TIDAK hilang: sebabnya dibawa sebagai `sebabBacaan`
- * dan dicetak sebagai pita. Yang tidak boleh cuma satu — sebab yang hilang.
- */
-type Isi = {
-  pasar: Pasar | null;
-  teratas: ReadonlyArray<Pasar>;
-  jumlahPasar: number;
-  mesin: Mesin | null;
-  ringkas: { setup: number; pantau: number; mesin: number } | null;
-  harga: number | null;
-  sebabBacaan: string | null;
-};
-
-export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
+export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaDokumen }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
+  const sesi = useSesi();
 
-  const muat = useCallback(async (segarkan: boolean): Promise<Hasil<Isi>> => {
-    const j = await ambilPasar(segarkan);
-    if (!j.ok) return j;
-    const p = j.isi.pasar.find((x) => x.simbol === setelan.pasar) ?? j.isi.pasar[0] ?? null;
-    const dasar = {
-      pasar: p,
-      jumlahPasar: j.isi.pasar.length,
-      teratas: [...j.isi.pasar].filter((x) => x.simbol !== p?.simbol)
-        .sort((a, b) => (b.volume24hUsd ?? 0) - (a.volume24hUsd ?? 0)).slice(0, 12),
-    };
-    if (p === null) {
-      return { ok: true, isi: { ...dasar, mesin: null, ringkas: null, harga: null, sebabBacaan: null } };
-    }
-    const punya = p.timeframes.map((t) => t.toLowerCase());
-    const tf = punya.includes(setelan.tf) ? setelan.tf : (punya[0] ?? 'h1');
-    const b = await ambilBacaan(p.simbol, tf, segarkan);
-    if (!b.ok) {
-      return { ok: true, isi: { ...dasar, mesin: null, ringkas: null, harga: null, sebabBacaan: b.kalimat } };
-    }
-    return {
-      ok: true,
-      isi: {
-        ...dasar,
-        harga: b.isi.harga,
-        mesin: b.isi.mesin.find((m) => m.mesin === setelan.mesin) ?? b.isi.mesin[0] ?? null,
-        ringkas: {
-          setup: b.isi.mesin.filter((m) => m.status.toUpperCase() === 'SETUP').length,
-          pantau: b.isi.mesin.filter((m) => m.status.toUpperCase() === 'PANTAU').length,
-          mesin: b.isi.mesin.length,
-        },
-        sebabBacaan: null,
-      },
-    };
-  }, [setelan]);
+  const muat = useCallback(async (): Promise<Hasil<Ringkas | null>> => {
+    if (sesi === null) return { ok: true, isi: null };
+    return ambilRingkas();
+  }, [sesi]);
+  const { keadaan, segarkan, menyegarkan, ulangi } = useMuat(muat, sesi === null ? 'kosong' : `ada:${sesi.jenis ?? 'mini'}`);
 
-  /* Kunci muat-ulang: setelan yang berganti WAJIB menarik data baru.
-     Tanpa ini layar akan menampilkan pasar lama sesudah orang menggantinya
-     di Pengaturan — cacat yang tidak terlihat seperti cacat. */
-  const { keadaan, segarkan, menyegarkan, ulangi } = useMuat(
-    muat, `${setelan.pasar}:${setelan.tf}:${setelan.mesin}`);
-
-  /* Daftar pasar tidak terambil sama sekali: ini layar galat, bukan rangka
-     memuat yang tidak pernah berhenti. Sebabnya dicetak, dan ada jalan keluar. */
   if (keadaan.fase === 'gagal') {
     return (
       <View style={[g.akar, { paddingTop: tinggiKepala, paddingBottom: sisaBilah, paddingHorizontal: TALANG, justifyContent: 'center' }]}>
-        <Kosong ikon="rumah" judul="Data pasar tidak terbaca" kalimat={keadaan.kalimat} aksi={ulangi} />
+        <Kosong ikon="rumah" judul="Akun tidak terbaca" kalimat={keadaan.kalimat} aksi={ulangi} />
       </View>
     );
   }
-
-  const isi: Isi | null = keadaan.fase === 'ada' ? keadaan.isi : null;
+  const r = keadaan.fase === 'ada' ? keadaan.isi : null;
   const basi = keadaan.fase === 'ada' ? keadaan.basi : null;
-  const pasar = isi?.pasar ?? null;
-  const teratas = isi?.teratas ?? [];
-  const jumlahPasar = isi?.jumlahPasar ?? 0;
-  const mesin = isi?.mesin ?? null;
-  const ringkas = isi?.ringkas ?? null;
-  const harga = isi?.harga ?? null;
-  const siap = isi !== null;
-
-  const wajib = mesin === null ? [] : syaratWajib(mesin);
-  const lolos = wajib.filter((c) => c.lolos).length;
-  const u = pasar?.ubah24hPersen ?? null;
-  const warnaUbah = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
+  const plus = r?.langganan === 'plus';
+  const nama = sesi?.akun.nama ?? null;
+  const google = sesi?.jenis === 'clerk';
+  const perluTelegram = r !== null && !r.telegramTersambung;
+  const angka = (n: number | undefined): string => (n === undefined ? '—' : n.toLocaleString('id-ID'));
+  /* Hari ke-n dalam tahun → satu istilah; sama untuk semua orang di hari yang sama. */
+  const hariKe = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86_400_000);
+  const istilah = ISTILAH[hariKe % ISTILAH.length] ?? ISTILAH[0] as (typeof ISTILAH)[number];
 
   return (
     <ScrollView
       style={g.akar}
-      contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}
+      contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 8 }}
       refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup} onRefresh={segarkan} />}
     >
-      {/* Isi lama masih terpampang, penyegaran terakhirnya gagal. */}
       {basi !== null && <PitaBasi kalimat={basi} />}
-      {/* Daftar pasar ada, bacaannya tidak — angka mesin kosong, sebabnya disebut. */}
-      {isi?.sebabBacaan != null && <PitaBasi kalimat={isi.sebabBacaan} />}
-      {/* Kartu pasar utama. Rangka saat belum siap — bentuk isi yang akan datang. */}
-      {!siap || pasar === null ? (
-        <Blok>
-          <View style={{ flexDirection: 'row', gap: 7, alignItems: 'center' }}><Rangka lebar={24} tinggi={24} gaya={{ borderRadius: 12 }} /><Rangka lebar={90} tinggi={11} /></View>
-          <Rangka lebar="52%" tinggi={19} gaya={{ marginTop: 9 }} />
-          <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}><Rangka lebar={56} tinggi={22} gaya={{ borderRadius: 11 }} /><Rangka lebar={64} tinggi={22} gaya={{ borderRadius: 11 }} /></View>
-        </Blok>
-      ) : (
-        <Pressable onPress={() => { bukaChart(pasar); }} accessibilityRole="button" accessibilityLabel={`Buka chart ${pasar.simbol}`}>
-          <Blok>
-            <View style={g.baris}>
-              <LambangPasar simbol={pasar.simbol} ukuran={22} />
-              <View style={{ minWidth: 0, flex: 1 }}>
-                <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
-                <Lbl polos>{pasar.label}</Lbl>
-              </View>
-              <Chip teks={setelan.tf.toLowerCase()} mono lencana />
-            </View>
-            <View style={[g.baris, { marginTop: 7, alignItems: 'baseline' }]}>
-              <Harga>{angka(harga ?? pasar.harga, pasar.desimal)}</Harga>
-              <Text style={[g.ubah, { color: warnaUbah }]}>{ubah(u)}</Text>
-            </View>
-            <View style={[g.baris, { marginTop: 8 }]}>
-              {ringkas !== null && <Chip teks={`${String(ringkas.setup)} setup`} on={ringkas.setup > 0} lencana />}
-              {ringkas !== null && <Chip teks={`${String(ringkas.pantau)} pantau`} lencana />}
-              {mesin !== null && <Lbl polos>{mesin.mesin} {lolos}/{wajib.length}</Lbl>}
-            </View>
-          </Blok>
-        </Pressable>
-      )}
 
-      {/* Pita empat angka: "ada yang perlu dilihat atau tidak". */}
-      <Blok rapat gaya={{ paddingHorizontal: 10 }}>
-        <View style={g.baris}>
-          <Angka label="Setup" nilai={ringkas === null ? '—' : String(ringkas.setup)} warna={ringkas !== null && ringkas.setup > 0 ? W.naik : undefined} />
-          <Angka label="Pantau" nilai={ringkas === null ? '—' : String(ringkas.pantau)} />
-          <Angka label="Mesin" nilai={ringkas === null ? '—' : String(ringkas.mesin)} />
-          <Angka label="Pasar" nilai={jumlahPasar === 0 ? '—' : String(jumlahPasar)} />
+      {/* Kartu akun — ringkas: siapa, status, dua angka. Emas hanya untuk AM+. */}
+      <View style={[g.akun, plus ? g.akunPlus : g.akunGratis]}>
+        {plus && <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.18)', 'rgba(201,169,97,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={g.akunNama} numberOfLines={1}>{nama === null ? 'Halo' : `Halo, ${nama.split(' ')[0] ?? nama}`}</Text>
+          <Text style={g.akunKet} numberOfLines={1}>
+            {plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari lagi` : 'Paket gratis'} · {google ? 'Google' : 'Telegram'}
+          </Text>
         </View>
-      </Blok>
+        <View style={g.angka}><Text style={g.angkaBesar}>{angka(r?.poin)}</Text><Text style={g.angkaLabel}>poin</Text></View>
+        <View style={g.angka}><Text style={g.angkaBesar}>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Text><Text style={g.angkaLabel}>pantauan</Text></View>
+      </View>
+      {perluTelegram && <Tombol teks="Tautkan Telegram — pantauan & kredit ada di bot" jenis="kedua" onPress={() => { buka('Sambung'); }} />}
 
-      {/* Yang bergerak — urut volume 24 jam. flex:1 supaya ia mengisi sisa
-          tinggi layar; ruang kosong di app data bukan kelegaan. */}
-      <Blok gaya={{ flex: 1 }}>
-        <View style={[g.baris, { justifyContent: 'space-between' }]}>
-          <Lbl>Yang bergerak</Lbl>
-          <Pressable onPress={bukaPasar} hitSlop={8}><Lbl polos>vol 24 jam ›</Lbl></Pressable>
+      {/* Kisi menu — SEMUA pintu di satu tempat, ikon di atas label. */}
+      <View style={g.kisi}>
+        <Sel ikon="pasar" label="Chart" onPress={bukaPasar} />
+        <Sel ikon="kabar" label="Pantauan" lencana={r === null ? undefined : `${String(r.pantauanAktif)} aktif`} warnaLencana="putih" onPress={() => { buka('Pantauan'); }} />
+        <Sel ikon="tambah" label="Pantauan baru" onPress={() => { buka('PantauanBaru'); }} />
+        <Sel ikon="kalender" label="Kabar otomatis" lencana="AM+" emas={plus} onPress={() => { buka('KabarOtomatis'); }} />
+        <Sel ikon="analisis" label="Kredit" onPress={() => { buka('Kredit'); }} />
+        <Sel ikon="kisi" label="Cek banyak" lencana="AM+" emas={plus} onPress={() => { buka('CekBanyak'); }} />
+        <Sel ikon="kalender" label="Kalender" onPress={() => { buka('Kalender'); }} />
+        <Sel ikon="buku" label="Belajar" onPress={() => { buka('Belajar'); }} />
+        <Sel ikon="profil" label="Profil" onPress={() => { buka('Profil'); }} />
+        <Sel ikon="gir" label="Pengaturan" onPress={() => { buka('Pengaturan'); }} />
+        <Sel ikon="plus" label="AnalisMarket+" emas onPress={() => { bukaTab('amplus'); }} />
+        <Sel ikon="turunkan" label="Lainnya" onPress={() => { bukaTab('lainnya'); }} />
+      </View>
+
+      <Lbl gaya={{ marginTop: 2 }}>Pintasan</Lbl>
+      <Menu>
+        <Butir ikon="pasar" nama={`${setelan.pasar} · ${setelan.tf.toLowerCase()}`} ket="chart bawaan" onPress={bukaPasar} pertama />
+        <Butir ikon="kalender" nama="Kalender berita" ket="30 hari" onPress={() => { buka('Kalender'); }} />
+      </Menu>
+
+      <Lbl gaya={{ marginTop: 2 }}>Bantuan & dokumen</Lbl>
+      <Menu>
+        <Butir ikon="buku" nama="Syarat & Ketentuan" onPress={() => { bukaDokumen('syarat'); }} pertama />
+        <Butir ikon="buku" nama="Kebijakan Privasi" onPress={() => { bukaDokumen('privasi'); }} />
+        <Butir ikon="lainnya" nama="Tentang AnalisMarket" onPress={() => { bukaTab('lainnya'); }} />
+      </Menu>
+
+      {/* ISI, BUKAN RUANG KOSONG. Pemilik: "di home jangan sampai ada ruang
+          kosong". Yang mengisi harus isi sungguhan — satu istilah dari Belajar,
+          berganti tiap hari, bukan bilah kosong yang didorong ke bawah. */}
+      <Lbl gaya={{ marginTop: 2 }}>Istilah hari ini</Lbl>
+      <Pressable onPress={() => { buka('Belajar'); }} accessibilityRole="button" style={({ pressed }) => [g.istilah, pressed && { opacity: 0.8 }]}>
+        <View style={g.istilahKepala}>
+          <Text style={g.istilahNama}>{istilah.nama}</Text>
+          <Text style={g.istilahMesin}>{istilah.mesin} · {istilah.kode}</Text>
         </View>
-        <View style={{ marginTop: 2 }}>
-          {teratas.length === 0 && [0, 1, 2, 3].map((i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'center', paddingVertical: 9 }}>
-              <Rangka lebar={22} tinggi={22} gaya={{ borderRadius: 11 }} /><Rangka lebar="40%" tinggi={10} />
-              <View style={{ flex: 1 }} /><Rangka lebar={56} tinggi={10} />
-            </View>
-          ))}
-          {teratas.map((x, i) => {
-            const v = x.ubah24hPersen;
-            return (
-              <BarisPasar key={x.simbol} simbol={x.simbol} label={x.label}
-                harga={angka(x.harga, x.desimal)} ubah={ubah(v)}
-                ubahWarna={v === null ? W.teksSamar : v > 0 ? W.naik : v < 0 ? W.turun : W.teksSamar}
-                pertama={i === 0} onPress={() => { bukaChart(x); }} />
-            );
-          })}
-        </View>
-      </Blok>
+        <Text style={g.istilahArti} numberOfLines={4}>{istilah.arti}</Text>
+        <Text style={g.istilahTaut}>Buka Belajar ›</Text>
+      </Pressable>
 
       <Mikro>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Mikro>
     </ScrollView>
@@ -207,7 +142,24 @@ export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  baris: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  simbol: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.1 },
-  ubah: { fontSize: H.nilai, fontVariant: ['tabular-nums'] },
+  akun: { borderRadius: R.kartu + 2, paddingVertical: 12, paddingHorizontal: 13, overflow: 'hidden', borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  akunPlus: { borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.kartu },
+  akunGratis: { borderColor: W.garis, backgroundColor: W.kartu },
+  akunNama: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.3 },
+  akunKet: { fontSize: H.alat, color: W.teksRedup, marginTop: 2 },
+  angka: { alignItems: 'flex-end' },
+  angkaBesar: { fontSize: 16, fontWeight: '600', color: W.teksKuat, fontVariant: ['tabular-nums'] },
+  angkaLabel: { fontSize: H.label, color: W.teksSamar },
+  kisi: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: 20, paddingTop: 14, paddingBottom: 8, paddingHorizontal: 4, flexDirection: 'row', flexWrap: 'wrap' },
+  sel: { width: '25%', alignItems: 'center', paddingTop: 12, paddingBottom: 10, gap: 7 },
+  selLabel: { fontSize: 11, color: W.teks },
+  lencana: { position: 'absolute', top: -2, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
+  lencanaEmas: { backgroundColor: W.plus }, lencanaPutih: { backgroundColor: 'rgba(255,255,255,0.12)' }, lencanaMerah: { backgroundColor: W.turun },
+  lencanaTeks: { fontSize: 9, fontWeight: '700' },
+  istilah: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, padding: 13 },
+  istilahKepala: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
+  istilahNama: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.2 },
+  istilahMesin: { fontSize: H.label, color: W.plus, fontVariant: ['tabular-nums'] },
+  istilahArti: { fontSize: H.nilai, color: W.teks, lineHeight: 17, marginTop: 6 },
+  istilahTaut: { fontSize: H.alat, color: W.teksRedup, marginTop: 8 },
 });

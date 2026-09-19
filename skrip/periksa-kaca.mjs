@@ -51,10 +51,14 @@ const app = readFileSync('App.tsx', 'utf8');
  * TAPI terpotong. Yang di bawah ini menuntut keduanya sekaligus. */
 cek(/useSafeAreaInsets\(\)/.test(app),
   'App.tsx: bilah melayang tanpa useSafeAreaInsets — labelnya terpotong di HP berponi');
-cek(/height:\s*TINGGI_BILAH\s*\+\s*bawah/.test(app),
-  'App.tsx: tinggi bilah tidak menambahkan jarak aman bawah');
-cek(/paddingBottom:\s*bawah/.test(app),
-  'App.tsx: bilah tanpa paddingBottom jarak aman — isinya melimpah keluar layar');
+/* DUA BENTUK yang sah, dan keduanya membawa `bawah`:
+   - bilah menempel tepi: `height: TINGGI_BILAH + bawah` + `paddingBottom: bawah`
+   - bilah PIL melayang (sejak 19 Sep): `bottom: bawah + ANGKAT_BILAH` — pilnya
+     sendiri diangkat di atas jarak aman, jadi tingginya tetap. */
+const menempel = /height:\s*TINGGI_BILAH\s*\+\s*bawah/.test(app) && /paddingBottom:\s*bawah/.test(app);
+const melayang = /bottom:\s*bawah\s*\+\s*ANGKAT_BILAH/.test(app);
+cek(menempel || melayang,
+  'App.tsx: bilah tab tidak membawa jarak aman bawah — labelnya terpotong di HP berponi');
 cek(/useSisaBilah/.test(readFileSync('src/gaya/jarak.ts', 'utf8')),
   'src/gaya/jarak.ts: kait jarak bawah tidak ada');
 

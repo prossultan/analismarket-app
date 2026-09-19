@@ -340,3 +340,23 @@ memakai `skrip/_sesi-tiruan.mts` (web) — sesi mini tiruan di localStorage +
 `/api/saya**` dijawab ringkasan tetap. Tanpa itu, `/api/saya` sungguhan
 menjawab 401, sesi dihapus, dan harness terlempar ke layar masuk di tengah
 jalan.
+
+## Home = pusat menu, tanpa pasar (19 Sep)
+
+Pemilik: "pasar jangan taruh di home" lalu mengirim referensi (kisi ikon 4
+kolom, bilah tab pil melayang). Home sekarang: kartu akun ringkas → kisi 12
+ikon (semua pintu) → Pintasan → Bantuan & dokumen → "Istilah hari ini".
+Satu permintaan jaringan (`/api/saya`); pasar dan bacaan milik tab Pasar.
+
+"Jangan sampai ada ruang kosong" — yang mengisi harus ISI, bukan pendorong
+`flex: 1`. Kartu istilah (16 istilah Belajar, berganti per hari) yang mengisi.
+
+Bilah tab PIL: `TombolTab` membaca keadaan aktif dari `useNavigationState`,
+BUKAN dari `accessibilityState.selected` — prop itu kosong di bottom-tabs v7
+saat runtime, dan potretnya tanpa satu pun tab tersorot. Jarak aman lewat
+`bottom: bawah + ANGKAT_BILAH`; `periksa-kaca.mjs` menerima bentuk ini.
+
+Ikon app: `assets/icon.png` dkk. sempat IKON BAWAAN TEMPLATE EXPO (chevron
+biru) sampai 19 Sep. Sekarang semua diturunkan dari `logo-512.png` web —
+satu mark di ikon, adaptive, monochrome, splash, kepala, dan Tentang.
+Mockup: `opendesign/mockups/kepala-2026`, `home-2026`.

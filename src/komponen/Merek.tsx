@@ -1,40 +1,52 @@
 /**
  * KUNCI MEREK — logo dan nama produk, satu susunan untuk seluruh app.
+ * Bentuknya varian A di `opendesign/mockups/kepala-2026`.
  *
- * Sampai 19 Sep merek AnalisMarket tidak muncul di satu layar pun: kepala
- * Home cuma bertuliskan "Home". Nama produk yang tidak pernah terlihat
- * membuat app terasa seperti pembaca chart generik, bukan permukaan kedua
- * dari alat yang sudah dipakai orang di Telegram dan web.
+ * Yang membuat kepala lama terasa jadul, dan yang diganti:
+ *  - mark 64px diperbesar ke 90px di layar 3× → buram. Sekarang 256px.
+ *  - ikon app masih ikon bawaan template Expo (chevron biru). Sekarang
+ *    dari logo-512 web — satu mark di ikon, splash, kepala, dan Tentang.
+ *  - sub cuma tanggal. Sekarang tanggal + titik hijau "hidup": kepala yang
+ *    menyatakan keadaan, bukan cuma nama.
  *
- * "Market" berwarna emas — emas sebagai TEKS, bukan bidang terisi. Bidang
- * emas tetap milik AnalisMarket+ sendirian.
+ * "Market" berwarna emas — emas sebagai TEKS. Bidang emas tetap milik AM+.
  */
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { W, H, J } from '../gaya/token';
+import { W, H } from '../gaya/token';
 
-const LOGO = require('../../assets/logo-am.png') as number;
+export const MARK = require('../../assets/merek-mark.png') as number;
 
-export function Merek({ sub, ukuran = 30 }: { sub?: string; ukuran?: number }) {
+export function Merek({ sub, hidup = true, ukuran = 36 }: { sub?: string; hidup?: boolean; ukuran?: number }) {
   return (
     <View style={g.akar}>
-      <Image
-        source={LOGO}
-        style={{ width: ukuran, height: ukuran, borderRadius: Math.round(ukuran * 0.29) }}
-        accessibilityIgnoresInvertColors
-      />
+      <View style={[g.markBingkai, { width: ukuran, height: ukuran, borderRadius: ukuran / 2 }]}>
+        <Image source={MARK} style={{ width: ukuran, height: ukuran, borderRadius: ukuran / 2 }} accessibilityIgnoresInvertColors />
+      </View>
       <View style={{ minWidth: 0 }}>
         <Text style={g.nama} numberOfLines={1}>
           Analis<Text style={g.emas}>Market</Text>
         </Text>
-        {sub !== undefined && <Text style={g.sub} numberOfLines={1}>{sub}</Text>}
+        {sub !== undefined && (
+          <View style={g.subBaris}>
+            {hidup && <View style={g.titik} />}
+            <Text style={g.sub} numberOfLines={1}>{sub}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
 const g = StyleSheet.create({
-  akar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  nama: { fontSize: 18, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.5 },
+  akar: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  /* cincin rambut + bayangan: mark bulat terasa "duduk" di kaca, bukan ditempel */
+  markBingkai: {
+    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.16)',
+    shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 7, shadowOffset: { width: 0, height: 4 }, elevation: 4,
+  },
+  nama: { fontSize: 20, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.6, lineHeight: 22 },
   emas: { color: W.plus },
-  sub: { fontSize: H.alat, color: W.teksSamar, marginTop: 1 },
+  subBaris: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  titik: { width: 5, height: 5, borderRadius: 3, backgroundColor: W.naik, shadowColor: W.naik, shadowOpacity: 0.9, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } },
+  sub: { fontSize: H.alat, color: W.teksSamar },
 });

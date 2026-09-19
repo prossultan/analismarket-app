@@ -24,7 +24,12 @@ const BUKU = 'M4 5a2 2 0 012-2h13v18H6a2 2 0 01-2-2zM19 17H6';
 const GIR = 'M12 9a3 3 0 100 6 3 3 0 000-6zM12 2v3m0 14v3M4.2 4.2l2.2 2.2m11.2 11.2l2.2 2.2'
   + 'M2 12h3m14 0h3M4.2 19.8l2.2-2.2M17.6 6.4l2.2-2.2';
 
+const TAMBAH = 'M12 5v14M5 12h14';
+const KISI = 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z';
+const TURUNKAN = 'M6 9l6 6 6-6';
+
 export const JALUR = {
+  tambah: TAMBAH, kisi: KISI, turunkan: TURUNKAN,
   rumah: RUMAH, pasar: PASAR, analisis: ANALISIS, plus: PLUS,
   kabar: KABAR, profil: PROFIL, lainnya: LAINNYA, kalender: KALENDER, buku: BUKU, gir: GIR,
 } as const;

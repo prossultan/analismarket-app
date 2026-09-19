@@ -50,16 +50,19 @@ import {
 import { Ikon, type NamaIkon } from './src/komponen/Ikon';
 import { Kaca } from './src/komponen/Kaca';
 import { Merek } from './src/komponen/Merek';
+import { AvatarKepala } from './src/komponen/AvatarKepala';
+import { LinearGradient } from 'expo-linear-gradient';
 import { JudulKepala } from './src/komponen/JudulKepala';
 import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
 import { umurTerakhir } from './src/data/antrian';
-import { W, H, TINGGI_BILAH } from './src/gaya/token';
+import { W, H, TINGGI_BILAH, TEPI_BILAH, ANGKAT_BILAH } from './src/gaya/token';
+import { TombolTab } from './src/komponen/TombolTab';
 
 const VERSI = '0.3.0';
 
 /** "Jumat, 19 September" — tanggal hari ini, dalam bahasa produk. */
-function tanggalPanjang(): string {
-  return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+function tanggalPendek(): string {
+  return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
 /** Rute tumpukan yang dibagi Lainnya, Kabar, dan PLUS+. */
@@ -100,7 +103,12 @@ const TEMA: Theme = {
 /** Kepala kaca — berlaku untuk tab maupun tumpukan. */
 const OPSI_KEPALA = {
   headerTransparent: true,
-  headerBackground: () => <Kaca tepi="bawah" gaya={{ flex: 1 }} />,
+  /* Kilau emas samar dari kiri atas — ambient, terasa lebih dulu daripada
+     terlihat. Ini yang membedakan kaca 2026 dari panel gelap datar. */
+  headerBackground: () => <Kaca tepi="bawah" gaya={{ flex: 1 }}>
+      <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.13)', 'rgba(201,169,97,0.0)']}
+        start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} style={{ position: 'absolute', left: 0, top: 0, width: '55%', height: '100%' }} />
+    </Kaca>,
   headerStyle: { backgroundColor: 'transparent' },
   headerTitleStyle: { color: W.teksKuat, fontSize: H.pasar, fontWeight: '600' as const },
   headerTintColor: W.plus,
@@ -336,35 +344,35 @@ function Isi() {
            */
           tabBarStyle: {
             position: 'absolute',
-            backgroundColor: 'transparent',
-            borderTopWidth: 0,
-            elevation: 0,
-            height: TINGGI_BILAH + bawah,
-            paddingTop: 0,
-            paddingBottom: bawah,
+            left: TEPI_BILAH, right: TEPI_BILAH, bottom: bawah + ANGKAT_BILAH,
+            height: TINGGI_BILAH, borderRadius: TINGGI_BILAH / 2, overflow: 'hidden',
+            backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0,
+            paddingTop: 0, paddingBottom: 0,
           },
-          tabBarBackground: () => <Kaca tepi="atas" gaya={{ flex: 1 }} />,
+          tabBarBackground: () => <Kaca tepi="atas" gaya={{ flex: 1, borderRadius: TINGGI_BILAH / 2 }} />,
+          tabBarShowLabel: false,
           tabBarActiveTintColor: W.teksKuat,
           tabBarInactiveTintColor: W.teksSamar,
-          /* mockup: label 9px, ikon 19px, padding 6/4/12 */
-          tabBarLabelStyle: { fontSize: H.label, fontWeight: '500', marginTop: 1 },
           tabBarItemStyle: { paddingVertical: 0 },
         }}
       >
         <Tab.Screen
           name="home"
-          options={{
+          options={({ navigation }) => ({
             title: 'Home', headerShown: true, ...OPSI_KEPALA,
-            headerTitle: () => <Merek sub={tanggalPanjang()} />,
+            headerTitle: () => <Merek sub={`${tanggalPendek()} · 131 pasar hidup`} />,
             headerTitleAlign: 'left' as const,
-            tabBarIcon: ikonTab('rumah'),
-          }}
+            headerRight: () => <AvatarKepala onPress={() => { navigation.navigate('lainnya', { screen: 'Profil' }); }} />,
+            tabBarButton: (p) => <TombolTab ikon="rumah" label="Home" nama="home" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} />,
+          })}
         >
           {({ navigation }) => (
             <LayarHome
               setelan={setelan}
-              bukaChart={(p) => { simpan({ ...setelan, pasar: p.simbol }); navigation.navigate('pasar'); }}
-              bukaPasar={() => { setTandaPasar((n) => n + 1); navigation.navigate('pasar'); }}
+              bukaPasar={() => { navigation.navigate('pasar'); }}
+              buka={(ke) => { navigation.navigate('lainnya', { screen: ke }); }}
+              bukaTab={(t) => { navigation.navigate(t); }}
+              bukaDokumen={(k) => { navigation.navigate('lainnya', { screen: 'Dokumen', params: { kunci: k } }); }}
             />
           )}
         </Tab.Screen>
@@ -372,7 +380,7 @@ function Isi() {
         {/* Ketukan kedua saat tab ini SUDAH aktif membuka lembar pasar. */}
         <Tab.Screen
           name="pasar"
-          options={{ title: 'Pasar', tabBarIcon: ikonTab('pasar') }}
+          options={{ title: 'Pasar', tabBarButton: (p) => <TombolTab ikon="pasar" label="Pasar" nama="pasar" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               if (!navigation.isFocused()) return;
@@ -384,7 +392,7 @@ function Isi() {
           {() => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} />}
         </Tab.Screen>
 
-        <Tab.Screen name="kabar" options={{ title: 'Kabar', tabBarIcon: ikonTab('kabar') }}>
+        <Tab.Screen name="kabar" options={{ title: 'Kabar', tabBarButton: (p) => <TombolTab ikon="kabar" label="Kabar" nama="kabar" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>
           {() => <AlurKabar setelan={setelan} simpan={simpan} />}
         </Tab.Screen>
 
@@ -395,21 +403,13 @@ function Isi() {
             title: 'PLUS+',
             /* Mockup: bintang TERISI emas di semua keadaan, dan tab aktif
                dapat garis 15×2 yang sama dengan tab lain. */
-            tabBarIcon: ({ focused }) => (
-              <View style={{ alignItems: 'center', paddingTop: 6 }}>
-                <View style={{ position: 'absolute', top: 0, width: 15, height: 2, borderRadius: 2, backgroundColor: focused ? W.plus : 'transparent' }} />
-                <Ikon nama="plus" warna={W.plus} ukuran={19} isi={W.plus} />
-              </View>
-            ),
-            /* Label diberi warna SENDIRI, bukan lewat tint: tint per-layar
-               menular ke seluruh bilah saat layar ini aktif. */
-            tabBarLabel: () => <Text style={{ fontSize: H.alat, fontWeight: '600', color: W.plus }}>PLUS+</Text>,
+            tabBarButton: (p) => <TombolTab ikon="plus" label="PLUS+" nama="amplus" emas aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} />,
           }}
         >
           {() => <AlurPlus setelan={setelan} simpan={simpan} />}
         </Tab.Screen>
 
-        <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('lainnya') }}>
+        <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarButton: (p) => <TombolTab ikon="lainnya" label="Lainnya" nama="lainnya" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>
           {() => <AlurLain setelan={setelan} simpan={simpan} />}
         </Tab.Screen>
       </Tab.Navigator>

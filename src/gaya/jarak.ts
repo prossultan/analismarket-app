@@ -7,9 +7,9 @@
  * harus ditanya ke perangkat.
  */
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TINGGI_BILAH } from './token';
+import { ANGKAT_BILAH, TINGGI_BILAH } from './token';
 
 export function useSisaBilah(): number {
   const { bottom } = useSafeAreaInsets();
-  return TINGGI_BILAH + bottom + 8;
+  return TINGGI_BILAH + ANGKAT_BILAH + bottom + 8;
 }

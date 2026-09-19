@@ -1,0 +1,74 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Home 2026 — AnalisMarket</title>
+<style>
+:root{--bg:#0C0B09;--kartu:#161512;--kartu2:#1C1A17;--garis:#252321;--fg1:#E8E7E5;--fg2:#CFCECB;--fg3:#A7A4A1;--fg4:#84827E;--emas:#C9A961;--emas-t:#E3CE97;--naik:#10B981;
+--kaca:rgba(26,24,21,.44);--kaca-tepi:rgba(255,255,255,.16);--buram:saturate(190%) blur(26px);--tulis:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;--angka:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}body{margin:0;background:#1a1917;font-family:var(--tulis);color:var(--fg1);display:flex;gap:28px;padding:28px}
+.hp{width:390px;height:780px;border-radius:30px;overflow:hidden;background:var(--bg);position:relative;border:1px solid #2a2825;flex:none}
+.nav{position:absolute;left:0;right:0;top:0;height:64px;padding:0 14px;display:flex;align-items:center;gap:11px;background:var(--kaca);backdrop-filter:var(--buram);border-bottom:1px solid var(--kaca-tepi);z-index:2}
+.nav::before{content:"";position:absolute;left:-40px;top:-60px;width:220px;height:160px;background:radial-gradient(closest-side,rgba(201,169,97,.16),transparent 70%)}
+.mark{width:36px;height:36px;border-radius:50%;background:url(mark.png) center/cover;box-shadow:0 0 0 1px rgba(255,255,255,.14),0 6px 14px rgba(0,0,0,.45)}
+.wm{font-size:20px;font-weight:700;letter-spacing:-.6px;line-height:1.05}.wm i{font-style:normal;color:var(--emas)}
+.sub{margin-top:3px;font-size:10px;color:var(--fg4);display:flex;align-items:center;gap:6px}.dot{width:5px;height:5px;border-radius:50%;background:var(--naik);box-shadow:0 0 6px var(--naik)}
+.av{margin-left:auto;width:30px;height:30px;border-radius:50%;background:linear-gradient(160deg,var(--emas-t),#a8894a);display:grid;place-items:center;font-size:12px;font-weight:700;color:#1A1508;box-shadow:0 0 0 2px rgba(201,169,97,.25)}
+.isi{position:absolute;inset:0;padding:74px 11px 70px;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.akun{border-radius:16px;padding:14px;background:linear-gradient(135deg,rgba(201,169,97,.16),rgba(201,169,97,.04) 60%,rgba(201,169,97,.09));border:1px solid rgba(201,169,97,.35);position:relative;overflow:hidden}
+.akun .nama{font-size:15px;font-weight:700}.akun .ket{font-size:10px;color:var(--fg3);margin-top:2px}
+.akun .stat{display:flex;gap:8px;margin-top:11px}.akun .stat div{flex:1;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 9px}
+.akun .stat b{display:block;font-size:16px;font-family:var(--angka);font-weight:600}.akun .stat span{font-size:9px;color:var(--fg4)}
+.chip{position:absolute;right:12px;top:12px;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--emas);border:1px solid rgba(201,169,97,.5);padding:4px 8px;border-radius:999px}
+.lbl{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg4);font-weight:600;padding:3px 2px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ubin{background:var(--kartu);border:1px solid var(--garis);border-radius:14px;padding:12px;min-height:84px;display:flex;flex-direction:column;justify-content:space-between;position:relative}
+.ubin .ik{width:30px;height:30px;border-radius:9px;background:var(--kartu2);border:1px solid var(--garis);display:grid;place-items:center;color:var(--emas);font-size:13px}
+.ubin b{font-size:13px;font-weight:600;display:block;margin-top:8px}.ubin span{font-size:10px;color:var(--fg4)}
+.ubin .n{position:absolute;right:11px;top:11px;font-family:var(--angka);font-size:11px;color:var(--fg3)}
+.ubin.emas{border-color:rgba(201,169,97,.4);background:linear-gradient(160deg,rgba(201,169,97,.12),var(--kartu) 70%)}
+.baris{background:var(--kartu);border:1px solid var(--garis);border-radius:14px;overflow:hidden}
+.baris div{display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:1px solid var(--garis);font-size:13px}.baris div:first-child{border-top:0}
+.baris .ik{width:22px;text-align:center;color:var(--fg4)}.baris .kanan{margin-left:auto;font-size:11px;color:var(--fg4);font-family:var(--angka)}
+.tab{position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--kaca);backdrop-filter:var(--buram);border-top:1px solid var(--kaca-tepi);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;text-align:center;font-size:9px;color:var(--fg4)}
+.tab div.on{color:var(--fg1)}.tab div.plus{color:var(--emas)}
+.cap{position:absolute;left:12px;right:12px;bottom:70px;font-size:10px;color:var(--fg4);background:rgba(12,11,9,.85);padding:6px 8px;border-radius:8px}
+.cta{display:flex;gap:8px}.cta div{flex:1;text-align:center;padding:11px;border-radius:12px;font-size:12px;font-weight:600;background:var(--fg1);color:#111}.cta div.kedua{background:var(--kartu);color:var(--fg2);border:1px solid var(--garis)}
+</style></head><body>
+<div class="hp">
+ <div class="nav"><div class="mark"></div><div><div class="wm">Analis<i>Market</i></div><div class="sub"><span class="dot"></span>Sabtu, 19 Sep · 131 pasar hidup</div></div><div class="av">Y</div></div>
+ <div class="isi">
+  <div class="akun"><span class="chip">AnalisMarket+</span><div class="nama">Halo, Yudi</div><div class="ket">Tersambung lewat Telegram · aktif 23 hari lagi</div>
+   <div class="stat"><div><b>1.840</b><span>Poin</span></div><div><b>4/10</b><span>Pantauan aktif</span></div><div><b>2</b><span>Setup hari ini</span></div></div></div>
+  <div class="cta"><div>Buka chart · SOLUSDT h1</div><div class="kedua">Cek banyak pasar</div></div>
+  <div class="lbl">Pantauan &amp; kabar</div>
+  <div class="grid">
+   <div class="ubin"><div class="ik">🔔</div><span class="n">4</span><div><b>Pantauan aktif</b><span>Dikabari saat syarat lolos</span></div></div>
+   <div class="ubin"><div class="ik">✦</div><div><b>Pantauan baru</b><span>Pasar, timeframe, mesin</span></div></div>
+   <div class="ubin emas"><div class="ik">◔</div><span class="n">h1·h4</span><div><b>Kabar otomatis</b><span>Jam sunyi 07–22</span></div></div>
+   <div class="ubin"><div class="ik">▤</div><span class="n">1.840</span><div><b>Kredit &amp; kuota</b><span>10 poin per analisa</span></div></div>
+  </div>
+  <div class="lbl">Baca</div>
+  <div class="baris"><div><span class="ik">▦</span>Kalender berita<span class="kanan">2 tinggi minggu ini ›</span></div><div><span class="ik">▣</span>Belajar<span class="kanan">16 istilah ›</span></div></div>
+  <div class="lbl">Akun</div>
+  <div class="baris"><div><span class="ik">◯</span>Profil<span class="kanan">AM+ ›</span></div><div><span class="ik">⚙</span>Pengaturan<span class="kanan">h1 · SOLUSDT ›</span></div></div>
+ </div>
+ <div class="tab"><div class="on">Home</div><div>Pasar</div><div>Kabar</div><div class="plus">PLUS+</div><div>Lainnya</div></div>
+ <div class="cap">A — kartu akun emas · dua CTA · ubin 2 kolom untuk pantauan/kabar/kredit · daftar Baca &amp; Akun. Tanpa satu pun harga pasar. REKOMENDASI</div>
+</div>
+<div class="hp">
+ <div class="nav"><div class="mark"></div><div><div class="wm">Analis<i>Market</i></div><div class="sub"><span class="dot"></span>Sabtu, 19 Sep</div></div><div class="av">Y</div></div>
+ <div class="isi">
+  <div class="akun" style="background:var(--kartu);border-color:var(--garis)"><div class="nama">Yudi</div><div class="ket">AnalisMarket+ · 23 hari · 1.840 poin · 4 pantauan</div></div>
+  <div class="lbl">Semua menu</div>
+  <div class="grid">
+   <div class="ubin"><div class="ik">▲</div><div><b>Chart</b><span>SOLUSDT h1</span></div></div>
+   <div class="ubin"><div class="ik">🔔</div><div><b>Pantauan</b><span>4 aktif</span></div></div>
+   <div class="ubin"><div class="ik">◔</div><div><b>Kabar otomatis</b><span>aktif</span></div></div>
+   <div class="ubin"><div class="ik">▤</div><div><b>Kredit</b><span>1.840 poin</span></div></div>
+   <div class="ubin"><div class="ik">⊞</div><div><b>Cek banyak</b><span>12 pasar sekaligus</span></div></div>
+   <div class="ubin"><div class="ik">▦</div><div><b>Kalender</b><span>30 hari</span></div></div>
+   <div class="ubin"><div class="ik">▣</div><div><b>Belajar</b><span>16 istilah</span></div></div>
+   <div class="ubin"><div class="ik">⚙</div><div><b>Pengaturan</b><span>bawaan app</span></div></div>
+  </div>
+ </div>
+ <div class="tab"><div class="on">Home</div><div>Pasar</div><div>Kabar</div><div class="plus">PLUS+</div><div>Lainnya</div></div>
+ <div class="cap">B — satu kisi 8 ubin rata, kartu akun netral. Paling sederhana, semua menu setara.</div>
+</div>
+</body></html>

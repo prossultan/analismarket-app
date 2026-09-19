@@ -29,7 +29,7 @@ import { ChartTertanam } from '../komponen/ChartTertanam';
 import { ASAL } from '../data/antrian';
 import { W, H, R, TALANG } from '../gaya/token';
 
-const LOGO = require('../../assets/logo-am.png') as number;
+const LOGO = require('../../assets/merek-mark.png') as number;
 const KUNCI = 'am_sambutan_v1';
 
 export async function sudahDisambut(): Promise<boolean> {

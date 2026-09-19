@@ -12,7 +12,7 @@ import { useSisaBilah } from '../gaya/jarak';
 import { Blok, Butir, Chip, Lbl, Menu, PitaBasi } from '../komponen/mockup';
 import { W, H, TALANG } from '../gaya/token';
 
-const LOGO = require('../../assets/logo-am.png') as number;
+const LOGO = require('../../assets/merek-mark.png') as number;
 const MESIN = ['snr', 'smc', 'ema200', 'ichimoku', 'fibonacci'];
 
 export function LayarTentang({ versi }: { versi: string }) {
