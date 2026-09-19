@@ -420,3 +420,23 @@ Tidak ketahuan karena server ikut mengirim `pesan` yang benar — kalimat yang
 tampil tidak salah, cuma jenisnya. Sekarang `galat` diperiksa lebih dulu, apa
 pun kode statusnya. Kalau menambah jenis galat baru, baca kodenya DARI berkas
 bot itu, jangan menebak dari nama galatnya.
+
+## Splash ditahan sampai gerbang sesi memutuskan (19 Sep)
+
+Root merender `null` sampai setelan (AsyncStorage) DAN Clerk (≤2,5 dtk
+fallback) terbaca. Tanpa `preventAutoHideAsync`, splash turun begitu root
+mount — jadi tiap buka dingin ada layar gelap tanpa merek, dan itu terasa
+sebagai "kurang smooth" walau tidak ada satu pun galat. Sekarang splash
+ditahan di `App.tsx` dan diturunkan saat `siap`, paling lambat 6 detik.
+Konfigurasi splash memakai plugin `expo-splash-screen` (`imageWidth: 200`),
+bukan kunci `expo.splash` lama. Harness potret web TIDAK bisa melihat ini
+(splash native tidak ada di web) — buktinya cuma di HP.
+
+## Belum ada jalur hapus akun di dalam app (temuan 19 Sep, keputusan pemilik)
+
+Play Console mewajibkan app yang membuat akun (masuk Google lewat Clerk =
+membuat akun) menyediakan cara menghapus akun DI DALAM app dan tautan web
+untuk permintaan hapus. Yang ada sekarang: kalimat di Kebijakan Privasi
+"minta lewat bot". Itu belum memenuhi formulir Data safety. Menghapus akun
+berarti menulis (menghapus) data produksi — keputusan pemilik, bukan sesi
+otonom. Belum dikerjakan; jangan dianggap selesai karena tidak ada uji merah.
