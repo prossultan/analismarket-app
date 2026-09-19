@@ -41,7 +41,13 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
       <Lbl gaya={{ marginTop: 2 }}>Chart</Lbl>
       <Menu>
         <Butir ikon="pasar" nama="Lapisan bawaan" ket="volume · zona · level" pertama />
-        <Butir ikon="analisis" nama="Tetap menyala saat chart terbuka" kanan={<Saklar on={false} />} />
+        {/* Dulu `<Saklar on={false} />` tanpa penangan: saklar yang digambar
+            persis seperti saklar hidup, tidak pernah bergerak, dan tidak
+            pernah menyalakan apa pun. Sekarang ia menyimpan pilihannya dan
+            `LayarAnalisis` yang menahan layarnya. */}
+        <Butir ikon="analisis" nama="Tetap menyala saat chart terbuka"
+          ket={setelan.layarMenyala ? 'nyala' : 'mati'}
+          kanan={<Saklar on={setelan.layarMenyala} ganti={(v) => { simpan({ ...setelan, layarMenyala: v }); }} />} />
       </Menu>
 
       <Lbl gaya={{ marginTop: 2 }}>Tampilan</Lbl>

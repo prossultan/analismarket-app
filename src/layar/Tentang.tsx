@@ -48,7 +48,7 @@ export function LayarTentang({ versi }: { versi: string }) {
 
       <Lbl gaya={{ marginTop: 2 }}>Mesin analisa</Lbl>
       <Blok>
-        <View style={g.chips}>{MESIN.map((m) => <Chip key={m} teks={m} />)}</View>
+        <View style={g.chips}>{MESIN.map((m) => <Chip key={m} teks={m} lencana />)}</View>
         <Text style={g.ketKiri}>Tiap mesin punya syarat wajibnya sendiri. Mesin baru masuk hanya sesudah lolos pengukuran belah-periode — bukan karena kelihatan bagus di grafik.</Text>
       </Blok>
 

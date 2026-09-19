@@ -17,7 +17,7 @@ import { useHeaderHeight } from '@react-navigation/elements';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import {
   ambilKabarOtomatis, ambilKredit, ambilPantauan, ambilRingkas,
-  matikanPantauan, setelJamKabar, tambahPantauan,
+  matikanPantauan, setelJamKabar, setelKabarOtomatis, tambahPantauan,
   type DaftarPantauan, type JawabanSaya, type KabarOtomatis, type Kredit, type Ringkas,
 } from '../data/saya';
 import { bacaSesi, dengarSesi, hapusSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
@@ -245,12 +245,29 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
       .then(() => { setSibuk(''); muat(); });
   };
 
-  const aktif = punya?.pantauan.filter((x) => x.aktif) ?? [];
+  /**
+   * SARINGAN DITURUNKAN DARI DATA, BUKAN DARI ANGAN-ANGAN.
+   *
+   * Baris ini dulu berbunyi "Aktif · Menunggu · Selesai" — tiga chip yang
+   * tidak menyaring apa pun DAN menjanjikan dua keadaan yang tidak ada di
+   * data: `pantauan[]` cuma punya `aktif: boolean`. Chip yang terlihat bisa
+   * ditekan tapi diam membuat orang mengira app-nya rusak; chip yang
+   * menjanjikan keadaan yang tidak ada membuatnya mencari sesuatu yang tidak
+   * akan pernah ketemu.
+   */
+  const [saring, setSaring] = useState<'aktif' | 'mati'>('aktif');
+  const semua = punya?.pantauan ?? [];
+  const aktif = semua.filter((x) => x.aktif);
+  const mati = semua.filter((x) => !x.aktif);
+  const terlihat = saring === 'aktif' ? aktif : mati;
 
   return (
     <Wadah>
       {(sebab ?? sebabPasar) !== null && <PitaBasi kalimat={(sebab ?? sebabPasar) ?? ''} />}
-      <View style={g.chips}><Chip teks="Aktif" on /><Chip teks="Menunggu" /><Chip teks="Selesai" /></View>
+      <View style={g.chips}>
+        <Chip teks={`Aktif ${String(aktif.length)}`} on={saring === 'aktif'} onPress={() => { setSaring('aktif'); }} />
+        <Chip teks={`Dimatikan ${String(mati.length)}`} on={saring === 'mati'} onPress={() => { setSaring('mati'); }} />
+      </View>
 
       {sesi === null
         ? <PerluSesi apa="Pantauan" buka={bukaSambung} />
@@ -264,10 +281,10 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
           </Blok>
         )}
 
-      {sesi !== null && aktif.length > 0 && (
+      {sesi !== null && terlihat.length > 0 && (
         <Blok>
-          <Lbl>Sedang dipantau</Lbl>
-          {aktif.map((w, i) => (
+          <Lbl>{saring === 'aktif' ? 'Sedang dipantau' : 'Sudah dimatikan'}</Lbl>
+          {terlihat.map((w, i) => (
             <View key={w.id} style={[g.pantau, i > 0 && g.garis]}>
               <LambangPasar simbol={w.pair} ukuran={22} />
               <View style={{ flex: 1, minWidth: 0 }}>
@@ -277,9 +294,15 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
                 </Text>
                 <Lbl polos>Kabari saat syarat wajib lolos semua</Lbl>
               </View>
-              <Chip teks="matikan" onPress={() => { void matikanPantauan(w.id).then(muat); }} />
+              {w.aktif && <Chip teks="matikan" onPress={() => { void matikanPantauan(w.id).then(muat); }} />}
             </View>
           ))}
+        </Blok>
+      )}
+
+      {sesi !== null && punya !== null && terlihat.length === 0 && (
+        <Blok rapat gaya={{ paddingHorizontal: 10 }}>
+          <Lbl polos>{saring === 'aktif' ? 'Belum ada pantauan aktif.' : 'Belum ada pantauan yang dimatikan.'}</Lbl>
         </Blok>
       )}
 
@@ -310,7 +333,7 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
               {sesi === null
                 ? <Chip teks={`${String(lolos)}/${String(w.length)}`} mono emas={setup} onPress={bukaSambung} />
                 : sudah
-                  ? <Chip teks="dipantau" on />
+                  ? <Chip teks="dipantau" on lencana />
                   : <Chip teks={sibuk === kunci ? '…' : '+ pantau'} onPress={() => { pasang(pasar, tf, m.mesin); }} />}
             </View>
           );
@@ -405,6 +428,7 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
 export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void }) {
   const sesi = useSesi();
   const { isi: d, sebab, ulangi: muat } = useAkun(ambilKabarOtomatis, sesi);
+  const [sibuk, setSibuk] = useState('');
 
   return (
     <Wadah>
@@ -417,7 +441,17 @@ export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void })
             <Text style={g.pilihJudul}>Kabar otomatis</Text>
             <Lbl polos>{d === null ? 'Pantauan berjalan tanpa membuka app' : d.plus ? 'Aktif lewat AnalisMarket+' : 'Butuh AnalisMarket+'}</Lbl>
           </View>
-          <Saklar on={d?.plus === true} />
+          {/* BUKAN SAKLAR.
+              Dulu di sini ada saklar yang tidak tersambung ke apa pun, dan ia
+              berbohong dua kali: ia tidak melakukan apa-apa saat ditekan, DAN
+              ia menggambarkan status langganan sebagai sesuatu yang bisa
+              dinyalakan dari layar ini. Server pun tidak punya "nyalakan
+              semua" — yang ada cuma `{ semua: false }`. Jadi statusnya
+              dicetak sebagai lencana, dan mematikan semua jadi tindakan yang
+              disebut namanya. */}
+          {d !== null && d.dipilih.length > 0
+            ? <Chip teks="Matikan semua" onPress={() => { void setelKabarOtomatis({ semua: false }).then(muat); }} />
+            : <Chip teks={d?.plus === true ? 'AM+ aktif' : 'Butuh AM+'} emas={d?.plus === true} lencana />}
         </View>
       </Blok>
 
@@ -441,11 +475,33 @@ export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void })
         <Blok><Rangka lebar="60%" tinggi={10} /><Rangka lebar="45%" tinggi={10} gaya={{ marginTop: 8 }} /></Blok>
       ) : (
         <Menu>
-          {d.tfTersedia.map((t, i) => (
-            <Butir key={t.tf} ikon="analisis" nama={t.tf.toLowerCase()}
-              ket={`${String(t.mesin.length)} mesin`}
-              kanan={<Saklar on={d.dipilih.some((x) => x.tf === t.tf)} />} pertama={i === 0} />
-          ))}
+          {/* SATU BARIS PER PASANGAN (timeframe, mesin) — bukan per timeframe.
+              Yang disimpan server memang pasangan, dan `setelKabarOtomatis`
+              menuntut ketiganya. Satu saklar per timeframe memaksa app
+              memilihkan mesinnya sendiri, dan memilihkan diam-diam persis
+              yang dilarang: orang yang memasang snr bisa berakhir dikabari
+              oleh mesin lain tanpa pernah diberi tahu. */}
+          {d.tfTersedia.flatMap((t) => t.mesin.map((m) => ({ tf: t.tf, ...m })))
+            .map((x, i) => {
+              const nyala = d.dipilih.some((y) => y.tf === x.tf && y.mesin === x.kode);
+              const kunci = `${x.tf}:${x.kode}`;
+              return (
+                <Butir key={kunci} ikon="analisis" nama={`${x.tf.toLowerCase()} · ${x.kode}`}
+                  ket={x.nama} pertama={i === 0}
+                  kanan={(
+                    <Saklar on={nyala}
+                      /* Tanpa AM+ `ganti` sengaja TIDAK diberikan: `Saklar`
+                         men-disable dirinya sendiri, jadi saklarnya tidak
+                         bisa ditekan alih-alih ditekan lalu ditolak server. */
+                      ganti={d.plus ? () => {
+                        if (sibuk !== '') return;
+                        setSibuk(kunci);
+                        void setelKabarOtomatis({ tf: x.tf, mesin: x.kode, aktif: !nyala })
+                          .then(() => { setSibuk(''); muat(); });
+                      } : undefined} />
+                  )} />
+              );
+            })}
         </Menu>
       )}
 
@@ -598,7 +654,7 @@ export function LayarBerlangganan() {
         <Lbl>Keadaan akunmu</Lbl>
         <View style={[g.rata, { marginTop: 5 }]}>
           <Text style={g.pilihJudul}>{r === null ? '—' : aktif ? 'AnalisMarket+ aktif' : 'Paket gratis'}</Text>
-          {r !== null && aktif && <Chip teks={`${String(r.sisaHariPlus)} hari lagi`} emas mono />}
+          {r !== null && aktif && <Chip teks={`${String(r.sisaHariPlus)} hari lagi`} emas mono lencana />}
         </View>
         {sampai !== null && <Lbl polos>Berlaku sampai {sampai}</Lbl>}
         {r !== null && !aktif && r.plusBerakhirPada !== null && (

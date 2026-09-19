@@ -55,11 +55,14 @@ export function Harga({ children, kecil = false }: { children: ReactNode; kecil?
 }
 
 /* ── .chip ─────────────────────────────────────────────────────────────── */
-export function Chip({ teks, on = false, emas = false, mono = false, onPress, gaya }: {
-  teks: string; on?: boolean; emas?: boolean; mono?: boolean; onPress?: () => void; gaya?: ViewStyle;
-}) {
+export function Chip({ teks, on = false, emas = false, mono = false, onPress, gaya, lencana }: {
+  teks: string; on?: boolean; emas?: boolean; mono?: boolean; onPress?: () => void; gaya?: ViewStyle; lencana?: boolean }) {
+  /* `lencana` BUKAN sekadar penanda untuk penjaga. Ia juga yang membuat
+     pembaca layar berhenti menyebutnya tombol: chip status yang diumumkan
+     sebagai tombol menyuruh orang menekan sesuatu yang tidak menjawab. */
   const isi = (
-    <View style={[g.chip, on && g.chipOn, emas && g.chipEmas, gaya]}>
+    <View style={[g.chip, on && g.chipOn, emas && g.chipEmas, gaya]}
+      accessibilityRole={lencana === true ? 'text' : undefined}>
       <Text style={[g.chipTeks, on && g.chipTeksOn, emas && g.chipTeksEmas, mono && ANGKA]}>{teks}</Text>
     </View>
   );

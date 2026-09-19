@@ -149,15 +149,15 @@ export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
                 <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
                 <Lbl polos>{pasar.label}</Lbl>
               </View>
-              <Chip teks={setelan.tf.toLowerCase()} mono />
+              <Chip teks={setelan.tf.toLowerCase()} mono lencana />
             </View>
             <View style={[g.baris, { marginTop: 7, alignItems: 'baseline' }]}>
               <Harga>{angka(harga ?? pasar.harga, pasar.desimal)}</Harga>
               <Text style={[g.ubah, { color: warnaUbah }]}>{ubah(u)}</Text>
             </View>
             <View style={[g.baris, { marginTop: 8 }]}>
-              {ringkas !== null && <Chip teks={`${String(ringkas.setup)} setup`} on={ringkas.setup > 0} />}
-              {ringkas !== null && <Chip teks={`${String(ringkas.pantau)} pantau`} />}
+              {ringkas !== null && <Chip teks={`${String(ringkas.setup)} setup`} on={ringkas.setup > 0} lencana />}
+              {ringkas !== null && <Chip teks={`${String(ringkas.pantau)} pantau`} lencana />}
               {mesin !== null && <Lbl polos>{mesin.mesin} {lolos}/{wajib.length}</Lbl>}
             </View>
           </Blok>

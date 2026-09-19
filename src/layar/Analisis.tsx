@@ -30,6 +30,7 @@ import { ASAL } from '../data/antrian';
 import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
 import { angka, ubah } from '../data/tampil';
 import { LembarPasar } from '../komponen/LembarPasar';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Kosong, Memuat } from '../komponen/dasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
@@ -65,6 +66,17 @@ const ALAT = ['volume', 'zona', 'struktur', 'level', 'pola lilin'] as const;
 type Props = { setelan: Setelan; simpan: (s: Setelan) => void; bukaPasarTanda: number };
 
 export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
+  /* Menahan layar HANYA kalau orangnya sendiri yang memintanya di Pengaturan.
+     `useKeepAwake` tidak bisa dipakai di sini: ia tidak punya cara dimatikan
+     bersyarat, dan memanggil hook di dalam `if` melanggar aturan hook. Jadi
+     efek biasa, dengan pembersih yang SELALU melepas — layar yang tertahan
+     menyala sesudah orang menutup chart adalah baterai yang habis tanpa ada
+     yang tahu sebabnya. */
+  useEffect(() => {
+    if (!setelan.layarMenyala) return undefined;
+    void activateKeepAwakeAsync('chart');
+    return () => { void deactivateKeepAwake('chart'); };
+  }, [setelan.layarMenyala]);
   const [daftarPasar, setDaftarPasar] = useState<Pasar[]>([]);
   const [pasar, setPasar] = useState<Pasar | null>(null);
   const [tf, setTf] = useState(setelan.tf);
@@ -274,8 +286,8 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Chip teks={`ATR ${angka(m.atr, pasar.desimal)}`} mono />
-                  {m.biayaPorsi !== null && <Chip teks={`Biaya ${Math.round(m.biayaPorsi * 100)}% risiko`} mono />}
+                  <Chip teks={`ATR ${angka(m.atr, pasar.desimal)}`} mono lencana />
+                  {m.biayaPorsi !== null && <Chip teks={`Biaya ${Math.round(m.biayaPorsi * 100)}% risiko`} mono lencana />}
                 </View>
               </View>
               <View style={g.angkaBaris}>

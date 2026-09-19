@@ -66,3 +66,43 @@ ls /tmp/web-app/_expo/static/js/web/
 Beda hash = pengukurannya tidak sah. Dan `pkill -f` di sini WAJIB mengecualikan
 `$$`/`$PPID`, atau ia membunuh shell-nya sendiri (exit 144) — sudah terjadi dua
 kali.
+
+## Kontrol yang diam saat ditekan
+
+Lebih buruk daripada kontrol yang tidak ada: orang menekannya berulang kali,
+menyimpulkan app-nya rusak, lalu berhenti memercayai kontrol LAIN di layar
+yang sama. Tiga di antaranya hidup sampai 19 Sep 2026 — saringan pantauan
+yang tidak menyaring (dan menjanjikan dua keadaan yang tidak ada di data),
+saklar induk kabar otomatis, dan saklar per-timeframe.
+
+Yang ketiga juga salah MODEL: server menyimpan pasangan **(timeframe, mesin)**
+dan `setelKabarOtomatis` menuntut ketiganya. Satu saklar per timeframe memaksa
+app memilihkan mesinnya sendiri — persis "mengganti pilihan user diam-diam".
+Sekarang satu baris per pasangan.
+
+Tidak ada `{ semua: true }` di server, cuma `{ semua: false }`. Jadi saklar
+induknya dicabut dan diganti tindakan bernama "Matikan semua": saklar dua arah
+untuk sesuatu yang cuma bisa satu arah adalah kebohongan bentuk.
+
+Dijaga `skrip/periksa-kontrol.mjs` — `<Chip>` dan `<Saklar>` wajib punya
+penangan, kecuali yang ditandai `lencana`. Tandanya harus DIKETIK sadar, dan
+ia juga mencabut peran tombol dari pembaca layar. Uji-mutasi 4/4 merah.
+
+## Harga disalin, dan salinannya dijaga
+
+App menampilkan harga AnalisMarket+ tapi tidak bisa mengambilnya lewat
+jaringan: `/api/saya/plus` ada di balik gerbang sesi, jadi orang yang belum
+menyambungkan Telegram — persis orang yang bertanya "berapa" — tidak bisa
+membacanya, dan tidak ada endpoint harga publik.
+
+Sampai 19 Sep 2026 layar AM+ mengetik **Rp 99.000** sementara yang ditagihkan
+**Rp 50.000**. Hampir dua kali lipat, di halaman yang satu-satunya tugasnya
+menjawab "berapa" — dan berkas data sebelahnya justru menulis "harganya
+sengaja tidak ikut". Tidak ada uji yang bisa merah, karena tidak ada satu pun
+tempat yang memegang angkanya.
+
+Sekarang `PAKET_PLUS` di `src/data/amplus.ts`, dan `skrip/periksa-harga.mjs`
+mencocokkannya dengan `PAKET_PLUS` di repo bot. Ia **gagal keras** kalau repo
+bot tidak terjangkau — lulus karena tidak menemukan sumbernya adalah kelas
+kegagalan yang sudah lima kali terjadi di repo sebelah. Setel `REPO_BOT` kalau
+lokasinya lain. Uji-mutasi 4/4 merah, termasuk kasus sumber hilang.

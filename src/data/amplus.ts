@@ -2,13 +2,15 @@
  * Isi AnalisMarket+ — DIANGKUT APA ADANYA dari `ambilFiturGratis()` dan
  * `ambilFiturAmPlus()` di web.
  *
- * YANG SENGAJA TIDAK IKUT: harganya.
+ * HARGANYA IKUT, TOMBOLNYA MATI. Keputusan pemilik: orang boleh tahu berapa,
+ * tapi app tidak memproses pembayaran dan tidak mengarahkan ke luar.
  *
- * Bukan karena lupa. Aturan toko aplikasi melarang app mengarahkan orang ke
- * pembayaran di luar, dan aturan produk kita melarang app menyebut harga web,
- * menautkannya, atau membandingkannya. Sampai IAP mendarat, halaman ini
- * menjawab "apa isinya" dan berhenti di situ — pertanyaan "berapa" tidak
- * dijawab setengah, ia tidak dijawab sama sekali.
+ * Komentar di tempat ini dulu berbunyi "harganya sengaja tidak ikut" — dan
+ * berhari-hari `AmPlus.tsx` justru mengetik "Rp 99.000" beberapa baris di
+ * bawahnya. Bukan cuma bertentangan dengan komentarnya: angkanya SALAH,
+ * hampir dua kali lipat harga sebenarnya. Itu bentuk kegagalan yang paling
+ * mahal di halaman harga, dan yang membuatnya bertahan adalah tidak adanya
+ * satu tempat yang memegang angkanya.
  */
 export type Fitur = { nama: string; keterangan: string };
 
@@ -31,3 +33,28 @@ export const FITUR_PLUS: readonly Fitur[] = [
 /** Ambang yang dipakai bar biaya, sama dengan web. */
 export const AMBANG_MUTU = 0.5;
 export const LANTAI_CETAK = 1;
+
+/**
+ * PAKET AnalisMarket+ — DITURUNKAN dari `PAKET_PLUS` di
+ * `~/apps/analisa/src/lib/langganan.ts`, yang adalah satu-satunya tempat
+ * harga ini benar-benar ditagihkan.
+ *
+ * Tidak bisa diambil lewat jaringan: `/api/saya/plus` ada di balik gerbang
+ * sesi, jadi orang yang belum menyambungkan Telegram — persis orang yang
+ * sedang bertanya "berapa" — tidak bisa membacanya. Tidak ada endpoint harga
+ * publik. Jadi angkanya disalin, dan `skrip/periksa-harga.mjs` yang menjaga
+ * salinannya tidak menyimpang.
+ */
+export type PaketPlus = { kode: string; bulan: number; hargaRp: number };
+
+export const PAKET_PLUS: readonly PaketPlus[] = [
+  { kode: '1B', bulan: 1, hargaRp: 50_000 },
+  { kode: '3B', bulan: 3, hargaRp: 135_000 },
+  { kode: '6B', bulan: 6, hargaRp: 250_000 },
+  { kode: '12B', bulan: 12, hargaRp: 480_000 },
+];
+
+/** "Rp 50.000" — titik ribuan gaya Indonesia, tanpa desimal. */
+export function rupiah(n: number): string {
+  return `Rp ${n.toLocaleString('id-ID')}`;
+}

@@ -58,7 +58,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
             <Text style={g.nama} numberOfLines={1}>{sesi === null ? 'Belum tersambung' : nama ?? 'Akun Telegram'}</Text>
             <Lbl polos>{sesi === null ? 'Identitas datang dari bot Telegram' : 'Tersambung lewat Telegram'}</Lbl>
             <View style={{ marginTop: 5, alignSelf: 'flex-start' }}>
-              <Chip teks={plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari` : 'Gratis'} emas={plus} />
+              <Chip teks={plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari` : 'Gratis'} emas={plus} lencana />
             </View>
           </View>
         </View>

@@ -95,13 +95,15 @@ export type Kredit = {
   topupDiBot: boolean;
 };
 
-export type Plus = { aktif: boolean; sisaHari: number; harga: number | null; paket: unknown };
-
+/* `/api/saya/plus` TIDAK dipakai app, dan tipenya sempat dideklarasikan salah
+   di sini — `aktif` dan `harga`, padahal server mengirim `plus`, `sisaHari`,
+   `telegramTersambung`, dan `paket[]`. Tipe yang salah atas fungsi yang tidak
+   pernah dipanggil tidak bisa ditemukan siapa pun; dibuang, bukan ditambal.
+   Status AM+ datang dari `ambilRingkas().langganan`, satu sumber. */
 export const ambilRingkas = (): Promise<JawabanSaya<Ringkas>> => panggil('/api/saya', 'GET');
 export const ambilPantauan = (): Promise<JawabanSaya<DaftarPantauan>> => panggil('/api/saya/pantauan', 'GET');
 export const ambilKabarOtomatis = (): Promise<JawabanSaya<KabarOtomatis>> => panggil('/api/saya/kabar-otomatis', 'GET');
 export const ambilKredit = (): Promise<JawabanSaya<Kredit>> => panggil('/api/saya/kredit', 'GET');
-export const ambilPlus = (): Promise<JawabanSaya<Plus>> => panggil('/api/saya/plus', 'GET');
 
 export const tambahPantauan = (b: { pair: string; tf: string; strategi?: string }): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/pantauan/tambah', 'POST', b);
@@ -109,7 +111,14 @@ export const matikanPantauan = (id: number): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/pantauan/matikan', 'POST', { id });
 export const setelJamKabar = (mulai: number, selesai: number): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/kabar-otomatis/jam', 'POST', { mulai, selesai });
-export const setelKabarOtomatis = (b: { tf: string; mesin: string; aktif: boolean }): Promise<JawabanSaya<unknown>> =>
-  panggil('/api/saya/kabar-otomatis/setel', 'POST', b);
+/**
+ * Dua bentuk, dan server memang menerima dua: satu pasangan (tf, mesin), atau
+ * `{ semua: false }` yang mematikan seluruhnya. TIDAK ADA `{ semua: true }` —
+ * menyalakan selalu satu per satu, karena "nyalakan semua" berarti memilihkan
+ * mesin untuk tiap timeframe, dan itu memilih diam-diam untuk orang lain.
+ */
+export const setelKabarOtomatis = (
+  b: { tf: string; mesin: string; aktif: boolean } | { semua: false },
+): Promise<JawabanSaya<unknown>> => panggil('/api/saya/kabar-otomatis/setel', 'POST', b);
 export const cekBanyak = (pasar: string[], tf: string): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/cek-banyak', 'POST', { pasar, tf });

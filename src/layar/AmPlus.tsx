@@ -13,7 +13,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { FITUR_GRATIS, FITUR_PLUS } from '../data/amplus';
+import { FITUR_GRATIS, FITUR_PLUS, PAKET_PLUS, rupiah } from '../data/amplus';
 import { Blok, Istilah, Lbl, Mikro, Tombol } from '../komponen/mockup';
 import { W, H, J, R, TALANG } from '../gaya/token';
 
@@ -24,6 +24,10 @@ const TANYA: ReadonlyArray<{ t: string; j: string }> = [
   { t: 'Lewat mana kabarnya dikirim?', j: 'Lewat Telegram, ke akun yang tersambung. App ini menampilkan salinannya di tab Kabar.' },
   { t: 'Pantauan gratis tetap ada?', j: 'Ada. Tiga pantauan pertama gratis; AM+ membuka sisanya dan kabar otomatisnya.' },
 ];
+
+/* Paket bawaan = yang dipakai saat harga disebut tanpa konteks paket,
+   sama seperti `PAKET_BAWAAN` di bot. */
+const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: number };
 
 export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
   const tinggiKepala = useHeaderHeight();
@@ -40,7 +44,7 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
         />
         <Text style={g.cap}>AnalisMarket+</Text>
         <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
-        <Text style={g.harga}>Rp 99.000 <Text style={g.perBulan}>/ bulan</Text></Text>
+        <Text style={g.harga}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.perBulan}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
         <View style={g.daftar}>
           {FITUR_PLUS.map((f) => (
             <View key={f.nama} style={g.butir}>

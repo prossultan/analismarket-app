@@ -8,9 +8,14 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type Setelan = { pasar: string; tf: string; mesin: string };
+export type Setelan = {
+  pasar: string; tf: string; mesin: string;
+  /** Layar ditahan tetap menyala selama chart terbuka. Mati secara bawaan:
+      menahan layar menghabiskan baterai, dan itu bukan keputusan app. */
+  layarMenyala: boolean;
+};
 
-export const SETELAN_BAWAAN: Setelan = { pasar: 'SOLUSDT', tf: 'h1', mesin: '' };
+export const SETELAN_BAWAAN: Setelan = { pasar: 'SOLUSDT', tf: 'h1', mesin: '', layarMenyala: false };
 
 const KUNCI = 'am:setelan:v1';
 
@@ -25,6 +30,7 @@ export async function bacaSetelan(): Promise<Setelan> {
       pasar: typeof j.pasar === 'string' && j.pasar !== '' ? j.pasar : SETELAN_BAWAAN.pasar,
       tf: typeof j.tf === 'string' && j.tf !== '' ? j.tf : SETELAN_BAWAAN.tf,
       mesin: typeof j.mesin === 'string' ? j.mesin : SETELAN_BAWAAN.mesin,
+      layarMenyala: typeof j.layarMenyala === 'boolean' ? j.layarMenyala : SETELAN_BAWAAN.layarMenyala,
     };
   } catch {
     return SETELAN_BAWAAN;
