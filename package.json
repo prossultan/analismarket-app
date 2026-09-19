@@ -35,7 +35,7 @@
     "web": "expo start --web",
     "periksa": "tsc --noEmit && tsc --noEmit -p skrip && node skrip/periksa-teks.mjs && node skrip/periksa-kaca.mjs && node skrip/periksa-lambang.mjs && node skrip/periksa-jawaban.mjs && node skrip/periksa-harga.mjs && node skrip/periksa-kontrol.mjs",
     "ukur-laju": "tsx skrip/ukur-laju.mts",
-    "uji-e2e": "tsx skrip/uji-e2e.mts",
+    "uji-e2e": "npx --yes tsx skrip/uji-e2e.mts",
     "periksa-izin": "node skrip/periksa-izin.mjs",
     "periksa-rilis": "npm run periksa && npm run periksa-izin && npm run uji-e2e"
   },
