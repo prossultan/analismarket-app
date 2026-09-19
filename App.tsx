@@ -135,7 +135,8 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
       <Tumpukan.Screen name="PantauanBaru" options={{ title: 'Pantauan baru' }}>
         {({ navigation }) => (
           <LayarPantauanBaru pasar={setelan.pasar} tf={setelan.tf} mesin={setelan.mesin}
-            bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />
+            bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }}
+            selesai={() => { (navigation as Nav).navigate('Pantauan'); }} />
         )}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="KabarOtomatis" options={{ title: 'Kabar otomatis' }}>
@@ -145,7 +146,7 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
         {({ navigation }) => <LayarKredit bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="CekBanyak" options={{ title: 'Cek banyak pasar' }}>
-        {({ navigation }) => <LayarCekBanyak bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+        {({ navigation }) => <LayarCekBanyak tf={setelan.tf} bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="Berlangganan" component={LayarBerlangganan} options={{ title: 'Berlangganan' }} />
     </>
@@ -213,7 +214,18 @@ export default function App() {
 
 function Isi() {
   const { bottom: bawah } = useSafeAreaInsets();
-  const [setelan, setSetelan] = useState<Setelan>(SETELAN_BAWAAN);
+  /**
+   * `null` = BELUM DIBACA dari HP, bukan "tidak ada".
+   *
+   * Sebelumnya ia dimulai dari SETELAN_BAWAAN, dan layar sempat memuat
+   * dengan pasar bawaan sebelum pilihan tersimpan datang dari AsyncStorage.
+   * Terukur dari render sungguhan 19 Sep: dua putaran penuh tiap app dibuka
+   * dingin — `/api/bacaan?pasar=BTCUSDT` pada 1,9 dtk lalu
+   * `/api/bacaan?pasar=SOLUSDT` pada 4,3 dtk. Permintaan pertama itu tidak
+   * pernah dilihat siapa pun, dan ia menagih jatah laju yang dikunci alamat
+   * IP dan dibagi banyak orang lewat CGNAT.
+   */
+  const [setelan, setSetelan] = useState<Setelan | null>(null);
   const [tandaPasar, setTandaPasar] = useState(0);
   /** null = belum tahu (jangan berkedip), true = tampilkan sambutan. */
   const [sambutan, setSambutan] = useState<boolean | null>(null);
@@ -225,7 +237,9 @@ function Isi() {
 
   const simpan = useCallback((s: Setelan): void => { setSetelan(s); void simpanSetelan(s); }, []);
 
-  if (sambutan === null) return null;
+  /* Menunggu KEDUANYA. Menahan satu layar kosong sepersekian detik jauh
+     lebih murah daripada satu putaran permintaan yang dibuang. */
+  if (sambutan === null || setelan === null) return null;
   if (sambutan) return <LayarSambutan selesai={() => { setSambutan(false); }} />;
 
   return (

@@ -9,7 +9,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilPasar } from '../data/api';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { Blok, Butir, Chip, Lbl, Menu } from '../komponen/mockup';
+import { Blok, Butir, Chip, Lbl, Menu, PitaBasi } from '../komponen/mockup';
 import { W, H, TALANG } from '../gaya/token';
 
 const LOGO = require('../../assets/logo-am.png') as number;
@@ -21,15 +21,18 @@ export function LayarTentang({ versi }: { versi: string }) {
   /* Jumlah pasar per penyedia DIHITUNG dari daftar yang sudah ada di simpanan,
      bukan diketik — angka yang diketik akan basi pada hari pasar ke-132 masuk. */
   const [jumlahPasar, setJumlah] = useState<{ binance: number; twelve: number } | null>(null);
+  const [sebab, setSebab] = useState<string | null>(null);
   useEffect(() => {
     void ambilPasar().then((j) => {
-      if (!j.ok) return;
+      if (!j.ok) { setSebab(j.kalimat); return; }
+      setSebab(null);
       const twelve = j.isi.pasar.filter((x) => x.jenis !== 'kripto').length;
       setJumlah({ binance: j.isi.pasar.length - twelve, twelve });
     });
   }, []);
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      {sebab !== null && <PitaBasi kalimat={sebab} />}
       <Blok gaya={{ alignItems: 'center', paddingVertical: 15 }}>
         <Image source={LOGO} style={g.logo} accessibilityIgnoresInvertColors />
         <Text style={g.nama}>Analis<Text style={{ color: W.plus }}>Market</Text></Text>

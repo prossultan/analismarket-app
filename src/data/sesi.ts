@@ -1,0 +1,170 @@
+/**
+ * SESI AKUN — satu-satunya tempat app menyimpan identitas.
+ *
+ * Jalurnya SUDAH ADA di server dan tidak perlu satu pun perubahan bot:
+ *
+ *   1. Bot menerbitkan token sekali pakai (32 byte base64url, umur 10 menit)
+ *      dan mengirimnya sebagai tombol `https://analismarket.com/?masuk=<token>`.
+ *   2. `POST /api/sambung/masuk {token}` menukarnya dengan SESI (umur 12 jam)
+ *      — dan di situ gerbang wajib-gabung ikut diperiksa, sama seperti web.
+ *   3. `Authorization: Bearer <sesi>` membuka 15 rute `/api/saya/*`.
+ *
+ * Yang hilang cuma sisi app, dan itu berkas ini.
+ *
+ * KENAPA TEMPEL-TAUTAN, BUKAN TAUTAN DALAM. Tautan dalam (`analismarket://`)
+ * butuh perubahan bot DAN build EAS; keduanya belum ada. Menempelkan tautan
+ * yang sudah dikirim bot bekerja HARI INI, termasuk di Expo Go. Skema tautan
+ * dalam tetap dipasang di `app.json` supaya satu tombol tambahan di bot nanti
+ * langsung menaikkannya jadi sekali ketuk — tanpa berkas ini berubah.
+ *
+ * Sesi disimpan di perangkat, bukan di memori: orang tidak boleh diminta
+ * menyambung ulang tiap kali app ditutup.
+ */
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ASAL } from './antrian';
+
+const KUNCI = 'am_sesi_v1';
+
+/** Umur sesi server: 12 jam (`UMUR_SESI_MINI_DETIK`), dikurangi satu menit. */
+const UMUR_SESI_MS = 12 * 3600 * 1000 - 60_000;
+
+export type Akun = {
+  akunId: number;
+  email: string | null;
+  nama: string | null;
+  telegramTersambung: boolean;
+  langganan: { aktif: boolean; sampai: number | null; paket: string | null } | null;
+};
+
+export type Sesi = { sesi: string; akun: Akun; pada: number };
+
+/**
+ * Sesi yang sedang berlaku, DIPEGANG DI MEMORI supaya tiap permintaan tidak
+ * menunggu AsyncStorage. `null` = belum tersambung, `undefined` = belum dibaca.
+ */
+let hidup: Sesi | null | undefined;
+
+/** Pemberi tahu perubahan — layar berlangganan ke sini, bukan menjajaki ulang. */
+type Pendengar = (s: Sesi | null) => void;
+const pendengar = new Set<Pendengar>();
+
+export function dengarSesi(f: Pendengar): () => void {
+  pendengar.add(f);
+  return () => { pendengar.delete(f); };
+}
+
+function umumkan(s: Sesi | null): void {
+  hidup = s;
+  for (const f of pendengar) f(s);
+}
+
+/**
+ * Sesi yang tersimpan, atau `null`.
+ *
+ * Yang KEDALUWARSA dibuang di sini, bukan dibiarkan sampai server menolaknya:
+ * sesi basi yang masih tersimpan membuat app menampilkan "tersambung" untuk
+ * akun yang sebenarnya sudah tidak bisa dipakai.
+ */
+export async function bacaSesi(): Promise<Sesi | null> {
+  if (hidup !== undefined) return hidup;
+  try {
+    const mentah = await AsyncStorage.getItem(KUNCI);
+    if (mentah === null) { hidup = null; return null; }
+    const s = JSON.parse(mentah) as Sesi;
+    if (typeof s.sesi !== 'string' || s.sesi === '') { hidup = null; return null; }
+    if (Date.now() - s.pada > UMUR_SESI_MS) { await hapusSesi(); return null; }
+    hidup = s;
+    return s;
+  } catch {
+    hidup = null;
+    return null;
+  }
+}
+
+/** Sesi yang sedang dipegang TANPA menunggu — dipakai penyusun header. */
+export function sesiSekarang(): Sesi | null {
+  return hidup ?? null;
+}
+
+export async function hapusSesi(): Promise<void> {
+  try { await AsyncStorage.removeItem(KUNCI); } catch { /* penyimpanan ditolak */ }
+  umumkan(null);
+}
+
+export type HasilSambung =
+  | { ok: true; sesi: Sesi }
+  /** `sebab` dipakai layar untuk memilih kalimatnya; jangan ditampilkan mentah. */
+  | { ok: false; sebab: 'token-cacat' | 'kedaluwarsa' | 'dipakai' | 'belum-gabung' | 'jaringan' | 'lain'; kalimat: string };
+
+/**
+ * Ambil token dari apa pun yang ditempel orang.
+ *
+ * Yang disalin dari Telegram bisa berupa tautan penuh, tautan tanpa skema,
+ * atau tokennya saja — dan menuntut bentuk tertentu berarti menyalahkan orang
+ * atas hal yang tidak ia kendalikan. Ketiganya diterima.
+ */
+export function tokenDariTempelan(teks: string): string | null {
+  const bersih = teks.trim();
+  if (bersih === '') return null;
+  const cocok = /[?&]masuk=([A-Za-z0-9_-]{20,64})/.exec(bersih);
+  if (cocok?.[1] !== undefined) return cocok[1];
+  return /^[A-Za-z0-9_-]{20,64}$/.test(bersih) ? bersih : null;
+}
+
+function kalimatSebab(galat: string): { sebab: 'kedaluwarsa' | 'dipakai' | 'belum-gabung' | 'lain'; kalimat: string } {
+  if (galat === 'kedaluwarsa') {
+    return { sebab: 'kedaluwarsa', kalimat: 'Tautannya sudah lewat 10 menit. Minta yang baru ke bot, lalu tempel lagi.' };
+  }
+  if (galat === 'dipakai') {
+    return { sebab: 'dipakai', kalimat: 'Tautan itu sudah dipakai sekali. Minta yang baru ke bot.' };
+  }
+  if (galat === 'belum-gabung') {
+    return { sebab: 'belum-gabung', kalimat: 'Akunmu belum bergabung di grup dan channel. Gabung dulu lewat bot, lalu coba lagi.' };
+  }
+  return { sebab: 'lain', kalimat: 'Tautannya tidak dikenali. Minta tautan baru ke bot.' };
+}
+
+/**
+ * Tukar token dengan sesi.
+ *
+ * TIDAK lewat antrean `ambil()`: ini POST sekali jalan yang tidak boleh
+ * di-cache maupun disatukan single-flight, dan ia bukan bagian dari zona
+ * pembatas laju `apibacaan`.
+ */
+export async function sambungkan(tempelan: string): Promise<HasilSambung> {
+  const token = tokenDariTempelan(tempelan);
+  if (token === null) {
+    return { ok: false, sebab: 'token-cacat', kalimat: 'Yang ditempel bukan tautan dari bot. Salin tautannya utuh, lalu tempel di sini.' };
+  }
+  const henti = new AbortController();
+  const jam = setTimeout(() => { henti.abort(); }, 15_000);
+  try {
+    const res = await fetch(`${ASAL}/api/sambung/masuk`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ token }),
+      signal: henti.signal,
+    });
+    const badan = (await res.json().catch(() => ({}))) as { sesi?: string; akun?: Akun; galat?: string };
+    if (!res.ok || typeof badan.sesi !== 'string' || badan.akun === undefined) {
+      return { ok: false, ...kalimatSebab(String(badan.galat ?? '')) };
+    }
+    const s: Sesi = { sesi: badan.sesi, akun: badan.akun, pada: Date.now() };
+    try { await AsyncStorage.setItem(KUNCI, JSON.stringify(s)); } catch { /* tetap dipakai di memori */ }
+    umumkan(s);
+    return { ok: true, sesi: s };
+  } catch {
+    return { ok: false, sebab: 'jaringan', kalimat: 'Tidak bisa menghubungi server. Periksa sambungan, lalu coba lagi.' };
+  } finally {
+    clearTimeout(jam);
+  }
+}
+
+/**
+ * Header untuk `/api/saya/*`. Kosong kalau belum tersambung — pemanggil yang
+ * memutuskan, bukan fungsi ini yang melempar.
+ */
+export function headerSesi(): Record<string, string> {
+  const s = sesiSekarang();
+  return s === null ? {} : { authorization: `Bearer ${s.sesi}` };
+}

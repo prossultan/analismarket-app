@@ -86,10 +86,18 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
      kedua pada tab yang sama tetap membuka. */
   useEffect(() => { if (bukaPasarTanda > 0) setLembarPasar(true); }, [bukaPasarTanda]);
 
+  /* Naik satu: penghitung yang dinaikkan tombol "Coba lagi". Daftar pasar
+     adalah akar layar ini — tanpa ia, tidak ada pasar, tidak ada bacaan, dan
+     tidak ada chart. Sebelum ini kegagalannya `return` diam-diam, jadi
+     `gagal` tetap kosong dan cabang di baris bawah SELALU memilih "Menyiapkan…".
+     Layar galatnya sudah ditulis; ia cuma tidak pernah bisa dicapai. */
+  const [ulang, setUlang] = useState(0);
   useEffect(() => {
     let batal = false;
-    void ambilPasar().then((j) => {
-      if (batal || !j.ok) return;
+    void ambilPasar(ulang > 0).then((j) => {
+      if (batal) return;
+      if (!j.ok) { setGagal(j.kalimat); return; }
+      setGagal('');
       setDaftarPasar(j.isi.pasar);
       const p = j.isi.pasar.find((x) => x.simbol === setelan.pasar) ?? j.isi.pasar[0] ?? null;
       setPasar(p);
@@ -99,7 +107,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
       }
     });
     return () => { batal = true; };
-  }, [setelan.pasar]);
+  }, [setelan.pasar, ulang]);
 
   const muatBacaan = useCallback(async (simbol: string, t: string, segarkan = false): Promise<void> => {
     const j = await ambilBacaan(simbol, t, segarkan);
@@ -118,7 +126,9 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
   }, [pasar, tf, muatBacaan]);
 
   if (pasar === null) {
-    return gagal === '' ? <Memuat teks="Menyiapkan…" /> : <Kosong judul="Daftar pasar tidak terbaca" sebab={gagal} />;
+    return gagal === ''
+      ? <Memuat teks="Menyiapkan…" />
+      : <Kosong judul="Daftar pasar tidak terbaca" sebab={gagal} aksi={() => { setGagal(''); setUlang((n) => n + 1); }} />;
   }
 
   const aktif = bacaan === null ? mesin : (bacaan.mesin.find((m) => m.mesin === mesin) ?? bacaan.mesin[0])?.mesin ?? '';

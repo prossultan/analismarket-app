@@ -2,5 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true
-  }
+  },
+  /* `skrip/` BUKAN kode app: ia jalan di Node, bukan di HP.
+     Preset Expo memakai `customConditions: ["react-native"]`, yang membuat
+     @types/node tidak pernah terpasang — dan menambalnya dengan
+     `"types": ["node"]` di sini akan menyuntikkan global Node ke SELURUH
+     kode RN (`setTimeout` berubah jadi NodeJS.Timeout). Jadi skrip punya
+     tsconfig sendiri, dan `npm run periksa` menjalankan KEDUANYA — bukan
+     mengecualikan yang satu. */
+  "exclude": ["node_modules", "skrip"]
 }

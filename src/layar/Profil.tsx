@@ -8,13 +8,17 @@
  * yang belum ada dicetak "—", bukan nol, dan setiap jalan buntu menunjuk ke
  * satu pekerjaan yang sama: Sambungkan Telegram.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilBacaan, ambilJadwal, syaratWajib, type Mesin, type Rilis } from '../data/api';
+import { ambilRingkas, type Ringkas } from '../data/saya';
+import { useMuat, type Hasil } from '../data/muat';
+import { hapusSesi } from '../data/sesi';
+import { useSesi } from './Akun';
 import { jamWib, tanggalWib } from '../data/tampil';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { Blok, Butir, Chip, Lbl, Menu, Mikro, Nil, Rangka, Tombol } from '../komponen/mockup';
+import { Blok, Butir, Chip, Kosong, Lbl, Menu, Mikro, Nil, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
 import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
@@ -23,24 +27,53 @@ type Props = { setelan: Setelan; bukaSambung: () => void; bukaPengaturan: () => 
 export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan, buka }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
+  const sesi = useSesi();
+  /* Sesi mati sudah menjawab dirinya sendiri: `saya.ts` menghapus sesinya
+     saat 401 dan `umumkan(null)` membalik SELURUH app ke "belum tersambung".
+     Yang dulu tidak punya suara adalah kegagalan yang LAIN — jaringan mati
+     sementara sesinya masih sah. Dulu layar ini tetap menulis "Tersambung"
+     dengan seluruh angkanya "—", dan tidak ada cara tahu kenapa. */
+  const muatRingkas = useCallback(async (): Promise<Hasil<Ringkas | null>> => {
+    if (sesi === null) return { ok: true, isi: null };
+    return ambilRingkas();
+  }, [sesi]);
+  const { keadaan } = useMuat(muatRingkas, sesi === null ? 'kosong' : 'ada');
+  const r = keadaan.fase === 'ada' ? keadaan.isi : null;
+  const sebab = keadaan.fase === 'gagal' ? keadaan.kalimat : (keadaan.fase === 'ada' ? keadaan.basi : null);
+  const nama = sesi?.akun.nama ?? null;
+  const plus = r?.langganan === 'plus';
+  const angka = (n: number | undefined): string => (n === undefined ? '—' : String(n));
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      {/* Angka akun tidak terbaca — sebabnya disebut, bukan disamarkan jadi "—". */}
+      {sesi !== null && sebab !== null && <PitaBasi kalimat={sebab} />}
       <Blok>
         <View style={g.baris}>
-          <View style={g.avatar}><Text style={g.avatarHuruf}>?</Text></View>
+          <View style={[g.avatar, sesi !== null && g.avatarAda]}>
+            <Text style={[g.avatarHuruf, sesi !== null && { color: '#1A1508' }]}>
+              {nama === null ? '?' : nama.trim().charAt(0).toUpperCase()}
+            </Text>
+          </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={g.nama}>Belum tersambung</Text>
-            <Lbl polos>Identitas datang dari bot Telegram</Lbl>
-            <View style={{ marginTop: 5, alignSelf: 'flex-start' }}><Chip teks="Gratis" /></View>
+            <Text style={g.nama} numberOfLines={1}>{sesi === null ? 'Belum tersambung' : nama ?? 'Akun Telegram'}</Text>
+            <Lbl polos>{sesi === null ? 'Identitas datang dari bot Telegram' : 'Tersambung lewat Telegram'}</Lbl>
+            <View style={{ marginTop: 5, alignSelf: 'flex-start' }}>
+              <Chip teks={plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari` : 'Gratis'} emas={plus} />
+            </View>
           </View>
         </View>
         <View style={g.statistik}>
-          <View style={g.sel}><Nil besar>—</Nil><Lbl polos>Analisa dibaca</Lbl></View>
-          <View style={g.sel}><Nil besar>—</Nil><Lbl polos>Pantauan aktif</Lbl></View>
-          <View style={g.sel}><Nil besar>—</Nil><Lbl polos>Hari beruntun</Lbl></View>
+          <View style={g.sel}><Nil besar>{angka(r?.poin)}</Nil><Lbl polos>Poin</Lbl></View>
+          <View style={g.sel}>
+            <Nil besar>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Nil>
+            <Lbl polos>Pantauan</Lbl>
+          </View>
+          <View style={g.sel}><Nil besar>{plus ? angka(r?.sisaHariPlus) : '—'}</Nil><Lbl polos>Hari AM+</Lbl></View>
         </View>
         <View style={{ marginTop: 10 }}>
-          <Tombol teks="Sambungkan Telegram" onPress={bukaSambung} />
+          {sesi === null
+            ? <Tombol teks="Sambungkan Telegram" onPress={bukaSambung} />
+            : <Tombol teks="Putuskan sambungan" jenis="kedua" onPress={() => { void hapusSesi(); }} />}
         </View>
       </Blok>
 
@@ -53,20 +86,22 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
 
       <Lbl gaya={{ marginTop: 2 }}>Pantauan</Lbl>
       <Menu>
-        <Butir ikon="kabar" nama="Pantauan aktif" ket="butuh Telegram" onPress={bukaPantauan} pertama />
+        <Butir ikon="kabar" nama="Pantauan aktif" ket={r === null ? "butuh Telegram" : `${String(r.pantauanAktif)} aktif`} onPress={bukaPantauan} pertama />
         <Butir ikon="kabar" nama="Pantauan baru" ket="formulir" onPress={() => { buka('PantauanBaru'); }} />
-        <Butir ikon="kalender" nama="Kabar otomatis & jam sunyi" ket="butuh Telegram" onPress={() => { buka('KabarOtomatis'); }} />
+        <Butir ikon="kalender" nama="Kabar otomatis & jam sunyi" ket={sesi === null ? "butuh Telegram" : plus ? "aktif" : "butuh AM+"} onPress={() => { buka('KabarOtomatis'); }} />
       </Menu>
 
       <Lbl gaya={{ marginTop: 2 }}>AnalisMarket+</Lbl>
       <Menu>
-        <Butir ikon="plus" nama="Kredit & kuota" ket="butuh Telegram" onPress={() => { buka('Kredit'); }} pertama />
-        <Butir ikon="pasar" nama="Cek banyak pasar" ket="butuh Telegram" onPress={() => { buka('CekBanyak'); }} />
-        <Butir ikon="plus" nama="Kelola langganan" ket="lewat web" ketEmas onPress={() => { buka('Berlangganan'); }} />
+        <Butir ikon="plus" nama="Kredit & kuota" ket={r === null ? "butuh Telegram" : `${String(r.poin)} poin`} ketMono onPress={() => { buka('Kredit'); }} pertama />
+        <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? "butuh Telegram" : plus ? "siap" : "butuh AM+"} onPress={() => { buka('CekBanyak'); }} />
+        <Butir ikon="plus" nama="Kelola langganan" ket={plus ? "aktif" : "lewat bot"} ketEmas onPress={() => { buka('Berlangganan'); }} />
       </Menu>
 
       <View style={{ flex: 1 }} />
-      <Mikro>Setelan bawaan tersimpan di perangkat ini. Yang lain menunggu sambungan Telegram.</Mikro>
+      <Mikro>{sesi === null
+        ? 'Setelan bawaan tersimpan di perangkat ini. Yang lain menunggu sambungan Telegram.'
+        : 'Setelan bawaan tersimpan di perangkat ini; pantauan dan langganan ikut akun Telegram.'}</Mikro>
     </ScrollView>
   );
 }
@@ -83,21 +118,48 @@ export function LayarKabar({ bukaSambung, setelan, bukaChart }: { bukaSambung: (
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   const [saring, setSaring] = useState<'semua' | 'berita'>('semua');
-  const [rilis, setRilis] = useState<Rilis[] | null>(null);
-  const [mesin, setMesin] = useState<Mesin[] | null>(null);
-  useEffect(() => {
-    /* Status lima mesin untuk pasar bawaan: kabar yang TIDAK butuh akun,
-       dan bentuknya persis butir kabar — "SOLUSDT h1 · snr — Pantau 5/8". */
-    void ambilBacaan(setelan.pasar, setelan.tf).then((b) => { setMesin(b.ok ? b.isi.mesin : []); });
-    void ambilJadwal(30).then((j) => {
-      if (!j.ok) { setRilis([]); return; }
-      const urut = [...j.isi.rilis].sort((a, b) => (a.dampak === b.dampak ? a.waktu - b.waktu : a.dampak === 'tinggi' ? -1 : 1));
-      setRilis(urut.slice(0, 20));
-    });
-  }, []);
+  /* DULU: jadwal yang gagal diambil disetel jadi larik kosong, dan layarnya
+     berbunyi "tidak ada berita". Itu kalimat yang SALAH, bukan kalimat yang
+     kurang — tidak ada berita dan tidak bisa mengambil berita adalah dua
+     keadaan yang berlawanan, dan yang kedua menyuruh orang berhenti khawatir
+     justru saat ada yang perlu dikhawatirkan. */
+  const muatKabar = useCallback(async (segarkan: boolean): Promise<Hasil<{ rilis: Rilis[]; mesin: Mesin[]; sebabMesin: string | null }>> => {
+    const [b, j] = await Promise.all([
+      ambilBacaan(setelan.pasar, setelan.tf, segarkan),
+      ambilJadwal(30, segarkan),
+    ]);
+    if (!j.ok) return j;
+    const urut = [...j.isi.rilis].sort((a, b2) => (a.dampak === b2.dampak ? a.waktu - b2.waktu : a.dampak === 'tinggi' ? -1 : 1));
+    /* Status mesin boleh gagal sendirian — jadwalnya tetap berguna. Tapi
+       sebabnya ikut, supaya baris mesin yang kosong punya keterangan. */
+    return {
+      ok: true,
+      isi: { rilis: urut.slice(0, 20), mesin: b.ok ? b.isi.mesin : [], sebabMesin: b.ok ? null : b.kalimat },
+    };
+  }, [setelan]);
+  const kabar = useMuat(muatKabar, `${setelan.pasar}:${setelan.tf}`);
+  const rilis = kabar.keadaan.fase === 'ada' ? kabar.keadaan.isi.rilis : null;
+  const mesin = kabar.keadaan.fase === 'ada' ? kabar.keadaan.isi.mesin : null;
+  const sebabKabar = kabar.keadaan.fase === 'gagal'
+    ? kabar.keadaan.kalimat
+    : kabar.keadaan.fase === 'ada' ? (kabar.keadaan.basi ?? kabar.keadaan.isi.sebabMesin) : null;
   const kini = Date.now() / 1000;
+
+  /* Gagal TOTAL berbeda dari basi. Pita di atas deretan rangka memuat masih
+     terbaca "sedang jalan", dan rangkanya tidak akan pernah berhenti; yang
+     benar adalah layar yang menyebut sebabnya DAN menawarkan jalan keluar,
+     sama seperti Home dan Kalender. */
+  if (kabar.keadaan.fase === 'gagal') {
+    return (
+      <View style={[g.akar, { paddingTop: tinggiKepala, paddingBottom: sisaBilah, paddingHorizontal: TALANG, justifyContent: 'center' }]}>
+        <Kosong ikon="kabar" judul="Kabar tidak terbaca" kalimat={kabar.keadaan.kalimat} aksi={kabar.ulangi} />
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      {sebabKabar !== null && <PitaBasi kalimat={sebabKabar} />}
       <View style={g.chips}>
         <Chip teks="Semua" on={saring === 'semua'} onPress={() => { setSaring('semua'); }} />
         <Chip teks="Setup" onPress={bukaSambung} /><Chip teks="Pantauan" onPress={bukaSambung} />
@@ -175,6 +237,7 @@ const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   baris: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis },
+  avatarAda: { backgroundColor: W.plus, borderColor: 'transparent' },
   avatarHuruf: { fontSize: 15, fontWeight: '700', color: W.teksSamar },
   nama: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
   statistik: { flexDirection: 'row', gap: 6, marginTop: 9 },

@@ -24,9 +24,23 @@ for (const n of dipetakan) if (!berkas.includes(n)) masalah.push(`'${n}' dipetak
 for (const wajib of ['btc', 'eth', 'sol', 'xau', 'eur']) {
   if (!dipetakan.includes(wajib)) masalah.push(`lambang '${wajib}' hilang — ia pasar yang paling sering dibuka`);
 }
-/* Pasar tanpa lambang tidak boleh jadi lubang di deret ikon. */
-if (!/function LambangPasar/.test(peta) || !/ganti/.test(peta)) {
-  masalah.push('LambangPasar.tsx tanpa lingkaran pengganti — pasar tak berlambang jadi lubang yang terbaca sebagai gambar gagal');
+/* Pasar tanpa lambang tidak boleh jadi lubang di deret ikon.
+ *
+ * Ini BUKAN keadaan langka: per 19 Sep, empat dari 20 pasar tersibuk
+ * (ENA, WLD, CRCLB, MARSCOIN) tidak punya logo di SATU PUN sumbernya —
+ * @web3icons/core 4.0.55 maupun 4.0.56, dan cryptocurrency-icons 0.18.1.
+ * Jadi cadangan huruf ini jalur yang benar-benar dipakai, bukan cadangan
+ * teoretis, dan ia ditembak lewat CABANGNYA — bukan lewat nama gayanya.
+ * Menembak `/ganti/` saja tetap hijau kalau cabangnya dihapus dan gayanya
+ * tertinggal di StyleSheet. */
+if (!/function LambangPasar/.test(peta)) {
+  masalah.push('LambangPasar.tsx tanpa komponen LambangPasar');
+}
+if (!/kunci\s*===\s*null/.test(peta)) {
+  masalah.push('LambangPasar.tsx tanpa cabang `kunci === null` — pasar tak berlambang jadi lubang yang terbaca sebagai gambar gagal');
+}
+if (!/simbol\.replace\(/.test(peta) || !/toUpperCase\(\)/.test(peta)) {
+  masalah.push('cabang pengganti tidak menurunkan hurufnya dari simbol — lingkarannya akan kosong, dan lingkaran kosong lebih buruk daripada ikon hilang');
 }
 
 if (masalah.length > 0) {
@@ -34,4 +48,4 @@ if (masalah.length > 0) {
   for (const m of masalah) process.stdout.write(`  - ${m}\n`);
   process.exit(1);
 }
-process.stdout.write(`  ${berkas.length} lambang · peta sejajar dengan folder · lima pasar utama ada · ada pengganti\n`);
+process.stdout.write(`  ${berkas.length} lambang · peta sejajar dengan folder · lima pasar utama ada · cabang pengganti utuh\n`);

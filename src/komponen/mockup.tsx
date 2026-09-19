@@ -257,6 +257,21 @@ export function Kosong({ ikon, judul, kalimat, aksi, labelAksi, catatan }: {
   );
 }
 
+/* ── .basi — isi lama masih terpampang, penyegaran terakhirnya gagal ────
+   BUKAN bendera diam-diam. Angka lama yang terlihat seperti angka baru adalah
+   kegagalan yang paling mahal di app ini, jadi sebabnya dicetak apa adanya —
+   dan `periksa-jawaban.mjs` menuntut tiap layar yang memakai `useMuat`
+   benar-benar merendernya. Titik jingga, bukan merah: ini bukan kerusakan,
+   melainkan keterangan tentang UMUR yang terlihat. */
+export function PitaBasi({ kalimat }: { kalimat: string }) {
+  return (
+    <View style={g.basi}>
+      <View style={g.basiTitik} />
+      <Text style={g.basiTeks}>{kalimat}</Text>
+    </View>
+  );
+}
+
 /* ── .dampak — pita tegak: bentuk DAN warna ────────────────────────────── */
 export function Dampak({ tinggi }: { tinggi: boolean }) {
   return <View style={[g.dampak, { backgroundColor: tinggi ? W.turun : W.plus }]} />;
@@ -413,6 +428,15 @@ const g = StyleSheet.create({
   kosong: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 9, paddingHorizontal: 26, paddingVertical: 26 },
   kosongJudul: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, textAlign: 'center' },
   kosongKalimat: { fontSize: H.alat, color: W.teksSamar, textAlign: 'center', lineHeight: 15, maxWidth: 240 },
+
+  basi: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingVertical: 6, paddingHorizontal: 9,
+    backgroundColor: 'rgba(253,152,41,0.10)',
+    borderWidth: 1, borderColor: 'rgba(253,152,41,0.22)', borderRadius: R.besar,
+  },
+  basiTitik: { width: 5, height: 5, borderRadius: R.bulat, backgroundColor: W.tanda },
+  basiTeks: { flex: 1, color: W.teksRedup, fontSize: H.alat, lineHeight: H.alat * 1.45 },
 
   dampak: { width: 3, borderRadius: 2, alignSelf: 'stretch', backgroundColor: W.teksSamar },
   hari: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.0, textTransform: 'uppercase', marginTop: J.x2, marginBottom: J.x1 },

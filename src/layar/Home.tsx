@@ -9,14 +9,15 @@
  * Tidak ada kartu Menu di sini. Menu punya rumah di tab Lainnya; mengulangnya
  * di Home berarti dua tempat yang bisa berbeda isi.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
+import { useMuat, type Hasil } from '../data/muat';
 import { angka, ubah } from '../data/tampil';
 import { LambangPasar } from '../komponen/LambangPasar';
-import { BarisPasar, Blok, Chip, Harga, Lbl, Mikro, Nil, Rangka } from '../komponen/mockup';
+import { BarisPasar, Blok, Chip, Harga, Kosong, Lbl, Mikro, Nil, PitaBasi, Rangka } from '../komponen/mockup';
 import { W, H, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
@@ -31,42 +32,91 @@ function Angka({ label, nilai, warna }: { label: string; nilai: string; warna?: 
   );
 }
 
+/**
+ * Satu muatan untuk seluruh layar.
+ *
+ * `ambilBacaan` boleh gagal SENDIRIAN — jatah laju dikunci alamat IP dan
+ * dibagi banyak orang lewat CGNAT, jadi permintaan kedua bisa ditolak
+ * sementara yang pertama lolos. Kalau itu membuat seluruh layar jadi layar
+ * galat, daftar pasar yang sudah di tangan ikut dibuang tanpa sebab.
+ *
+ * Jadi ia turun derajat, TIDAK hilang: sebabnya dibawa sebagai `sebabBacaan`
+ * dan dicetak sebagai pita. Yang tidak boleh cuma satu — sebab yang hilang.
+ */
+type Isi = {
+  pasar: Pasar | null;
+  teratas: ReadonlyArray<Pasar>;
+  jumlahPasar: number;
+  mesin: Mesin | null;
+  ringkas: { setup: number; pantau: number; mesin: number } | null;
+  harga: number | null;
+  sebabBacaan: string | null;
+};
+
 export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
-  const [pasar, setPasar] = useState<Pasar | null>(null);
-  const [teratas, setTeratas] = useState<ReadonlyArray<Pasar>>([]);
-  const [jumlahPasar, setJumlahPasar] = useState(0);
-  const [mesin, setMesin] = useState<Mesin | null>(null);
-  const [ringkas, setRingkas] = useState<{ setup: number; pantau: number; mesin: number } | null>(null);
-  const [harga, setHarga] = useState<number | null>(null);
-  const [siap, setSiap] = useState(false);
-  const [menyegarkan, setMenyegarkan] = useState(false);
 
-  const muat = useCallback(async (segarkan = false): Promise<void> => {
+  const muat = useCallback(async (segarkan: boolean): Promise<Hasil<Isi>> => {
     const j = await ambilPasar(segarkan);
-    if (!j.ok) { setSiap(true); return; }
+    if (!j.ok) return j;
     const p = j.isi.pasar.find((x) => x.simbol === setelan.pasar) ?? j.isi.pasar[0] ?? null;
-    setPasar(p);
-    setJumlahPasar(j.isi.pasar.length);
-    setTeratas([...j.isi.pasar].filter((x) => x.simbol !== p?.simbol)
-      .sort((a, b) => (b.volume24hUsd ?? 0) - (a.volume24hUsd ?? 0)).slice(0, 12));
-    if (p === null) { setSiap(true); return; }
+    const dasar = {
+      pasar: p,
+      jumlahPasar: j.isi.pasar.length,
+      teratas: [...j.isi.pasar].filter((x) => x.simbol !== p?.simbol)
+        .sort((a, b) => (b.volume24hUsd ?? 0) - (a.volume24hUsd ?? 0)).slice(0, 12),
+    };
+    if (p === null) {
+      return { ok: true, isi: { ...dasar, mesin: null, ringkas: null, harga: null, sebabBacaan: null } };
+    }
     const punya = p.timeframes.map((t) => t.toLowerCase());
     const tf = punya.includes(setelan.tf) ? setelan.tf : (punya[0] ?? 'h1');
     const b = await ambilBacaan(p.simbol, tf, segarkan);
-    if (b.ok) {
-      setHarga(b.isi.harga);
-      setMesin(b.isi.mesin.find((m) => m.mesin === setelan.mesin) ?? b.isi.mesin[0] ?? null);
-      setRingkas({
-        setup: b.isi.mesin.filter((m) => m.status.toUpperCase() === 'SETUP').length,
-        pantau: b.isi.mesin.filter((m) => m.status.toUpperCase() === 'PANTAU').length,
-        mesin: b.isi.mesin.length,
-      });
+    if (!b.ok) {
+      return { ok: true, isi: { ...dasar, mesin: null, ringkas: null, harga: null, sebabBacaan: b.kalimat } };
     }
-    setSiap(true);
+    return {
+      ok: true,
+      isi: {
+        ...dasar,
+        harga: b.isi.harga,
+        mesin: b.isi.mesin.find((m) => m.mesin === setelan.mesin) ?? b.isi.mesin[0] ?? null,
+        ringkas: {
+          setup: b.isi.mesin.filter((m) => m.status.toUpperCase() === 'SETUP').length,
+          pantau: b.isi.mesin.filter((m) => m.status.toUpperCase() === 'PANTAU').length,
+          mesin: b.isi.mesin.length,
+        },
+        sebabBacaan: null,
+      },
+    };
   }, [setelan]);
-  useEffect(() => { void muat(); }, [muat]);
+
+  /* Kunci muat-ulang: setelan yang berganti WAJIB menarik data baru.
+     Tanpa ini layar akan menampilkan pasar lama sesudah orang menggantinya
+     di Pengaturan — cacat yang tidak terlihat seperti cacat. */
+  const { keadaan, segarkan, menyegarkan, ulangi } = useMuat(
+    muat, `${setelan.pasar}:${setelan.tf}:${setelan.mesin}`);
+
+  /* Daftar pasar tidak terambil sama sekali: ini layar galat, bukan rangka
+     memuat yang tidak pernah berhenti. Sebabnya dicetak, dan ada jalan keluar. */
+  if (keadaan.fase === 'gagal') {
+    return (
+      <View style={[g.akar, { paddingTop: tinggiKepala, paddingBottom: sisaBilah, paddingHorizontal: TALANG, justifyContent: 'center' }]}>
+        <Kosong ikon="rumah" judul="Data pasar tidak terbaca" kalimat={keadaan.kalimat} aksi={ulangi} />
+      </View>
+    );
+  }
+
+  const isi: Isi | null = keadaan.fase === 'ada' ? keadaan.isi : null;
+  const basi = keadaan.fase === 'ada' ? keadaan.basi : null;
+  const pasar = isi?.pasar ?? null;
+  const teratas = isi?.teratas ?? [];
+  const jumlahPasar = isi?.jumlahPasar ?? 0;
+  const mesin = isi?.mesin ?? null;
+  const ringkas = isi?.ringkas ?? null;
+  const harga = isi?.harga ?? null;
+  const siap = isi !== null;
 
   const wajib = mesin === null ? [] : syaratWajib(mesin);
   const lolos = wajib.filter((c) => c.lolos).length;
@@ -77,9 +127,12 @@ export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
     <ScrollView
       style={g.akar}
       contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}
-      refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup}
-        onRefresh={() => { setMenyegarkan(true); void muat(true).finally(() => { setMenyegarkan(false); }); }} />}
+      refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup} onRefresh={segarkan} />}
     >
+      {/* Isi lama masih terpampang, penyegaran terakhirnya gagal. */}
+      {basi !== null && <PitaBasi kalimat={basi} />}
+      {/* Daftar pasar ada, bacaannya tidak — angka mesin kosong, sebabnya disebut. */}
+      {isi?.sebabBacaan != null && <PitaBasi kalimat={isi.sebabBacaan} />}
       {/* Kartu pasar utama. Rangka saat belum siap — bentuk isi yang akan datang. */}
       {!siap || pasar === null ? (
         <Blok>
