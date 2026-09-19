@@ -10,6 +10,16 @@
  *   `Akun.tsx`, berkas yang penjaga itu tidak pernah lihat. Yang menemukannya
  *   `grep` atas bundel, bukan satu pun penjaga sumber.
  *
+ * BUNDEL JS, BUKAN APK. Yang diperiksa di sini keluaran `export:embed`, yang
+ * masih JavaScript teks. Bundel di DALAM APK rilis adalah bytecode Hermes
+ * (`assets/index.android.bundle`, magic c6 1f bc 03): string-nya masih
+ * terbaca di tabel string, tapi ANGKANYA tersimpan biner. Mencari "50000"
+ * di sana melaporkan seluruh harga hilang, dan yang salah pencariannya.
+ *
+ * Jadi dari APK yang sah diperiksa cuma stringnya — harga yang DIKETIK dan
+ * kata terlarang. Nilai angkanya diperiksa dari sini, dan dari layar yang
+ * benar-benar dirender.
+ *
  * Membangun bundel lambat (~1 menit), jadi ia bagian `periksa-rilis`.
  *
  *   node skrip/periksa-bundel.mjs

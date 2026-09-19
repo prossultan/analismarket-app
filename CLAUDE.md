@@ -234,3 +234,21 @@ menemukan apa-apa:
 Satu jebakan yang sudah memerahkannya sekali secara palsu: **minifier menulis
 `50000` sebagai `5e4`** dan `135000` sebagai `135e3`. Mencari digit polos saja
 melaporkan seluruh harga hilang, dan yang salah penjaganya.
+
+## Bundel di dalam APK rilis adalah bytecode Hermes
+
+`assets/index.android.bundle` di APK EAS bukan JavaScript teks — ia bytecode
+Hermes (magic `c6 1f bc 03`). String-nya masih terbaca di tabel string, tapi
+**angkanya tersimpan biner**. Mencari `"50000"` di sana melaporkan seluruh
+harga hilang, dan yang salah pencariannya, bukan bundelnya.
+
+Yang sah diperiksa dari APK:
+
+| bisa | tidak bisa |
+|---|---|
+| harga yang DIKETIK sebagai string | nilai angka konstanta |
+| kata terlarang | |
+| `<uses-permission>` (urai AXML, jangan pindai string) | |
+
+Nilai angkanya diperiksa dari bundel JS `export:embed`
+(`skrip/periksa-bundel.mjs`) dan dari layar yang benar-benar dirender.
