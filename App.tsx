@@ -193,6 +193,7 @@ function AlurKabar({ setelan, simpan }: IsiTumpukan) {
       <Tumpukan.Screen name="Kabar" options={{ title: 'Kabar' }}>
         {({ navigation }) => (
           <LayarKabar setelan={setelan}
+            bukaPantauan={() => { (navigation as Nav).navigate('Pantauan'); }}
             bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }}
             bukaChart={() => { navigation.getParent()?.navigate('pasar'); }} />
         )}

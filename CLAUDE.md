@@ -386,3 +386,13 @@ sempat menampilkannya di Home, Profil, Pantauan, Cek banyak, dan satu layar
 Kredit penuh, karena bentuk API disalin tanpa memeriksa saklarnya. Semua
 dicabut atas permintaan pemilik. Kalau suatu hari kredit dinyalakan lagi,
 mulai dari saklarnya: API perlu mengirim `kreditAktif`, bukan app menebak.
+
+## Status langganan dibaca dari SATU sumber di setiap permukaan
+
+19 Sep pemilik menemukan: Home bilang "AM+ aktif", tab PLUS+ dua ketukan
+kemudian masih mengajak berlangganan — layar PLUS+ statis, tidak membaca
+sesi maupun `/api/saya`. Kelas yang sama ada di tab Kabar ("menunggu
+Telegram · Sambungkan" tampil tanpa syarat). Dua permukaan yang berbeda
+pendapat lebih buruk daripada satu yang salah: orang tidak tahu mana yang
+benar. Tiap permukaan yang menyebut langganan atau tautan Telegram WAJIB
+membaca `useSesi()` + `ambilRingkas()`, bukan mengetik keadaannya.

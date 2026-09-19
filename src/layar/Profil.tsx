@@ -132,7 +132,10 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
  * di saringan "Berita". Jadi layar ini terisi data sungguhan, bukan kosong,
  * dan satu blok di atas menyebut apa yang masih menunggu Telegram.
  */
-export function LayarKabar({ bukaSambung, setelan, bukaChart }: { bukaSambung: () => void; setelan: Setelan; bukaChart: () => void }) {
+export function LayarKabar({ bukaSambung, bukaPantauan, setelan, bukaChart }: { bukaSambung: () => void; bukaPantauan: () => void; setelan: Setelan; bukaChart: () => void }) {
+  /* Blok "menunggu Telegram" dulu tampil TANPA SYARAT — juga untuk pelanggan
+     yang sudah tersambung. Sekarang ia membaca sesi, seperti Home. */
+  const sesiKabar = useSesi();
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   const [saring, setSaring] = useState<'semua' | 'berita'>('semua');
@@ -180,11 +183,11 @@ export function LayarKabar({ bukaSambung, setelan, bukaChart }: { bukaSambung: (
       {sebabKabar !== null && <PitaBasi kalimat={sebabKabar} />}
       <View style={g.chips}>
         <Chip teks="Semua" on={saring === 'semua'} onPress={() => { setSaring('semua'); }} />
-        <Chip teks="Setup" onPress={bukaSambung} /><Chip teks="Pantauan" onPress={bukaSambung} />
+        <Chip teks="Setup" onPress={sesiKabar === null ? bukaSambung : bukaPantauan} /><Chip teks="Pantauan" onPress={sesiKabar === null ? bukaSambung : bukaPantauan} />
         <Chip teks="Berita" on={saring === 'berita'} onPress={() => { setSaring('berita'); }} />
       </View>
 
-      {saring === 'semua' && (
+      {saring === 'semua' && sesiKabar === null && (
         <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
           <View style={[g.baris, { gap: 8 }]}>
             <View style={{ flex: 1 }}>
@@ -192,6 +195,17 @@ export function LayarKabar({ bukaSambung, setelan, bukaChart }: { bukaSambung: (
               <Lbl polos>Tiga pantauan pertama gratis. Sambungkan, dan kabarnya masuk ke sini.</Lbl>
             </View>
             <Chip teks="Sambungkan" emas onPress={bukaSambung} />
+          </View>
+        </Blok>
+      )}
+      {saring === 'semua' && sesiKabar !== null && (
+        <Blok rapat gaya={{ paddingHorizontal: 10 }}>
+          <View style={[g.baris, { gap: 8 }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={g.nama}>Kabar pantauanmu dikirim ke Telegram</Text>
+              <Lbl polos>Salinannya tampil di sini. Atur pantauan dan kabar otomatis dari Pantauan.</Lbl>
+            </View>
+            <Chip teks="Pantauan" onPress={bukaPantauan} />
           </View>
         </Blok>
       )}

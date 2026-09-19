@@ -9,12 +9,16 @@
  * Tombol belinya MATI, dan kartunya mengatakan kenapa. Tombol mati tanpa
  * kalimat terbaca sebagai bug.
  */
+import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { FITUR_GRATIS, FITUR_PLUS, PAKET_PLUS, rupiah } from '../data/amplus';
-import { Blok, Istilah, Lbl, Mikro, Tombol } from '../komponen/mockup';
+import { Blok, Istilah, Lbl, Mikro, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
+import { ambilRingkas, type Ringkas } from '../data/saya';
+import { useMuat, type Hasil } from '../data/muat';
+import { useSesi } from './Akun';
 import { W, H, J, R, TALANG } from '../gaya/token';
 
 const TANYA: ReadonlyArray<{ t: string; j: string }> = [
@@ -32,8 +36,26 @@ const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: numb
 export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
+  /* SUMBER YANG SAMA DENGAN HOME. Dulu layar ini statis — selalu mengajak
+     berlangganan, juga kepada pelanggan yang di Home dua ketukan sebelumnya
+     baru saja dibilang "AM+ aktif". Dua permukaan yang berbeda pendapat
+     lebih buruk daripada satu yang salah: orang tidak tahu mana yang benar. */
+  const sesi = useSesi();
+  const muat = useCallback(async (): Promise<Hasil<Ringkas | null>> => {
+    if (sesi === null) return { ok: true, isi: null };
+    return ambilRingkas();
+  }, [sesi]);
+  const { keadaan } = useMuat(muat, sesi === null ? 'kosong' : `ada:${sesi.jenis ?? 'mini'}`);
+  const r = keadaan.fase === 'ada' ? keadaan.isi : null;
+  const sebab = keadaan.fase === 'gagal' ? keadaan.kalimat : keadaan.fase === 'ada' ? keadaan.basi : null;
+  const menunggu = sesi !== null && keadaan.fase === 'memuat';
+  const plus = r?.langganan === 'plus';
+  const sampai = plus && r !== null
+    ? new Date(Date.now() + r.sisaHariPlus * 86_400_000).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      {sebab !== null && <PitaBasi kalimat={sebab} />}
       {/* Kartu emas bergradasi — satu-satunya di seluruh app. */}
       <View style={g.kartu}>
         <LinearGradient
@@ -43,18 +65,34 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
           style={StyleSheet.absoluteFill}
         />
         <Text style={g.cap}>AnalisMarket+</Text>
-        <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
-        <Text style={g.harga}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.perBulan}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
+        {menunggu ? (
+          <>
+            <Rangka lebar="70%" tinggi={14} gaya={{ marginTop: 8 }} />
+            <Rangka lebar="45%" tinggi={19} gaya={{ marginTop: 9 }} />
+          </>
+        ) : plus ? (
+          <>
+            <Text style={g.judul}>Aktif · {String(r?.sisaHariPlus ?? 0)} hari lagi</Text>
+            <Text style={g.harga}>{sampai ?? '—'} <Text style={g.perBulan}>berlaku sampai</Text></Text>
+          </>
+        ) : (
+          <>
+            <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
+            <Text style={g.harga}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.perBulan}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
+          </>
+        )}
         <View style={g.daftar}>
           {FITUR_PLUS.map((f) => (
             <View key={f.nama} style={g.butir}>
               <Text style={g.centang}>✓</Text>
-              <Text style={g.butirTeks}>{f.nama}</Text>
+              <Text style={g.butirTeks}>{f.nama}{plus ? ' — terbuka' : ''}</Text>
             </View>
           ))}
         </View>
-        <Tombol teks={bukaLangganan === undefined ? 'Berlangganan lewat web' : 'Lihat cara berlangganan'} jenis="emas" mati={bukaLangganan === undefined} onPress={bukaLangganan} />
-        <Mikro tengah>Pembelian belum tersedia di dalam app.</Mikro>
+        <Tombol
+          teks={bukaLangganan === undefined ? 'Berlangganan lewat web' : plus ? 'Kelola langganan' : 'Lihat cara berlangganan'}
+          jenis={plus ? 'kedua' : 'emas'} mati={bukaLangganan === undefined || menunggu} onPress={bukaLangganan} />
+        <Mikro tengah>{plus ? 'Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
       </View>
 
       <Blok>
