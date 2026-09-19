@@ -31,9 +31,15 @@ import { LayarLainnya } from './src/layar/Lainnya';
 import { LayarDokumen } from './src/layar/Dokumen';
 import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
 import { Kaca } from './src/komponen/Kaca';
+import { Merek } from './src/komponen/Merek';
 import { W, H, KACA, TINGGI_BILAH } from './src/gaya/token';
 
 const VERSI = '0.2.0';
+
+/** "Jumat, 19 September" — tanggal hari ini, dalam bahasa produk. */
+function tanggalPanjang(): string {
+  return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+}
 
 export type DaftarLainParam = {
   Lainnya: undefined;
@@ -189,13 +195,26 @@ function Isi() {
             tabBarItemStyle: { paddingVertical: 2 },
           }}
         >
-          <Tab.Screen name="home" options={{ title: 'Home', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('rumah') }}>
+          <Tab.Screen
+            name="home"
+            options={{
+              title: 'Home',
+              headerShown: true,
+              ...OPSI_KEPALA,
+              /* Merek di kepala, bukan kata "Home". Tab di bawah sudah
+                 menyebut di mana orang berdiri; kepala tidak perlu
+                 mengulangnya, dan ruangnya lebih berguna untuk nama
+                 produknya sendiri. */
+              headerTitle: () => <Merek sub={tanggalPanjang()} />,
+              headerTitleAlign: 'left' as const,
+              tabBarIcon: ikonTab('rumah'),
+            }}
+          >
             {({ navigation }) => (
               <LayarHome
                 setelan={setelan}
                 bukaChart={() => { navigation.navigate('pasar'); }}
                 bukaPasar={() => { setTandaPasar((n) => n + 1); navigation.navigate('pasar'); }}
-                bukaMenu={(k) => { navigation.navigate('lainnya', { screen: KE_LAYAR[k] ?? 'Belajar' }); }}
               />
             )}
           </Tab.Screen>

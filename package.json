@@ -27,7 +27,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "periksa": "tsc --noEmit && node skrip/periksa-teks.mjs && node skrip/periksa-kaca.mjs",
+    "periksa": "tsc --noEmit && node skrip/periksa-teks.mjs && node skrip/periksa-kaca.mjs && node skrip/periksa-lambang.mjs",
     "ukur-laju": "tsx skrip/ukur-laju.mts"
   },
   "private": true

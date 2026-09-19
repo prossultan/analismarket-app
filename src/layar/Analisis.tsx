@@ -33,6 +33,7 @@ import { SkalaJarum } from '../komponen/SkalaJarum';
 import { BarBiaya, Kosong, Memuat } from '../komponen/dasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
+import { LambangPasar } from '../komponen/LambangPasar';
 import { Kaca } from '../komponen/Kaca';
 import { W, H, J, R, ANGKA, SENTUH, TALANG, TINGGI_KENDALI } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
@@ -139,6 +140,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
       {/* ── KEPALA ─────────────────────────────────────────────────────── */}
       <View style={g.kepala}>
         <Pressable onPress={() => { setLembarPasar(true); }} style={g.pasarTombol} hitSlop={6}>
+          <LambangPasar simbol={pasar.simbol} ukuran={19} />
           <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
           <Text style={g.tanda}>▾</Text>
         </Pressable>

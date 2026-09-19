@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Pasar } from '../data/api';
+import { LambangPasar } from './LambangPasar';
 import { angka, kategoriTersedia, labelJenis, labelKategori, ubah } from '../data/tampil';
 import { W, H, J, R, ANGKA, SENTUH, TINGGI_BARIS, TALANG, SELA_CHIP, TINGGI_CHIP } from '../gaya/token';
 
@@ -95,6 +96,7 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
                 onPress={() => { pilih(item); tutup(); }}
                 style={({ pressed }) => [g.baris, aktif && g.barisAktif, pressed && g.barisTekan]}
               >
+                <LambangPasar simbol={item.simbol} ukuran={20} />
                 <Text style={g.nm} numberOfLines={1}>{item.simbol}</Text>
                 <Text style={g.tag} numberOfLines={1}>{item.label}</Text>
                 <View style={{ flex: 1 }} />

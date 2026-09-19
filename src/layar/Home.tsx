@@ -16,6 +16,7 @@ import { useSisaBilah } from '../gaya/jarak';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import { angka, ubah } from '../data/tampil';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
+import { LambangPasar } from '../komponen/LambangPasar';
 import { Kartu, Memuat, Pil } from '../komponen/dasar';
 import { W, H, J, R, ANGKA, SENTUH, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
@@ -24,16 +25,8 @@ type Props = {
   setelan: Setelan;
   bukaChart: (p: Pasar) => void;
   bukaPasar: () => void;
-  bukaMenu: (k: 'profil' | 'kalender' | 'belajar' | 'kabar' | 'plus') => void;
 };
 
-const MENU: ReadonlyArray<{ kunci: 'profil' | 'kalender' | 'belajar' | 'kabar' | 'plus'; nama: string; ikon: NamaIkon; ket: string }> = [
-  { kunci: 'plus', nama: 'AnalisMarket+', ikon: 'plus', ket: 'apa isinya' },
-  { kunci: 'kalender', nama: 'Kalender berita', ikon: 'kalender', ket: '14 hari ke depan' },
-  { kunci: 'belajar', nama: 'Belajar', ikon: 'buku', ket: 'cara baca kartu & istilah' },
-  { kunci: 'kabar', nama: 'Kabar', ikon: 'kabar', ket: 'butuh akun' },
-  { kunci: 'profil', nama: 'Profil & akun', ikon: 'profil', ket: 'keadaan akun' },
-];
 
 /** Satu sel pita ringkas. Label 9/400 samar, nilainya 19/700 — tidak pernah terbalik. */
 function AngkaPita({ label, nilai, warna }: { label: string; nilai: string; warna?: string }) {
@@ -45,7 +38,7 @@ function AngkaPita({ label, nilai, warna }: { label: string; nilai: string; warn
   );
 }
 
-export function LayarHome({ setelan, bukaChart, bukaPasar, bukaMenu }: Props) {
+export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   const [pasar, setPasar] = useState<Pasar | null>(null);
@@ -109,6 +102,7 @@ export function LayarHome({ setelan, bukaChart, bukaPasar, bukaMenu }: Props) {
       {pasar !== null && (
         <Pressable onPress={() => { bukaChart(pasar); }} style={g.kartuPasar}>
           <View style={g.barisAtas}>
+            <LambangPasar simbol={pasar.simbol} ukuran={24} />
             <Text style={g.simbol}>{pasar.simbol}</Text>
             <Text style={g.tag} numberOfLines={1}>{pasar.label}</Text>
             <View style={{ flex: 1 }} />
@@ -165,6 +159,7 @@ export function LayarHome({ setelan, bukaChart, bukaPasar, bukaMenu }: Props) {
               onPress={() => { bukaChart(x); }}
               style={[g.barisPasar, i > 0 && g.menuGaris]}
             >
+              <LambangPasar simbol={x.simbol} />
               <View style={g.pasarNama}>
                 <Text style={g.pasarSimbol} numberOfLines={1}>{x.simbol}</Text>
                 <Text style={g.pasarLabel} numberOfLines={1}>{x.label}</Text>
@@ -185,16 +180,6 @@ export function LayarHome({ setelan, bukaChart, bukaPasar, bukaMenu }: Props) {
         </Kartu>
       )}
 
-      <Kartu judul="Menu">
-        {MENU.map((m, i) => (
-          <Pressable key={m.kunci} onPress={() => { bukaMenu(m.kunci); }} style={[g.menu, i > 0 && g.menuGaris]}>
-            <Ikon nama={m.ikon} warna={m.kunci === 'plus' ? W.plus : W.teksRedup} ukuran={18} />
-            <Text style={[g.menuNama, m.kunci === 'plus' && { color: W.plus }]}>{m.nama}</Text>
-            <View style={{ flex: 1 }} />
-            <Text style={g.menuKet}>{m.ket}</Text>
-          </Pressable>
-        ))}
-      </Kartu>
 
       <Text style={g.kaki}>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Text>
     </ScrollView>
