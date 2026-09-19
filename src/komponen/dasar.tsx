@@ -4,6 +4,7 @@
  */
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BIAYA_WAJAR_PERSEN, biayaLebar, biayaPersen } from '../data/tampil';
 import { W, H, J, R, ANGKA, gayaLabel } from '../gaya/token';
 
 export function Kartu({ judul, kanan, children }: { judul?: string; kanan?: ReactNode; children: ReactNode }) {
@@ -97,8 +98,8 @@ export function BarBiaya({ porsi, ringkas = false }: { porsi: number | null; rin
   if (porsi === null) {
     return ringkas ? null : <Text style={g.kosongSebab}>Biaya belum tersedia; jangan menganggap transaksi tanpa biaya.</Text>;
   }
-  const lebar = Math.max(2, Math.min(100, porsi * 100));
-  const warna = porsi >= 1 ? W.turun : porsi >= 0.5 ? W.tanda : W.naik;
+  const lebar = biayaLebar(porsi);
+  const warna = porsi >= BIAYA_WAJAR_PERSEN * 2 ? W.turun : porsi >= BIAYA_WAJAR_PERSEN ? W.tanda : W.naik;
   return (
     <View>
       <View style={g.barLuar}>
@@ -106,7 +107,7 @@ export function BarBiaya({ porsi, ringkas = false }: { porsi: number | null; rin
       </View>
       {!ringkas && (
         <Text style={[g.kosongSebab, { marginTop: J.x2, textAlign: 'left' }]}>
-          Biaya {Math.round(porsi * 100)}% dari risiko · wajar di bawah 50%
+          Biaya {biayaPersen(porsi)} dari risiko · wajar di bawah {String(BIAYA_WAJAR_PERSEN)}%
         </Text>
       )}
     </View>

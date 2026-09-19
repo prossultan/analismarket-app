@@ -153,3 +153,28 @@ merah. Dua kegagalan pertamanya layak diingat karena bentuknya umum:
 
 Keduanya cuma ketahuan dari uji-mutasi. Penjaga yang belum pernah dituntut
 merah belum diketahui menjaga apa pun.
+
+## `biayaPorsi` SUDAH dalam persen
+
+Di bot, `bulatkan.ts` menghitungnya `(biayaBps / stopBps) * 100`. Server
+mengatakannya sendiri di kalimat syaratnya:
+
+```
+biayaPorsi = 8.64
+kalimat    = "Biaya 9,0 bps vs jarak SL 104,2 bps — 9% dari risiko"
+```
+
+App sempat mengalikannya 100 LAGI di dua tempat, jadi setup sehat berbiaya
+8,6% tercetak **"Biaya 864% risiko"** — angka mustahil di kartu yang justru
+harus membantu orang memutuskan. Bilahnya ikut rusak: ambangnya ditulis 0,5
+dan 1, jadi apa pun di atas 1% terisi penuh dan merah, dan bilah yang selalu
+merah berhenti memberi tahu apa pun.
+
+**Web TIDAK punya bug ini** — ia membagi 100 saat menerima
+(`src/data/bacaan.ts:893` dan `:994`), jadi tipenya di dalam memang pecahan.
+App memakai nilai mentah API langsung, dan di situlah bedanya. Jangan
+menyalin pola web tanpa menyalin normalisasinya.
+
+Satuannya sekarang dikunci di `src/data/tampil.ts` (`biayaPersen`,
+`biayaLebar`, `BIAYA_WAJAR_PERSEN`) dan `skrip/periksa-satuan.mjs` melarang
+`biayaPorsi` disentuh aritmetika di luar sana. Uji-mutasi 2/2 merah.

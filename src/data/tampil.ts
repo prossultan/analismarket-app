@@ -66,3 +66,33 @@ export function kategoriTersedia(daftar: ReadonlyArray<{ kategori: string }>): s
   const sisa = [...ada].filter((k) => !KATEGORI_URUT.includes(k)).sort();
   return ['semua', ...urut, ...sisa];
 }
+
+/**
+ * BIAYA SEBAGAI PORSI RISIKO — `biayaPorsi` SUDAH DALAM PERSEN.
+ *
+ * Bukan pecahan. Di bot `bulatkan.ts` menghitungnya
+ * `(biayaBps / stopBps) * 100`, dan komentarnya berbunyi "dalam persen".
+ * Server pun mengatakannya sendiri di kalimat syaratnya:
+ *
+ *   biayaPorsi = 8.64
+ *   kalimat    = "Biaya 9,0 bps vs jarak SL 104,2 bps — 9% dari risiko"
+ *
+ * App sempat mengalikannya 100 lagi di DUA tempat, jadi setup sehat berbiaya
+ * 8,6% tercetak "Biaya 864% risiko" — angka yang mustahil, di kartu yang
+ * seharusnya membantu orang memutuskan. Dan bilahnya ikut: ambangnya ditulis
+ * 0,5 dan 1, jadi apa pun di atas 1% terisi penuh dan merah.
+ *
+ * Satu fungsi, satu satuan, dan `skrip/periksa-satuan.mjs` melarang
+ * `biayaPorsi` dikalikan di tempat lain.
+ */
+export function biayaPersen(porsi: number): string {
+  return `${String(Math.round(porsi))}%`;
+}
+
+/** Lebar bilah 0..100, dipotong di 100. Ambangnya PERSEN, bukan pecahan. */
+export function biayaLebar(porsi: number): number {
+  return Math.max(2, Math.min(100, porsi));
+}
+
+/** Wajar di bawah 50% risiko — ambang yang sama dengan syarat BIAYA di bot. */
+export const BIAYA_WAJAR_PERSEN = 50;

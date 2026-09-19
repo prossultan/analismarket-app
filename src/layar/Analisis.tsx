@@ -28,7 +28,7 @@ import type { WebViewMessageEvent } from 'react-native-webview';
 import { ChartTertanam } from '../komponen/ChartTertanam';
 import { ASAL } from '../data/antrian';
 import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
-import { angka, ubah } from '../data/tampil';
+import { angka, ubah, biayaPersen } from '../data/tampil';
 import { LembarPasar } from '../komponen/LembarPasar';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Kosong, Memuat } from '../komponen/dasar';
@@ -287,7 +287,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
                   <Chip teks={`ATR ${angka(m.atr, pasar.desimal)}`} mono lencana />
-                  {m.biayaPorsi !== null && <Chip teks={`Biaya ${Math.round(m.biayaPorsi * 100)}% risiko`} mono lencana />}
+                  {m.biayaPorsi !== null && <Chip teks={`Biaya ${biayaPersen(m.biayaPorsi)} risiko`} mono lencana />}
                 </View>
               </View>
               <View style={g.angkaBaris}>
