@@ -15,7 +15,8 @@
       "distribution": "internal",
       "channel": "pratinjau",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a"
       },
       "ios": {
         "simulator": false
@@ -26,7 +27,8 @@
       "channel": "produksi",
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a"
       }
     }
   },

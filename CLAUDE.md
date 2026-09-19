@@ -487,3 +487,17 @@ antaranya dari ShortcutBadger — angka di ikon app — termasuk
 Yang ketiga kalinya pustaka menyelundupkan izin ke APK di proyek ini
 (Clerk/Solana, expo-secure-store biometrik, sekarang ShortcutBadger), dan
 ketiganya ditemukan penjaga, bukan mata.
+
+## APK 86 MB: 38 MB-nya arsitektur yang tidak dipakai HP mana pun (19 Sep)
+
+Rincian APK pratinjau pertama: `lib/x86` 19,4 MB + `lib/x86_64` 18,7 MB —
+keduanya untuk emulator Intel, dan tidak satu pun HP Android memakainya.
+arm64-v8a 18,2 MB dan armeabi-v7a 12,7 MB yang benar-benar dipakai.
+
+Unduhan 86 MB lewat jaringan seluler adalah penyebab nyata orang gagal
+memasang app, dan separuhnya tidak pernah dijalankan siapa pun. Dipotong
+lewat `gradleCommand` di `eas.json`:
+`-PreactNativeArchitectures=arm64-v8a,armeabi-v7a`.
+
+Kalau suatu saat perlu menjalankan app di emulator x86, JANGAN mencabut baris
+ini — pakai profil `development`, yang memang untuk itu.
