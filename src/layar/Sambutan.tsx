@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Kaca } from '../komponen/Kaca';
 import { Ikon } from '../komponen/Ikon';
 import { BarisPasar, PilTf, PitaMesin, Tombol } from '../komponen/mockup';
+import { TombolGoogle } from '../komponen/TombolGoogle';
 import { ChartTertanam } from '../komponen/ChartTertanam';
 import { ASAL } from '../data/antrian';
 import { W, H, R, TALANG } from '../gaya/token';
@@ -116,7 +117,7 @@ export function LayarSambutan({ selesai, sambungkan }: { selesai: () => void; sa
           <Tombol teks="Sambungkan Telegram · @analismarketbot" onPress={sambungkan}
             ikon={<Ikon nama="kabar" warna={W.teksKuat} ukuran={14} />} />
           <View style={{ marginTop: 7 }}>
-            <Tombol teks="Masuk dengan Google — belum tersedia" jenis="kedua" mati />
+            <TombolGoogle sesudah={lanjut} />
           </View>
           <Text style={g.syarat}>Gratis, tanpa formulir. Dengan masuk kamu menyetujui Syarat & Ketentuan dan Kebijakan Privasi.</Text>
           <Pressable onPress={lanjut} hitSlop={10} style={g.lewati} accessibilityRole="button">

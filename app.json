@@ -51,6 +51,10 @@
         "projectId": "2bf750c3-f839-4568-9eba-3dc2ae01be33"
       }
     },
-    "owner": "polosan"
+    "owner": "polosan",
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
   }
 }

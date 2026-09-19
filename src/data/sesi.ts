@@ -33,10 +33,55 @@ export type Akun = {
   email: string | null;
   nama: string | null;
   telegramTersambung: boolean;
-  langganan: { aktif: boolean; sampai: number | null; paket: string | null } | null;
+  /**
+   * STRING, bukan objek. `/api/sambung/masuk` mengirim `ringkas.langganan`
+   * dari `ringkasAkun()` di bot: `'plus' | 'gratis'`. Tipe ini sempat
+   * dideklarasikan `{ aktif, sampai, paket }`, jadi layar Sambungkan membaca
+   * `langganan.aktif` — selalu `undefined` — dan mencetak "Gratis" untuk
+   * pelanggan AM+ tepat sesudah ia berhasil menyambung. Diuji pemilik di HP,
+   * 19 Sep: "AM+ tidak terbawa".
+   */
+  langganan: 'plus' | 'gratis';
 };
 
-export type Sesi = { sesi: string; akun: Akun; pada: number };
+/**
+ * DUA JENIS SESI, SATU BENTUK.
+ *
+ * `mini`  — token dari bot, ditukar di `/api/sambung/masuk`, 12 jam, dipegang
+ *           di AsyncStorage. `sesi` adalah tokennya.
+ * `clerk` — masuk lewat Google. Tokennya PENDEK UMUR (~60 dtk) dan diperbarui
+ *           Clerk sendiri, jadi TIDAK disimpan di sini: `sesi` kosong, dan
+ *           `tokenSesi()` yang memintanya ke Clerk tiap kali dibutuhkan.
+ *
+ * Layar tidak perlu tahu bedanya: `useSesi()` memberi satu `Sesi`, dan
+ * `saya.ts` memakai `headerSesi()` yang sudah memilih tokennya.
+ */
+export type Sesi = { jenis?: 'mini' | 'clerk'; sesi: string; akun: Akun; pada: number };
+
+type PenyediaClerk = {
+  getToken: () => Promise<string | null>;
+  signOut: () => Promise<void>;
+  /** `null` = belum masuk. */
+  akun: Akun | null;
+};
+let clerk: PenyediaClerk | null = null;
+
+function sesiClerk(): Sesi | null {
+  if (clerk === null || clerk.akun === null) return null;
+  return { jenis: 'clerk', sesi: '', akun: clerk.akun, pada: Date.now() };
+}
+
+/**
+ * Dipanggil `JembatanClerk` di App.tsx tiap kali keadaan Clerk berubah.
+ * Sesi mini yang sedang ada TETAP menang — Telegram adalah identitas yang
+ * membuka fitur bot; Google cuma identitas.
+ */
+export function pasangClerk(p: PenyediaClerk | null): void {
+  clerk = p;
+  if (hidup === undefined) return;            // belum dibaca; bacaSesi() yang menggabungkan
+  if (hidup !== null && hidup.jenis !== 'clerk') return;   // sesi mini menang
+  umumkan(sesiClerk());
+}
 
 /**
  * Sesi yang sedang berlaku, DIPEGANG DI MEMORI supaya tiap permintaan tidak
@@ -69,26 +114,46 @@ export async function bacaSesi(): Promise<Sesi | null> {
   if (hidup !== undefined) return hidup;
   try {
     const mentah = await AsyncStorage.getItem(KUNCI);
-    if (mentah === null) { hidup = null; return null; }
+    if (mentah === null) { hidup = sesiClerk(); return hidup; }
     const s = JSON.parse(mentah) as Sesi;
-    if (typeof s.sesi !== 'string' || s.sesi === '') { hidup = null; return null; }
-    if (Date.now() - s.pada > UMUR_SESI_MS) { await hapusSesi(); return null; }
-    hidup = s;
-    return s;
+    if (typeof s.sesi !== 'string' || s.sesi === '') { hidup = sesiClerk(); return hidup; }
+    if (Date.now() - s.pada > UMUR_SESI_MS) { await hapusSesi(); return hidup ?? null; }
+    hidup = { ...s, jenis: 'mini' };
+    return hidup;
   } catch {
-    hidup = null;
-    return null;
+    hidup = sesiClerk();
+    return hidup;
   }
 }
 
-/** Sesi yang sedang dipegang TANPA menunggu — dipakai penyusun header. */
+/** Sesi yang sedang dipegang TANPA menunggu — dipakai layar saat render. */
 export function sesiSekarang(): Sesi | null {
   return hidup ?? null;
 }
 
+/**
+ * Token yang dikirim sebagai Bearer. Mini: dari simpanan. Clerk: diminta ke
+ * Clerk TIAP KALI, karena ia memperbarui tokennya sendiri di belakang.
+ */
+export async function tokenSesi(): Promise<string | null> {
+  const s = hidup ?? null;
+  if (s === null) return null;
+  if (s.jenis === 'clerk') {
+    try { return await clerk?.getToken() ?? null; } catch { return null; }
+  }
+  return s.sesi;
+}
+
 export async function hapusSesi(): Promise<void> {
+  const lama = hidup ?? null;
   try { await AsyncStorage.removeItem(KUNCI); } catch { /* penyimpanan ditolak */ }
-  umumkan(null);
+  if (lama?.jenis === 'clerk') {
+    try { await clerk?.signOut(); } catch { /* Clerk sudah keluar */ }
+    umumkan(null);
+    return;
+  }
+  /* Sesi mini dicabut; kalau Google masih masuk, ia yang tampil sekarang. */
+  umumkan(sesiClerk());
 }
 
 export type HasilSambung =
@@ -158,7 +223,7 @@ export async function sambungkan(tempelan: string): Promise<HasilSambung> {
     if (!res.ok || typeof badan.sesi !== 'string' || badan.akun === undefined) {
       return { ok: false, ...kalimatSebab(String(badan.galat ?? '')) };
     }
-    const s: Sesi = { sesi: badan.sesi, akun: badan.akun, pada: Date.now() };
+    const s: Sesi = { jenis: 'mini', sesi: badan.sesi, akun: badan.akun, pada: Date.now() };
     try { await AsyncStorage.setItem(KUNCI, JSON.stringify(s)); } catch { /* tetap dipakai di memori */ }
     umumkan(s);
     return { ok: true, sesi: s };
@@ -173,7 +238,7 @@ export async function sambungkan(tempelan: string): Promise<HasilSambung> {
  * Header untuk `/api/saya/*`. Kosong kalau belum tersambung — pemanggil yang
  * memutuskan, bukan fungsi ini yang melempar.
  */
-export function headerSesi(): Record<string, string> {
-  const s = sesiSekarang();
-  return s === null ? {} : { authorization: `Bearer ${s.sesi}` };
+export async function headerSesi(): Promise<Record<string, string>> {
+  const t = await tokenSesi();
+  return t === null ? {} : { authorization: `Bearer ${t}` };
 }

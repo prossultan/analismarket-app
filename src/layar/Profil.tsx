@@ -47,6 +47,19 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
       {/* Angka akun tidak terbaca — sebabnya disebut, bukan disamarkan jadi "—". */}
       {sesi !== null && sebab !== null && <PitaBasi kalimat={sebab} />}
+      {/* Masuk lewat Google tapi belum ditautkan ke bot: pantauan, kabar, dan
+          kredit hidup di akun Telegram. Ini bukan galat, ini langkah berikutnya. */}
+      {sesi !== null && r !== null && !r.telegramTersambung && (
+        <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
+          <View style={[g.baris, { gap: 8 }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={g.nama}>Tautkan Telegram</Text>
+              <Lbl polos>Pantauan, kabar, dan kredit ada di akun bot.</Lbl>
+            </View>
+            <Chip teks="Sambungkan" emas onPress={bukaSambung} />
+          </View>
+        </Blok>
+      )}
       <Blok>
         <View style={g.baris}>
           <View style={[g.avatar, sesi !== null && g.avatarAda]}>
@@ -56,9 +69,9 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={g.nama} numberOfLines={1}>{sesi === null ? 'Belum tersambung' : nama ?? 'Akun Telegram'}</Text>
-            <Lbl polos>{sesi === null ? 'Identitas datang dari bot Telegram' : 'Tersambung lewat Telegram'}</Lbl>
+            <Lbl polos>{sesi === null ? 'Identitas datang dari bot Telegram' : sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Tersambung lewat Telegram'}</Lbl>
             <View style={{ marginTop: 5, alignSelf: 'flex-start' }}>
-              <Chip teks={plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari` : 'Gratis'} emas={plus} lencana />
+              <Chip teks={plus ? 'AnalisMarket+ aktif' : 'Gratis'} emas={plus} lencana />
             </View>
           </View>
         </View>
@@ -70,11 +83,13 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
           </View>
           <View style={g.sel}><Nil besar>{plus ? angka(r?.sisaHariPlus) : '—'}</Nil><Lbl polos>Hari AM+</Lbl></View>
         </View>
-        <View style={{ marginTop: 10 }}>
-          {sesi === null
-            ? <Tombol teks="Sambungkan Telegram" onPress={bukaSambung} />
-            : <Tombol teks="Putuskan sambungan" jenis="kedua" onPress={() => { void hapusSesi(); }} />}
-        </View>
+        {/* Mockup: tombol sambung hanya saat BELUM masuk; putus sambungan
+            adalah baris di bagian Akun, bukan tombol besar di kartu. */}
+        {sesi === null && (
+          <View style={{ marginTop: 10 }}>
+            <Tombol teks="Sambungkan Telegram" onPress={bukaSambung} />
+          </View>
+        )}
       </Blok>
 
       <Lbl gaya={{ marginTop: 2 }}>Bawaan saat app dibuka</Lbl>
@@ -91,11 +106,15 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
         <Butir ikon="kalender" nama="Kabar otomatis & jam sunyi" ket={sesi === null ? "butuh Telegram" : plus ? "aktif" : "butuh AM+"} onPress={() => { buka('KabarOtomatis'); }} />
       </Menu>
 
-      <Lbl gaya={{ marginTop: 2 }}>AnalisMarket+</Lbl>
+      <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
       <Menu>
-        <Butir ikon="plus" nama="Kredit & kuota" ket={r === null ? "butuh Telegram" : `${String(r.poin)} poin`} ketMono onPress={() => { buka('Kredit'); }} pertama />
+        <Butir ikon="plus" nama="Kelola langganan" ket={plus ? "aktif" : "lewat bot"} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
+        <Butir ikon="plus" nama="Kredit & kuota" ket={r === null ? "butuh Telegram" : `${String(r.poin)} poin`} ketMono onPress={() => { buka('Kredit'); }} />
         <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? "butuh Telegram" : plus ? "siap" : "butuh AM+"} onPress={() => { buka('CekBanyak'); }} />
-        <Butir ikon="plus" nama="Kelola langganan" ket={plus ? "aktif" : "lewat bot"} ketEmas onPress={() => { buka('Berlangganan'); }} />
+        {sesi !== null && (
+          <Butir ikon="lainnya" nama={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
+            onPress={() => { void hapusSesi(); }} />
+        )}
       </Menu>
 
       <View style={{ flex: 1 }} />

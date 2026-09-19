@@ -16,7 +16,8 @@ const ANALISIS = 'M9 19V9m6 10V5m6 14v-8M3 19v-4';
 const PLUS = 'M12 3l2.4 5.3 5.6.6-4.2 3.9 1.2 5.7L12 15.6 6.999 18.5l1.2-5.7L4 8.9l5.6-.6L12 3z';
 const KABAR = 'M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0';
 const PROFIL = 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z';
-const LAINNYA = 'M4 7h16M4 12h16M4 17h16';
+/* Mockup `kaca`: Lainnya adalah TIGA TITIK (•••), bukan tiga garis. */
+const LAINNYA = 'M5 12h.01M12 12h.01M19 12h.01';
 const KALENDER = 'M7 3v3m10-3v3M4 9h16M5 6h14v15H5z';
 const BUKU = 'M4 5a2 2 0 012-2h13v18H6a2 2 0 01-2-2zM19 17H6';
 /** Gir: lingkaran poros + enam gigi. Satu jalur, seperti yang lain. */

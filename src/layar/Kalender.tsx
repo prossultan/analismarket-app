@@ -10,7 +10,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { ambilJadwal, type Rilis } from '../data/api';
-import { jamWib, kunciHariWib, tanggalWib } from '../data/tampil';
+import { jamWib, judulHariWib, kunciHariWib } from '../data/tampil';
 import { Chip, Dampak, Hari, Kosong, Lbl, Mikro, Rangka } from '../komponen/mockup';
 import { W, H, TALANG } from '../gaya/token';
 
@@ -47,7 +47,7 @@ export function LayarKalender() {
       const isi = peta.get(k);
       if (isi === undefined) peta.set(k, [r]); else isi.push(r);
     }
-    return [...peta.values()].map((isi) => ({ judul: isi[0] === undefined ? '' : tanggalWib(isi[0].waktu), isi }));
+    return [...peta.values()].map((isi) => ({ judul: isi[0] === undefined ? '' : judulHariWib(isi[0].waktu), isi }));
   }, [rilis, saring, kode]);
 
   const isiPadding = { flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG };

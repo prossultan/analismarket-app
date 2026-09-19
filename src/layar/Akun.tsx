@@ -17,8 +17,8 @@ import { useHeaderHeight } from '@react-navigation/elements';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import {
   ambilKabarOtomatis, ambilKredit, ambilPantauan, ambilRingkas,
-  matikanPantauan, setelJamKabar, setelKabarOtomatis, tambahPantauan,
-  type DaftarPantauan, type JawabanSaya, type KabarOtomatis, type Kredit, type Ringkas,
+  cekBanyak, matikanPantauan, setelJamKabar, setelKabarOtomatis, tambahPantauan, MAKS_SLOT_CEK_BANYAK,
+  type BarisCekBanyak, type DaftarPantauan, type HasilCekBanyak, type JawabanSaya, type KabarOtomatis, type Kredit, type Ringkas,
 } from '../data/saya';
 import { bacaSesi, dengarSesi, hapusSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
 import { useMuat, type Hasil } from '../data/muat';
@@ -29,6 +29,7 @@ import { PAKET_PLUS, rupiah } from '../data/amplus';
 import { useSisaBilah } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
+import { TombolGoogle } from '../komponen/TombolGoogle';
 import {
   BarIsi, BarisPakai, Blok, Butir, Chip, Langkah, Lbl, Menu, Mikro, Nil, PitaBasi, Radio, Rangka, Saklar, Tombol,
 } from '../komponen/mockup';
@@ -41,7 +42,13 @@ function Wadah({ children }: { children: React.ReactNode }) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+    /* `keyboardShouldPersistTaps="handled"`: tanpa ini, di HP ketukan PERTAMA
+       pada tombol saat keyboard terbuka cuma menutup keyboardnya — tombolnya
+       baru menjawab di ketukan kedua. Di web tidak pernah terlihat, karena
+       tidak ada keyboard yang menutupi. Pemilik melaporkannya sebagai
+       "tombol tidak berfungsi", dan itu memang persis rasanya. */
+    <ScrollView style={g.akar} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+      contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
       {children}
     </ScrollView>
   );
@@ -135,9 +142,9 @@ export function LayarSambung() {
       <Wadah>
         <Blok gaya={{ alignItems: 'center', paddingVertical: 16 }}>
           <Ikon nama="profil" warna={W.naik} ukuran={28} />
-          <Text style={g.judulTengah}>Sudah tersambung</Text>
+          <Text style={g.judulTengah}>{sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Sudah tersambung'}</Text>
           <Text style={g.ketTengah}>
-            {sesi.akun.nama ?? 'Akun Telegram'} · {sesi.akun.langganan?.aktif === true ? 'AnalisMarket+' : 'Gratis'}
+            {sesi.akun.nama ?? (sesi.jenis === 'clerk' ? 'Akun Google' : 'Akun Telegram')} · {sesi.akun.langganan === 'plus' ? 'AnalisMarket+' : 'Gratis'}
           </Text>
         </Blok>
         <Blok gaya={{ flex: 1 }}>
@@ -204,6 +211,14 @@ export function LayarSambung() {
         </View>
         {galat !== '' && <Text style={g.galat}>{galat}</Text>}
         <Mikro>Tautannya berlaku 10 menit dan sekali pakai. Kalau lewat, minta lagi ke bot.</Mikro>
+      </Blok>
+
+      <Blok>
+        <Lbl>Atau masuk dengan akun web</Lbl>
+        <View style={{ marginTop: 8 }}>
+          <TombolGoogle />
+        </View>
+        <Mikro>Akun yang sama dengan analismarket.com. Pantauan dan kabar tetap butuh Telegram yang ditautkan — bisa dilakukan sesudah masuk.</Mikro>
       </Blok>
 
       <Blok emas gaya={{ alignItems: 'center', paddingVertical: 14 }}>
@@ -571,6 +586,10 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
   const sesi = useSesi();
   const [pilih, setPilih] = useState<string[]>([]);
   const [daftar, setDaftar] = useState<Pasar[]>([]);
+  const [mesinSemua, setMesinSemua] = useState<string[]>([]);
+  const [sibuk, setSibuk] = useState(false);
+  const [hasil, setHasil] = useState<HasilCekBanyak | null>(null);
+  const [galatJalan, setGalatJalan] = useState('');
 
   const [sebabPasar, setSebabPasar] = useState<string | null>(null);
   useEffect(() => {
@@ -581,6 +600,12 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
       setDaftar(urut.slice(0, 12));
       setPilih(urut.slice(0, 4).map((x) => x.simbol));
     });
+    /* Daftar mesin dari bacaan pasar bawaan — server menuntut kode mesin
+       eksplisit, dan "semua" berarti kelima kode itu disebut satu-satu. */
+    void ambilBacaan('BTCUSDT', 'h1').then((b) => {
+      if (!b.ok) { setSebabPasar(b.kalimat); return; }
+      setMesinSemua(b.isi.mesin.map((m) => m.mesin));
+    });
   }, []);
   const { isi: ringkasCek, sebab } = useAkun(ambilRingkas, sesi);
   const plus: boolean | null = ringkasCek === null ? null : ringkasCek.langganan === 'plus';
@@ -588,6 +613,38 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
   const alih = (s: string): void => {
     setPilih((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]));
   };
+
+  /* DULU `onPress={undefined}` untuk pelanggan AM+ yang sudah masuk — tombol
+     yang terlihat hidup dan diam. Sekarang ia menjalankan pemeriksaannya di
+     sini dan menampilkan tabelnya, seperti mockup 28. */
+  const jalankan = async (): Promise<void> => {
+    if (sibuk || pilih.length === 0) return;
+    setSibuk(true); setGalatJalan(''); setHasil(null);
+    const j = await cekBanyak(pilih, [tf], mesinSemua);
+    setSibuk(false);
+    if (!j.ok) { setGalatJalan(j.kalimat); return; }
+    setHasil(j.isi);
+  };
+
+  /* Satu baris per pasar: yang IDEAL dulu, lalu yang terdekat ke entry. */
+  const terbaik = (h: HasilCekBanyak): BarisCekBanyak[] => {
+    const per = new Map<string, BarisCekBanyak[]>();
+    for (const b of h.baris) per.set(b.pair, [...(per.get(b.pair) ?? []), b]);
+    return [...per.entries()].map(([, rows]) => [...rows].sort((a, b) =>
+      Number(b.ideal === true) - Number(a.ideal === true)
+      || (a.jarakAtr ?? 99) - (b.jarakAtr ?? 99))[0] as BarisCekBanyak);
+  };
+  const statusBaris = (b: BarisCekBanyak): { teks: string; warna: string } => {
+    if (b.sebab === 'pasar-tutup') return { teks: 'Pasar tutup', warna: W.teksSamar };
+    if (b.sebab === 'kuota-habis') return { teks: 'Jatah habis', warna: W.turun };
+    if (b.sebab !== undefined) return { teks: 'Tidak terbaca', warna: W.teksSamar };
+    if (b.ideal === true) return { teks: 'Setup', warna: W.naik };
+    if (b.ideal === false) return { teks: 'Pantau', warna: W.teksKuat };
+    return { teks: 'Tidak dicetak', warna: W.teksSamar };
+  };
+
+  const slot = pilih.length; // satu timeframe
+  const lewat = slot > MAKS_SLOT_CEK_BANYAK;
 
   return (
     <Wadah>
@@ -602,7 +659,7 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
 
       <Blok>
         <View style={g.rata}>
-          <Lbl>Pasar dipilih</Lbl><Nil>{String(pilih.length)}</Nil>
+          <Lbl>Pasar dipilih</Lbl><Nil warna={lewat ? W.turun : undefined}>{String(slot)}{lewat ? ` / maks ${String(MAKS_SLOT_CEK_BANYAK)}` : ''}</Nil>
         </View>
         <View style={[g.chips, { flexWrap: 'wrap', marginTop: 6 }]}>
           {daftar.map((x) => (
@@ -614,24 +671,51 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
 
       <View style={g.baris}>
         <View style={{ flex: 1 }}><Lbl>Timeframe</Lbl><Nil gaya={{ marginTop: 2 }}>{tf.toLowerCase()}</Nil></View>
-        <View style={{ flex: 1 }}><Lbl>Mesin</Lbl><Nil gaya={{ marginTop: 2 }}>semua 5</Nil></View>
-        <View style={{ flex: 1 }}><Lbl>Poin</Lbl><Nil gaya={{ marginTop: 2 }}>{String(pilih.length)}</Nil></View>
+        <View style={{ flex: 1 }}><Lbl>Mesin</Lbl><Nil gaya={{ marginTop: 2 }}>semua {String(mesinSemua.length || 5)}</Nil></View>
+        <View style={{ flex: 1 }}><Lbl>Poin</Lbl><Nil gaya={{ marginTop: 2 }}>{String(slot)}</Nil></View>
       </View>
 
       <Blok gaya={{ flex: 1 }}>
-        <Lbl>Hasil</Lbl>
-        <Text style={g.ket}>
-          Menjalankan {pilih.length} pasar sekaligus menagih {pilih.length} poin — sama dengan membukanya
-          satu per satu. Yang dihemat waktunya, bukan kuotanya.
-        </Text>
+        {hasil === null ? (
+          <>
+            <Lbl>Hasil</Lbl>
+            <Text style={g.ket}>
+              {galatJalan !== '' ? galatJalan
+                : `Menjalankan ${String(slot)} pasar sekaligus menagih ${String(slot)} poin — sama dengan membukanya satu per satu. Yang dihemat waktunya, bukan kuotanya.`}
+            </Text>
+          </>
+        ) : (
+          <>
+            <View style={[g.rata, { paddingBottom: 6 }]}>
+              <Lbl>Pasar</Lbl><Lbl>Terbaik</Lbl><Lbl>Jarak</Lbl><Lbl>Status</Lbl>
+            </View>
+            {terbaik(hasil).map((b, i) => {
+              const st = statusBaris(b);
+              return (
+                <View key={b.pair} style={[g.rata, g.pantau, i > 0 && g.garis]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1.3 }}>
+                    <LambangPasar simbol={b.pair} ukuran={18} />
+                    <Text style={g.pilihJudul} numberOfLines={1}>{b.pair.replace('USDT', '')}</Text>
+                  </View>
+                  <Nil gaya={{ flex: 1 }}>{b.mesin}</Nil>
+                  <Nil gaya={{ flex: 1 }}>{b.jarakAtr === null ? '—' : `${b.jarakAtr.toFixed(1)} ATR`}</Nil>
+                  <Text style={[g.pilihJudul, { flex: 1, color: st.warna, textAlign: 'right' }]}>{st.teks}</Text>
+                </View>
+              );
+            })}
+            <Lbl polos gaya={{ marginTop: 8 }}>
+              {String(hasil.baris.filter((b) => b.ideal === true).length)} setup · {String(hasil.baris.filter((b) => b.ideal === false).length)} pantau · {String(hasil.tarikan)} tarikan · {String(Math.round(hasil.msTotal / 100) / 10)} dtk
+            </Lbl>
+          </>
+        )}
       </Blok>
 
       <Tombol
-        teks={sesi === null ? 'Sambungkan Telegram' : plus === false ? 'Butuh AnalisMarket+' : 'Jalankan di bot'}
-        mati={plus === false}
-        onPress={sesi === null ? bukaSambung : undefined}
+        teks={sesi === null ? 'Sambungkan Telegram' : plus === false ? 'Butuh AnalisMarket+' : sibuk ? 'Memeriksa…' : hasil === null ? 'Jalankan' : 'Jalankan lagi'}
+        mati={plus === false || sibuk || lewat || (sesi !== null && slot === 0)}
+        onPress={sesi === null ? bukaSambung : () => { void jalankan(); }}
       />
-      <Mikro tengah>Hasilnya dikirim bot ke Telegram — di situ kartunya bisa dibagikan langsung.</Mikro>
+      <Mikro tengah>{lewat ? `Maksimum ${String(MAKS_SLOT_CEK_BANYAK)} pasar per pemeriksaan.` : 'Dijalankan di server, hasilnya tampil di sini. Poin ditagih per pasar.'}</Mikro>
     </Wadah>
   );
 }

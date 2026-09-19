@@ -29,8 +29,14 @@ export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan }: Pro
   }
   return (
     <WebView
-      key={url}
+      /* TANPA `key={url}`. Dulu tiap ganti timeframe/pasar membuang seluruh
+         WebView dan membangunnya dari nol — layar hitam sesaat, chart dimuat
+         ulang, dan itu terasa sebagai app yang tersendat. Mengganti `source`
+         saja membuat WebView bernavigasi di tempat. */
       source={{ uri: url }}
+      androidLayerType="hardware"
+      cacheEnabled
+      nestedScrollEnabled={false}
       style={{ flex: 1, backgroundColor: latar }}
       backgroundColor={latar}
       onLoadStart={() => { onMuat(true); }}

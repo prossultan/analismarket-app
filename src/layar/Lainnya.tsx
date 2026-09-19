@@ -9,6 +9,7 @@ import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { Blok, Butir, Lbl, Menu, Mikro, Nil } from '../komponen/mockup';
 import { Merek } from '../komponen/Merek';
+import { useSesi } from './Akun';
 import { jamWib } from '../data/tampil';
 import { W, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
@@ -25,6 +26,10 @@ type Props = {
 };
 
 export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Props) {
+  /* Dulu "belum tersambung" DIKETIK — jadi sesudah orang menyambung, menu
+     ini tetap bilang belum. Pemilik melihatnya di HP sebagai "AM+ tidak
+     terbawa". Keterangan baris harus ikut sesi. */
+  const sesi = useSesi();
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   const jam = (d: number | null): string => (d === null ? '—' : jamWib(d));
@@ -33,13 +38,15 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
       <Lbl>Baca</Lbl>
       <Menu>
         <Butir ikon="kalender" nama="Kalender berita" ket="30 hari" onPress={() => { bukaMenu('kalender'); }} pertama />
-        <Butir ikon="buku" nama="Belajar" ket="istilah & cara baca" onPress={() => { bukaMenu('belajar'); }} />
+        <Butir ikon="buku" nama="Belajar" ket="16 istilah" onPress={() => { bukaMenu('belajar'); }} />
       </Menu>
 
       <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
       <Menu>
-        <Butir ikon="profil" nama="Profil" ket="belum tersambung" onPress={() => { bukaMenu('profil'); }} pertama />
-        <Butir ikon="kabar" nama="Pantauan" ket="butuh Telegram" onPress={() => { bukaMenu('pantauan'); }} />
+        <Butir ikon="profil" nama="Profil"
+          ket={sesi === null ? 'belum tersambung' : sesi.akun.langganan === 'plus' ? 'AM+' : sesi.akun.nama ?? 'tersambung'}
+          ketEmas={sesi?.akun.langganan === 'plus'} onPress={() => { bukaMenu('profil'); }} pertama />
+        <Butir ikon="kabar" nama="Pantauan" ket={sesi === null ? 'butuh Telegram' : sesi.jenis === 'clerk' ? 'tautkan Telegram' : 'aktif'} onPress={() => { bukaMenu('pantauan'); }} />
         <Butir ikon="gir" nama="Pengaturan" ket={`${setelan.tf.toLowerCase()} · ${setelan.pasar}`} ketMono onPress={() => { bukaMenu('pengaturan'); }} />
       </Menu>
 

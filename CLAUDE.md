@@ -252,3 +252,51 @@ Yang sah diperiksa dari APK:
 
 Nilai angkanya diperiksa dari bundel JS `export:embed`
 (`skrip/periksa-bundel.mjs`) dan dari layar yang benar-benar dirender.
+
+## Yang cuma ketahuan di HP, bukan di harness web (uji pemilik 19 Sep)
+
+| gejala di HP | sebab | tempat |
+|---|---|---|
+| "AM+ tidak terbawa" sesudah menyambung | tipe `akun.langganan` dideklarasikan objek `{aktif,…}`; server mengirim STRING `'plus'\|'gratis'`, jadi `langganan.aktif` selalu `undefined` | `sesi.ts` |
+| Lainnya tetap "belum tersambung" | keterangannya DIKETIK, tidak membaca sesi | `Lainnya.tsx` |
+| "tombol tidak berfungsi" | (1) ketukan pertama saat keyboard terbuka cuma menutup keyboard — `keyboardShouldPersistTaps` tidak ada; (2) tombol "Jalankan" Cek banyak `onPress={undefined}`; (3) `cekBanyak()` mengirim `{pasar}` padahal server menuntut `{pair:[],tf:[],mesin:[]}` | `Akun.tsx`, `saya.ts` |
+| kaca tidak terlihat sama sekali | `backgroundColor` dipasang DI ATAS `BlurView` — di Android ia dicat menutupi hasil blur; intensitas 34 ≈ separuh mockup | `Kaca.tsx`, `token.ts` |
+| tersendat | WebView `key={url}` membangun ulang chart tiap ganti tf; 131 baris pasar dirender sekaligus; layar tab lain ikut render | `ChartTertanam.tsx`, `LembarPasar.tsx`, `App.tsx` (`enableFreeze`) |
+
+Harness web tidak bisa melihat satu pun dari ini: tidak ada keyboard, blur
+CSS selalu jalan, dan potret cuma memotret jalur bahagia. **Potret dari HP
+pemilik adalah bukti yang lebih tinggi daripada seluruh harness.**
+
+## 402 punya dua arti
+
+`perlu-telegram` (akun belum ditautkan ke bot — mis. masuk lewat Google) dan
+`perlu-plus` (butuh langganan) sama-sama datang sebagai 402. Dulu keduanya
+dipetakan `jenis: 'plus'`, jadi orang yang baru masuk disuruh berlangganan
+padahal yang kurang tautannya. Sekarang `jenis: 'telegram'`, dibedakan dari
+`badan.galat`.
+
+## Masuk dengan Google — Clerk, instance yang sama dengan web
+
+`@clerk/clerk-expo` + SecureStore. Kuncinya PUBLISHABLE (`clerk-kunci.ts`),
+sama dengan `VITE_CLERK_PUBLISHABLE_KEY` di web. Sesi Clerk berumur pendek dan
+diperbarui Clerk sendiri, jadi TIDAK disimpan di `sesi.ts` — `tokenSesi()`
+memintanya tiap kali. `JembatanClerk` di App.tsx meneruskan keadaan Clerk ke
+`sesi.ts`; layar cukup memakai `useSesi()`.
+
+Sesi mini (Telegram) MENANG atas sesi Clerk: Telegram yang membuka fitur bot.
+Pengguna Google tanpa Telegram melihat ajakan "Tautkan Telegram" di Profil.
+
+**Syarat di Dashboard Clerk yang tidak bisa dipasang dari kode:** skema
+`analismarket://` harus ada di daftar putih Native Applications. Kalau belum,
+Google selesai di peramban tapi app tidak pernah dipanggil kembali — terlihat
+persis seperti tombol yang tidak bekerja.
+
+## Bandingkan dengan mockup lewat POTRET, bukan ingatan
+
+`~/analismarket-web/skrip/_potret-mockup.mts` memotret tiap `.hp` di
+`opendesign/mockups/kaca/index.html`; lembar banding (mockup | app) dirakit
+dengan PIL ke `scratchpad/banding/`. Dua belas lembar, 24 pasang layar.
+Yang mockup punya tapi API tidak (dan karena itu SENGAJA tidak dibuat):
+feed Kabar per-peristiwa dengan "belum dibaca", statistik "Analisa dibaca /
+Hari beruntun", "Terkirim 7 hari terakhir", jatah harian 412/800 per pasar.
+Semuanya butuh endpoint baru di bot.

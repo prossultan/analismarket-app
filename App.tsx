@@ -17,11 +17,20 @@
  * Sambungkan Telegram.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { StatusBar, Text } from 'react-native';
+import { Platform, StatusBar, Text, View } from 'react-native';
 import { NavigationContainer, DarkTheme, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { enableFreeze } from 'react-native-screens';
+import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
+import * as SecureStore from 'expo-secure-store';
+import { KUNCI_CLERK } from './src/data/clerk-kunci';
+import { pasangClerk } from './src/data/sesi';
+
+/* Layar yang tidak terlihat dibekukan — tab lain tidak ikut merender saat
+   harga berganti di tab yang terbuka. Salah satu sebab "kurang smooth" di HP. */
+enableFreeze(true);
 
 import { LayarAnalisis } from './src/layar/Analisis';
 import { LayarBelajar } from './src/layar/Belajar';
@@ -40,6 +49,7 @@ import {
 import { Ikon, type NamaIkon } from './src/komponen/Ikon';
 import { Kaca } from './src/komponen/Kaca';
 import { Merek } from './src/komponen/Merek';
+import { JudulKepala } from './src/komponen/JudulKepala';
 import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
 import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH } from './src/gaya/token';
@@ -104,8 +114,8 @@ type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void; mulaiDiSamb
 function LayarBersama({ setelan, simpan }: IsiTumpukan) {
   return (
     <>
-      <Tumpukan.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar' }} />
-      <Tumpukan.Screen name="Kalender" component={LayarKalender} options={{ title: 'Kalender berita' }} />
+      <Tumpukan.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar', headerTitle: () => <JudulKepala judul="Belajar" sub="16 istilah · cara baca kartu" /> }} />
+      <Tumpukan.Screen name="Kalender" component={LayarKalender} options={{ title: 'Kalender berita', headerTitle: () => <JudulKepala judul="Kalender berita" sub="30 hari ke depan" /> }} />
       <Tumpukan.Screen name="Pengaturan" options={{ title: 'Pengaturan' }}>
         {() => <LayarPengaturan setelan={setelan} simpan={simpan} />}
       </Tumpukan.Screen>
@@ -139,16 +149,16 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
             selesai={() => { (navigation as Nav).navigate('Pantauan'); }} />
         )}
       </Tumpukan.Screen>
-      <Tumpukan.Screen name="KabarOtomatis" options={{ title: 'Kabar otomatis' }}>
+      <Tumpukan.Screen name="KabarOtomatis" options={{ title: 'Kabar otomatis', headerTitle: () => <JudulKepala judul="Kabar otomatis" sub="AnalisMarket+" /> }}>
         {({ navigation }) => <LayarKabarOtomatis bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
       </Tumpukan.Screen>
-      <Tumpukan.Screen name="Kredit" options={{ title: 'Kredit & kuota' }}>
+      <Tumpukan.Screen name="Kredit" options={{ title: 'Kredit & kuota', headerTitle: () => <JudulKepala judul="Kredit & kuota" sub="AnalisMarket+" /> }}>
         {({ navigation }) => <LayarKredit bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
       </Tumpukan.Screen>
-      <Tumpukan.Screen name="CekBanyak" options={{ title: 'Cek banyak pasar' }}>
+      <Tumpukan.Screen name="CekBanyak" options={{ title: 'Cek banyak pasar', headerTitle: () => <JudulKepala judul="Cek banyak pasar" sub="AnalisMarket+" /> }}>
         {({ navigation }) => <LayarCekBanyak tf={setelan.tf} bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
       </Tumpukan.Screen>
-      <Tumpukan.Screen name="Berlangganan" component={LayarBerlangganan} options={{ title: 'Berlangganan' }} />
+      <Tumpukan.Screen name="Berlangganan" component={LayarBerlangganan} options={{ title: 'Berlangganan', headerTitle: () => <JudulKepala judul="Berlangganan" sub="AnalisMarket+" /> }} />
     </>
   );
 }
@@ -205,16 +215,65 @@ function AlurPlus({ setelan, simpan }: IsiTumpukan) {
 }
 
 /** Ikon tab — path SVG yang SAMA dengan web. Tab aktif PUTIH, bukan emas. */
+/**
+ * Ikon tab PERSIS mockup `kaca`: 19px, dan tab aktif punya garis 15×2 di
+ * atasnya (`.tabbar div.on::after`). Garis itu yang membuat bilah terbaca
+ * "modern": keadaan aktif ditandai bentuk, bukan cuma warna.
+ */
 function ikonTab(nama: NamaIkon) {
-  return ({ color }: { color: string }) => <Ikon nama={nama} warna={color} ukuran={20} />;
+  return ({ color, focused }: { color: string; focused: boolean }) => (
+    <View style={{ alignItems: 'center', paddingTop: 6 }}>
+      <View style={{ position: 'absolute', top: 0, width: 15, height: 2, borderRadius: 2, backgroundColor: focused ? W.teksKuat : 'transparent' }} />
+      {/* Aktif = TERISI (mockup): keadaan ditandai bentuk, bukan cuma warna.
+          Titik `lainnya` dipertebal saat terisi supaya tidak lenyap. */}
+      <Ikon nama={nama} warna={color} ukuran={19} isi={focused && nama !== 'lainnya' ? color : undefined} />
+    </View>
+  );
+}
+
+/** Token Clerk disimpan di SecureStore (keystore/keychain), bukan AsyncStorage.
+    Di web SecureStore tidak ada — Clerk memakai cookie peramban sendiri. */
+const simpananToken = Platform.OS === 'web' ? undefined : {
+  getToken: (k: string) => SecureStore.getItemAsync(k),
+  saveToken: (k: string, v: string) => SecureStore.setItemAsync(k, v),
+};
+
+/**
+ * JEMBATAN CLERK → SESI. Satu komponen tanpa tampilan yang meneruskan keadaan
+ * Clerk ke `sesi.ts` tiap kali berubah, supaya layar cukup memakai
+ * `useSesi()` dan tidak perlu tahu Clerk ada.
+ */
+function JembatanClerk() {
+  const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
+  const { user } = useUser();
+  useEffect(() => {
+    if (!isLoaded) return;
+    pasangClerk({
+      getToken: async () => (await getToken()) ?? null,
+      signOut: async () => { await signOut(); },
+      akun: isSignedIn && user !== null && user !== undefined
+        ? {
+          akunId: 0,
+          email: user.primaryEmailAddress?.emailAddress ?? null,
+          nama: user.fullName ?? user.firstName ?? user.primaryEmailAddress?.emailAddress ?? null,
+          telegramTersambung: false,
+          langganan: 'gratis',
+        }
+        : null,
+    });
+  }, [isLoaded, isSignedIn, user?.id, getToken, signOut]);
+  return null;
 }
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle="light-content" backgroundColor={W.latar} />
-      <Isi />
-    </SafeAreaProvider>
+    <ClerkProvider publishableKey={KUNCI_CLERK} tokenCache={simpananToken}>
+      <SafeAreaProvider>
+        <StatusBar barStyle="light-content" backgroundColor={W.latar} />
+        <JembatanClerk />
+        <Isi />
+      </SafeAreaProvider>
+    </ClerkProvider>
   );
 }
 
@@ -276,14 +335,15 @@ function Isi() {
             borderTopWidth: 0,
             elevation: 0,
             height: TINGGI_BILAH + bawah,
-            paddingTop: 4,
+            paddingTop: 0,
             paddingBottom: bawah,
           },
           tabBarBackground: () => <Kaca tepi="atas" gaya={{ flex: 1 }} />,
           tabBarActiveTintColor: W.teksKuat,
           tabBarInactiveTintColor: W.teksSamar,
-          tabBarLabelStyle: { fontSize: H.alat, fontWeight: '500' },
-          tabBarItemStyle: { paddingVertical: 2 },
+          /* mockup: label 9px, ikon 19px, padding 6/4/12 */
+          tabBarLabelStyle: { fontSize: H.label, fontWeight: '500', marginTop: 1 },
+          tabBarItemStyle: { paddingVertical: 0 },
         }}
       >
         <Tab.Screen

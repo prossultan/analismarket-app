@@ -45,6 +45,22 @@ export function tanggalWib(detik: number): string {
   return `${String(d.getUTCDate())} ${BULAN[d.getUTCMonth()] ?? ''}`;
 }
 
+const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const BULAN_PANJANG = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+/**
+ * Judul kelompok hari seperti mockup `kaca`: "HARI INI · 19 SEPTEMBER",
+ * "BESOK · 20 SEPTEMBER", lalu "SABTU · 20 SEPTEMBER". Nama hari untuk
+ * yang lebih jauh — orang membaca kalender dengan nama hari, bukan angka.
+ */
+export function judulHariWib(detik: number, sekarangDetik = Date.now() / 1000): string {
+  const d = new Date(detik * 1000 + 7 * 3600 * 1000);
+  const tanggal = `${String(d.getUTCDate())} ${BULAN_PANJANG[d.getUTCMonth()] ?? ''}`;
+  const selisih = Math.round((Date.parse(kunciHariWib(detik)) - Date.parse(kunciHariWib(sekarangDetik))) / 86_400_000);
+  const awalan = selisih === 0 ? 'Hari ini' : selisih === 1 ? 'Besok' : (HARI[d.getUTCDay()] ?? '');
+  return `${awalan} · ${tanggal}`.toUpperCase();
+}
+
 export function kunciHariWib(detik: number): string {
   const d = new Date(detik * 1000 + 7 * 3600 * 1000);
   return `${String(d.getUTCFullYear())}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;

@@ -18,20 +18,20 @@ import { hapusSesi, headerSesi, sesiSekarang } from './sesi';
 export type JawabanSaya<T> =
   | { ok: true; isi: T }
   /** `sesi` = harus sambung ulang · `plus` = butuh AM+ · sisanya apa adanya. */
-  | { ok: false; jenis: 'sesi' | 'plus' | 'batas' | 'jaringan' | 'lain'; kalimat: string };
+  | { ok: false; jenis: 'sesi' | 'telegram' | 'plus' | 'batas' | 'jaringan' | 'lain'; kalimat: string };
 
 const BATAS_MS = 15_000;
 
 async function panggil<T>(jalur: string, metode: 'GET' | 'POST', badan?: unknown): Promise<JawabanSaya<T>> {
   if (sesiSekarang() === null) {
-    return { ok: false, jenis: 'sesi', kalimat: 'Belum tersambung ke akun Telegram.' };
+    return { ok: false, jenis: 'sesi', kalimat: 'Belum masuk.' };
   }
   const henti = new AbortController();
   const jam = setTimeout(() => { henti.abort(); }, BATAS_MS);
   try {
     const res = await fetch(`${ASAL}${jalur}`, {
       method: metode,
-      headers: { ...headerSesi(), ...(metode === 'POST' ? { 'content-type': 'application/json' } : {}) },
+      headers: { ...(await headerSesi()), ...(metode === 'POST' ? { 'content-type': 'application/json' } : {}) },
       body: metode === 'POST' ? JSON.stringify(badan ?? {}) : undefined,
       signal: henti.signal,
     });
@@ -43,6 +43,14 @@ async function panggil<T>(jalur: string, metode: 'GET' | 'POST', badan?: unknown
     }
     const isi = (await res.json().catch(() => ({}))) as T & { galat?: string; pesan?: string };
     if (res.status === 402) {
+      /* DUA HAL BERBEDA DATANG SEBAGAI 402. `perlu-telegram` berarti akun
+         ini (mis. masuk lewat Google) belum ditautkan ke bot — dan itu
+         BUKAN soal langganan. Dulu keduanya dipetakan ke 'plus', jadi orang
+         yang baru menyambung disuruh berlangganan padahal yang kurang
+         tautannya. */
+      if (isi.galat === 'perlu-telegram') {
+        return { ok: false, jenis: 'telegram', kalimat: isi.pesan ?? 'Fitur ini butuh akun Telegram yang tersambung ke bot.' };
+      }
       return { ok: false, jenis: 'plus', kalimat: isi.pesan ?? 'Fitur ini bagian dari AnalisMarket+.' };
     }
     if (res.status === 429) {
@@ -120,5 +128,20 @@ export const setelJamKabar = (mulai: number, selesai: number): Promise<JawabanSa
 export const setelKabarOtomatis = (
   b: { tf: string; mesin: string; aktif: boolean } | { semua: false },
 ): Promise<JawabanSaya<unknown>> => panggil('/api/saya/kabar-otomatis/setel', 'POST', b);
-export const cekBanyak = (pasar: string[], tf: string): Promise<JawabanSaya<unknown>> =>
-  panggil('/api/saya/cek-banyak', 'POST', { pasar, tf });
+export type BarisCekBanyak = {
+  pair: string; tf: string; mesin: string;
+  ideal: boolean | null; arah: 'bull' | 'bear' | null; jarakAtr: number | null;
+  sebab?: 'pasar-tutup' | 'tf-tidak-diizinkan' | 'kuota-habis' | 'kuota-tak-terbaca' | 'data-gagal';
+};
+export type HasilCekBanyak = { baris: BarisCekBanyak[]; slot: number; tarikan: number; msTotal: number };
+/** Maksimum pasangan (pair × tf) per permintaan — `MAKS_SLOT_CEK_BANYAK` di bot. */
+export const MAKS_SLOT_CEK_BANYAK = 12;
+
+/**
+ * Bentuk badannya LARIK, dan namanya `pair` — bukan `pasar`. Versi pertama
+ * mengirim `{ pasar, tf }` dan server menjawab 400 "pair kosong"; tidak ada
+ * yang pernah melihatnya karena tombol yang memanggilnya juga tidak
+ * tersambung. Dua cacat yang saling menyembunyikan.
+ */
+export const cekBanyak = (pair: string[], tf: string[], mesin: string[]): Promise<JawabanSaya<HasilCekBanyak>> =>
+  panggil('/api/saya/cek-banyak', 'POST', { pair, tf: tf.map((t) => t.toUpperCase()), mesin });

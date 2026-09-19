@@ -94,7 +94,8 @@ export const TINGGI_CHIP = 30;
 /** Tombol di baris kendali chart. */
 export const TINGGI_KENDALI = 40;
 /** Bilah navigasi bawah. */
-export const TINGGI_BILAH = 58;
+/** Mockup `--tabbar-h: 52px` (di luar jarak aman). */
+export const TINGGI_BILAH = 52;
 /** Bar biaya. */
 export const TINGGI_BAR = 6;
 
@@ -137,12 +138,16 @@ export const SELA_CHIP = 6;
  */
 export const KACA = {
   /** Bilah: isi di baliknya harus tetap terbaca. */
-  tipis: { intensitas: 34, warna: 'rgba(26,24,21,0.42)' },
+  /* Intensitas dinaikkan (34 → 68): mockup memakai blur(26px), dan di
+     expo-blur angka 34 setara ~10px — separuhnya. Di HP pemilik kaca tidak
+     terlihat sama sekali; sebagian karena ini, sebagian karena warnanya
+     dicat DI ATAS blur (lihat Kaca.tsx). */
+  tipis: { intensitas: 68, warna: 'rgba(26,24,21,0.44)' },
   /** Lembar: ia menutupi sesuatu, jadi lebih pekat. */
-  tebal: { intensitas: 52, warna: 'rgba(20,19,16,0.62)' },
+  tebal: { intensitas: 84, warna: 'rgba(20,19,16,0.66)' },
   /** Garis rambut atas — kilau tepi yang membuat kaca punya ketebalan. */
   tepi: 'rgba(255,255,255,0.16)',
-  rim: 'rgba(255,255,255,0.13)',
+  rim: 'rgba(255,255,255,0.15)',
 } as const;
 
 export const J = { x1: 4, x2: 8, x3: 12, x4: 18, x5: 26 } as const;

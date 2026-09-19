@@ -94,6 +94,12 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
           <FlatList
             data={terlihat}
             keyExtractor={(p) => p.simbol}
+            /* 131 baris: render 14 dulu, sisanya per gulir. Tanpa ini lembar
+               terbuka dengan jeda terasa di HP — semua baris dirakit sekaligus. */
+            initialNumToRender={14}
+            maxToRenderPerBatch={12}
+            windowSize={7}
+            removeClippedSubviews
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingHorizontal: TALANG, paddingBottom: J.x4 }}
             renderItem={({ item, index }) => {

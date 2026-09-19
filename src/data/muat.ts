@@ -23,7 +23,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * sudah punya bentuk ini; yang di sini cuma menyatukan daftar `jenis`-nya
  * supaya satu hook bisa menampung dua-duanya tanpa cast.
  */
-export type Jenis = 'jaringan' | 'ditolak' | 'batas' | 'sesi' | 'plus' | 'lain';
+export type Jenis = 'jaringan' | 'ditolak' | 'batas' | 'sesi' | 'telegram' | 'plus' | 'lain';
 export type Hasil<T> = { ok: true; isi: T } | { ok: false; jenis: Jenis; kalimat: string };
 
 /**
