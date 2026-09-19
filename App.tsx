@@ -389,7 +389,14 @@ function Isi() {
           name="amplus"
           options={{
             title: 'PLUS+',
-            tabBarIcon: ({ focused }) => <Ikon nama="plus" warna={W.plus} ukuran={20} isi={focused ? W.plusRedup : undefined} />,
+            /* Mockup: bintang TERISI emas di semua keadaan, dan tab aktif
+               dapat garis 15×2 yang sama dengan tab lain. */
+            tabBarIcon: ({ focused }) => (
+              <View style={{ alignItems: 'center', paddingTop: 6 }}>
+                <View style={{ position: 'absolute', top: 0, width: 15, height: 2, borderRadius: 2, backgroundColor: focused ? W.plus : 'transparent' }} />
+                <Ikon nama="plus" warna={W.plus} ukuran={19} isi={W.plus} />
+              </View>
+            ),
             /* Label diberi warna SENDIRI, bukan lewat tint: tint per-layar
                menular ke seluruh bilah saat layar ini aktif. */
             tabBarLabel: () => <Text style={{ fontSize: H.alat, fontWeight: '600', color: W.plus }}>PLUS+</Text>,
