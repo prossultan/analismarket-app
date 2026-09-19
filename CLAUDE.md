@@ -106,3 +106,27 @@ mencocokkannya dengan `PAKET_PLUS` di repo bot. Ia **gagal keras** kalau repo
 bot tidak terjangkau — lulus karena tidak menemukan sumbernya adalah kelas
 kegagalan yang sudah lima kali terjadi di repo sebelah. Setel `REPO_BOT` kalau
 lokasinya lain. Uji-mutasi 4/4 merah, termasuk kasus sumber hilang.
+
+## Izin Android datang dari pustaka, bukan dari kode kita
+
+Tidak ada satu baris pun di repo ini yang menyebut izin, dan sampai
+19 Sep 2026 app ini tetap meminta EMPAT yang tidak pernah dipakainya —
+`SYSTEM_ALERT_WINDOW` ("tampil di atas aplikasi lain", izin sensitif yang
+diperiksa ketat Play Store), `READ/WRITE_EXTERNAL_STORAGE`, dan `VIBRATE`.
+Semuanya warisan penggabungan manifes React Native.
+
+Diblokir lewat `android.blockedPermissions` di `app.json`. Yang boleh ikut
+cuma `INTERNET`, dan itu ditegakkan `skrip/periksa-izin.mjs`.
+
+Penjaganya menembak **manifes yang dihasilkan prebuild**, bukan daftar
+`blockedPermissions`. Daftar itu cuma menjawab "apa yang sudah kita tahu";
+yang berbahaya adalah izin KELIMA yang disuntikkan pustaka baru besok, dan
+itu hanya terlihat dari manifesnya. Lambat (~1 menit), jadi tidak ikut
+`npm run periksa` — ia bagian dari `npm run periksa-rilis`.
+
+## Nomor versi dipegang EAS, jangan disimpan dua kali
+
+`eas.json` memakai `appVersionSource: "remote"`, jadi `versionCode` dan
+`buildNumber` di `app.json` DIABAIKAN saat build — tapi tetap tercetak ke
+manifest lewat expo-constants. Dua angka untuk satu hal, dan yang terbaca app
+justru yang basi. Keduanya dicabut dari `app.json`.

@@ -15,18 +15,18 @@
       "resizeMode": "contain",
       "backgroundColor": "#0C0B09"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "id.analismarket.app",
-      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "id.analismarket.app",
-      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0C0B09",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -34,11 +34,23 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2bf750c3-f839-4568-9eba-3dc2ae01be33"
+      }
+    },
+    "owner": "polosan"
   }
 }
