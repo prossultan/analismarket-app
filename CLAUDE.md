@@ -211,3 +211,26 @@ Hasil sah dari APK build 19 Sep (`id.analismarket.app`):
 android.permission.INTERNET
 id.analismarket.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION   <- privat, dari AndroidX
 ```
+
+## Penjaga sumber dan penjaga bundel menjawab pertanyaan yang BERBEDA
+
+Penjaga sumber: "apakah kode yang saya lihat benar."
+Penjaga bundel: "apakah yang terpasang di HP orang benar."
+
+Keduanya berbeda pada hari yang sama, 19 Sep 2026: `periksa-harga.mjs` hijau
+sesudah harga dibetulkan di satu layar, sementara bundel jadi masih memuat
+harga lama TIGA kali — dari `Akun.tsx`, berkas yang penjaga itu tidak pernah
+lihat karena ia cuma memindai satu berkas. Yang menemukannya `grep` atas
+BUNDEL, sesudah harganya sudah dinyatakan beres.
+
+`skrip/periksa-bundel.mjs` membangun bundel android lalu memeriksanya.
+Dua sisi, dan sisi kedua ada karena sisi pertama bisa lulus dengan tidak
+menemukan apa-apa:
+
+- **larangan** — nol harga rupiah yang DIKETIK, nol kata terlarang;
+- **keharusan** — tiap `hargaRp` di `PAKET_PLUS` wajib ADA di bundel, karena
+  "nol literal" juga yang dijawab bundel yang harganya hilang sama sekali.
+
+Satu jebakan yang sudah memerahkannya sekali secara palsu: **minifier menulis
+`50000` sebagai `5e4`** dan `135000` sebagai `135e3`. Mencari digit polos saja
+melaporkan seluruh harga hilang, dan yang salah penjaganya.

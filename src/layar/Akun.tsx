@@ -23,6 +23,9 @@ import {
 import { bacaSesi, dengarSesi, hapusSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
 import { useMuat, type Hasil } from '../data/muat';
 import { volumeRingkas } from '../data/tampil';
+/* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
+   sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
+import { PAKET_PLUS, rupiah } from '../data/amplus';
 import { useSisaBilah } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -100,6 +103,8 @@ function useAkun<T>(ambil: () => Promise<JawabanSaya<T>>, sesi: Sesi | null): {
     ulangi,
   };
 }
+
+const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: number };
 
 /* ══ 21 · SAMBUNGKAN TELEGRAM ═══════════════════════════════════════════ */
 export function LayarSambung() {
@@ -646,7 +651,7 @@ export function LayarBerlangganan() {
       {sebab !== null && <PitaBasi kalimat={sebab} />}
       <View style={g.kartuEmas}>
         <Text style={g.cap}>AnalisMarket+</Text>
-        <Text style={g.harga}>Rp 99.000 <Text style={g.dari}>/ bulan</Text></Text>
+        <Text style={g.harga}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.dari}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
         <Lbl polos gaya={{ marginTop: 3 }}>Ditagih tiap 30 hari · berhenti kapan saja</Lbl>
       </View>
 
@@ -673,9 +678,9 @@ export function LayarBerlangganan() {
       <Blok gaya={{ flex: 1 }}>
         <Lbl>Rincian</Lbl>
         <View style={{ marginTop: 4 }}>
-          <BarisPakai kiri="AnalisMarket+ · 1 bulan" kanan="Rp 99.000" pertama />
+          <BarisPakai kiri={`AnalisMarket+ · ${String(SATU_BULAN.bulan)} bulan`} kanan={rupiah(SATU_BULAN.hargaRp)} pertama />
           <BarisPakai kiri="PPN" kanan="Termasuk" />
-          <BarisPakai kiri="Total" kanan="Rp 99.000" tebal />
+          <BarisPakai kiri="Total" kanan={rupiah(SATU_BULAN.hargaRp)} tebal />
         </View>
         <Mikro>Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis, tanpa tagihan berikutnya.</Mikro>
       </Blok>

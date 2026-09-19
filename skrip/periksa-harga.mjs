@@ -18,7 +18,7 @@
  * tidak ketemu berarti penjaga ini lulus dengan tidak memeriksa apa pun — dan
  * itu kelas kegagalan yang sudah lima kali terjadi di repo sebelah.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 const BOT = process.env['REPO_BOT'] ?? `${process.env['HOME'] ?? ''}/apps/analisa`;
 const SUMBER = `${BOT}/src/lib/langganan.ts`;
@@ -54,10 +54,25 @@ const diApp = new Set(app.map(kunci));
 for (const k of diApp) if (!diBot.has(k)) masalah.push(`app menawarkan paket yang TIDAK ditagihkan bot: ${k}`);
 for (const k of diBot) if (!diApp.has(k)) masalah.push(`bot menagih paket yang tidak ada di app: ${k}`);
 
-/* Harga yang diketik langsung di layar melewati satu-satunya sumbernya. */
-const layar = readFileSync('src/layar/AmPlus.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-const ketik = [...layar.matchAll(/Rp\s?[\d.]{4,}/g)].map((m) => m[0]);
-if (ketik.length > 0) masalah.push(`harga diketik langsung di AmPlus.tsx (${ketik.join(', ')}) — pakai rupiah(PAKET_PLUS[...])`);
+/* Harga yang diketik langsung MELEWATI satu-satunya sumbernya.
+ *
+ * Versi pertama penjaga ini cuma memindai `src/layar/AmPlus.tsx` — dan
+ * melewatkan TIGA baris lagi di `Akun.tsx`, termasuk rincian tagihan
+ * "AnalisMarket+ · 1 bulan  Rp 99.000 / PPN Termasuk / Total Rp 99.000".
+ * Yang menemukannya bukan penjaga ini melainkan `grep` atas BUNDEL JADI,
+ * sesudah harganya sudah dinyatakan beres. Penjaga yang cuma melihat satu
+ * berkas menjawab pertanyaan yang lebih sempit daripada yang ditanyakan. */
+const berkas = [];
+for (const dir of ['src/layar', 'src/komponen', 'src/data']) {
+  for (const n of readdirSync(dir)) if (n.endsWith('.tsx') || n.endsWith('.ts')) berkas.push(`${dir}/${n}`);
+}
+if (berkas.length < 15) masalah.push(`cuma ${berkas.length} berkas dipindai — sapuan ini tidak menguji apa pun`);
+for (const jalur of berkas) {
+  if (jalur === 'src/data/amplus.ts') continue; // satu-satunya tempat angkanya boleh hidup
+  const teks = readFileSync(jalur, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+  const ketik = [...teks.matchAll(/Rp\s?[\d][\d.]{3,}/g)].map((m) => m[0]);
+  if (ketik.length > 0) masalah.push(`harga diketik langsung di ${jalur} (${ketik.join(', ')}) — pakai rupiah(PAKET_PLUS[...])`);
+}
 
 if (masalah.length > 0) {
   process.stdout.write(`GAGAL — ${masalah.length} masalah harga:\n`);
