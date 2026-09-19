@@ -224,9 +224,10 @@ function ikonTab(nama: NamaIkon) {
   return ({ color, focused }: { color: string; focused: boolean }) => (
     <View style={{ alignItems: 'center', paddingTop: 6 }}>
       <View style={{ position: 'absolute', top: 0, width: 15, height: 2, borderRadius: 2, backgroundColor: focused ? W.teksKuat : 'transparent' }} />
-      {/* Aktif = TERISI (mockup): keadaan ditandai bentuk, bukan cuma warna.
-          Titik `lainnya` dipertebal saat terisi supaya tidak lenyap. */}
-      <Ikon nama={nama} warna={color} ukuran={19} isi={focused && nama !== 'lainnya' ? color : undefined} />
+      {/* Mockup: bintang PLUS+ SELALU terisi emas; ikon lain menebal saat aktif.
+          Mengisi jalur terbuka (grafik Pasar) menghasilkan bidang aneh — dicoba
+          dan terlihat di potret, jadi yang aktif ditebalkan, bukan diisi. */}
+      <Ikon nama={nama} warna={color} ukuran={19} isi={nama === 'plus' ? W.plus : undefined} tebal={focused} />
     </View>
   );
 }

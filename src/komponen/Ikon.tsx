@@ -31,8 +31,12 @@ export const JALUR = {
 
 export type NamaIkon = keyof typeof JALUR;
 
-export function Ikon({ nama, warna, ukuran = 20, isi }: {
+export function Ikon({ nama, warna, ukuran = 20, isi, tebal = false }: {
   nama: NamaIkon; warna: string; ukuran?: number; isi?: string;
+  /** Goresan lebih tebal — keadaan aktif untuk ikon yang jalurnya TERBUKA
+      (grafik, lonceng): mengisinya menghasilkan bidang aneh, menebalkannya
+      tidak. */
+  tebal?: boolean;
 }) {
   return (
     <Svg width={ukuran} height={ukuran} viewBox="0 0 24 24">
@@ -40,7 +44,7 @@ export function Ikon({ nama, warna, ukuran = 20, isi }: {
         d={JALUR[nama]}
         fill={isi ?? 'none'}
         stroke={warna}
-        strokeWidth={1.8}
+        strokeWidth={tebal ? 2.4 : 1.8}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
