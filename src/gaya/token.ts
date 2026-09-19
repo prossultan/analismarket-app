@@ -118,7 +118,7 @@ export const TINGGI_BAR = 6;
  */
 export const SISA_BILAH = TINGGI_BILAH + 8;
 
-export const TALANG = 14;
+export const TALANG = 11;
 /** Jarak antar chip dan antar tab. Terukur diketik mentah di 16 tempat. */
 export const SELA_CHIP = 6;
 

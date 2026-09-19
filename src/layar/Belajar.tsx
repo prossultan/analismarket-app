@@ -1,80 +1,45 @@
 /**
- * HALAMAN 8 — BELAJAR.
+ * BELAJAR — mockup 08.
  *
- * Dua bagian: cara membaca kartu, lalu kamus istilah. Urutan itu disengaja —
- * orang baru butuh tahu arti "Setup" dan "Pantau" sebelum butuh tahu apa itu
- * order block.
- *
- * Isinya diangkut dari web apa adanya. Yang dijelaskan adalah apa yang MESIN
- * INI maksud, bukan definisi buku teks.
+ * Tanpa kartu untuk tiap istilah: pemisah garis rambut sudah cukup, dan
+ * kartu bertumpuk membuat daftar bacaan terasa seperti papan kendali.
  */
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ISTILAH } from '../data/istilah';
-import { Kartu, Pisah } from '../komponen/dasar';
-import { W, H, J } from '../gaya/token';
+import { Chip, Istilah } from '../komponen/mockup';
+import { W, TALANG } from '../gaya/token';
 
-const KEADAAN: ReadonlyArray<{ nama: string; arti: string }> = [
-  { nama: 'Setup', arti: 'Semua syarat wajib lolos, angka rencana dicetak.' },
-  { nama: 'Pantau', arti: 'Ada syarat yang belum lolos, angka ditahan sampai lolos.' },
-  { nama: 'Tidak dicetak', arti: 'Mesin membaca levelnya, tapi rencananya ditahan — sebabnya disebut di bacaan.' },
+const CARA_BACA: ReadonlyArray<{ nama: string; arti: string }> = [
+  { nama: 'Setup · Pantau · Tidak dicetak', arti: 'Setup berarti semua syarat wajib lolos. Pantau berarti sebagian. Tidak dicetak berarti kondisinya belum layak dibaca.' },
+  { nama: 'Syarat wajib', arti: 'Hanya syarat wajib yang dihitung. Bonus tidak menaikkan hitungan, dan tidak pernah membuat sesuatu jadi setup.' },
+  { nama: 'Angka rencana ditahan', arti: 'Kalau imbalan tidak sepadan dengan risikonya di dalam gerak wajar pasar, Entry, SL, dan TP tidak dicetak. Kartu menyebut sebabnya.' },
+  { nama: 'Jarak entry', arti: 'Seberapa jauh harga sekarang dari level entry, diukur dalam ATR. Lewat 3 ATR, entry-nya belum terjangkau.' },
+  { nama: 'Porsi biaya', arti: 'Berapa persen dari risiko yang habis oleh spread dan slippage. Di atas separuh, setupnya jarang layak.' },
+  { nama: 'Bias timeframe atas', arti: 'Arah yang terbaca di timeframe di atasnya. Setup yang melawan bias atas lebih jarang lolos.' },
 ];
 
 export function LayarBelajar() {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
+  const [tab, setTab] = useState<'istilah' | 'cara'>('istilah');
+  const daftar = tab === 'istilah' ? ISTILAH.map((i) => ({ nama: i.nama, arti: i.arti })) : CARA_BACA;
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
-      <Kartu judul="Tiga keadaan kartu">
-        {KEADAAN.map((k, i) => (
-          <View key={k.nama}>
-            {i > 0 && <Pisah />}
-            <Text style={g.nama}>{k.nama}</Text>
-            <Text style={g.arti}>{k.arti}</Text>
-          </View>
-        ))}
-      </Kartu>
-
-      <Kartu judul="Bar biaya">
-        <Text style={g.arti}>
-          Ongkos masuk-keluar dibagi jarak stop loss. Di bawah 50% wajar; di atasnya mencolok; di atas 100% ongkosnya melebihi seluruh risiko dan angka rencana ditahan.
-        </Text>
-      </Kartu>
-
-      <Kartu judul="Jarak entry">
-        <Text style={g.arti}>
-          Jarak harga sekarang ke entry dinyatakan dalam ATR. Rencana entry hanya dicetak sampai 2 ATR — lebih jauh dari itu, harga hampir tidak pernah sampai sebelum bacaannya kedaluwarsa.
-        </Text>
-      </Kartu>
-
-      <Text style={g.judulBagian}>Istilah di chart</Text>
-      <Text style={g.catatan}>
-        Yang dijelaskan adalah apa yang mesin bot maksud dengan tiap kata — bukan definisi umum.
-      </Text>
-
-      {ISTILAH.map((it) => (
-        <Kartu key={it.kode}>
-          <View style={g.kepalaIstilah}>
-            <Text style={g.kode}>{it.kode}</Text>
-            <Text style={g.mesin}>{it.mesin}</Text>
-          </View>
-          <Text style={g.namaIstilah}>{it.nama}</Text>
-          <Text style={[g.arti, { marginTop: J.x2 }]}>{it.arti}</Text>
-        </Kartu>
-      ))}
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG }}>
+      <View style={g.chips}>
+        <Chip teks="Istilah" on={tab === 'istilah'} onPress={() => { setTab('istilah'); }} />
+        <Chip teks="Cara baca kartu" on={tab === 'cara'} onPress={() => { setTab('cara'); }} />
+      </View>
+      <View style={{ marginTop: 6 }}>
+        {daftar.map((d, i) => <Istilah key={d.nama} judul={d.nama} isi={d.arti} pertama={i === 0} />)}
+      </View>
     </ScrollView>
   );
 }
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  nama: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500' },
-  arti: { fontSize: 11, color: W.teksRedup, lineHeight: 18, marginTop: 3 },
-  judulBagian: { fontSize: H.nama, color: W.teksKuat, fontWeight: '700', paddingHorizontal: J.x3, paddingTop: J.x3 },
-  catatan: { fontSize: 11, color: W.teksSamar, paddingHorizontal: J.x3, paddingBottom: J.x3, paddingTop: J.x1, lineHeight: 16 },
-  kepalaIstilah: { flexDirection: 'row', alignItems: 'center', gap: J.x2 },
-  kode: { fontSize: H.kontrol, color: W.teksKuat, fontWeight: '700' },
-  mesin: { fontSize: H.label, color: W.teksSamar, letterSpacing: 0.6, textTransform: 'uppercase' },
-  namaIstilah: { fontSize: 11, color: W.teks, marginTop: 2 },
+  chips: { flexDirection: 'row', gap: 4 },
 });

@@ -1,23 +1,21 @@
 /**
- * HALAMAN 7 — KALENDER BERITA.
+ * KALENDER BERITA — mockup 07.
  *
- * `/api/jadwal-berita` sudah melayani pengunjung anonim sejak lama dan BELUM
- * DIPAKAI permukaan mana pun — tidak di web, tidak di bot. App ini yang
- * pertama menampilkannya.
- *
- * Dikelompokkan per hari WIB, bukan daftar datar: pertanyaan yang orang bawa
- * ke halaman ini adalah "hari ini ada apa", bukan "rilis ke-empat puluh apa".
+ * Dampak dikodekan BENTUK dan WARNA sekaligus: pita tegak di tepi kiri,
+ * merah untuk tinggi, emas untuk sedang. Warna saja hilang bagi yang tidak
+ * membedakannya; pita saja tidak cukup cepat dibaca.
  */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { ambilJadwal, type Rilis } from '../data/api';
 import { jamWib, kunciHariWib, tanggalWib } from '../data/tampil';
-import { Kosong, Memuat } from '../komponen/dasar';
-import { W, H, J, R, ANGKA } from '../gaya/token';
+import { Chip, Dampak, Hari, Kosong, Mikro, Rangka } from '../komponen/mockup';
+import { W, H, TALANG } from '../gaya/token';
 
-const HARI = 14;
+const HARI = 30;
+type Saring = 'semua' | 'tinggi' | 'sedang';
 
 export function LayarKalender() {
   const tinggiKepala = useHeaderHeight();
@@ -26,71 +24,97 @@ export function LayarKalender() {
   const [keadaan, setKeadaan] = useState<'memuat' | 'ada' | 'gagal'>('memuat');
   const [sebab, setSebab] = useState('');
   const [menyegarkan, setMenyegarkan] = useState(false);
+  const [saring, setSaring] = useState<Saring>('semua');
+  const [kode, setKode] = useState<string | null>(null);
 
   const muat = useCallback(async (segarkan = false): Promise<void> => {
     const j = await ambilJadwal(HARI, segarkan);
     if (j.ok) { setRilis(j.isi.rilis); setKeadaan('ada'); }
     else { setKeadaan('gagal'); setSebab(j.kalimat); }
   }, []);
-
   useEffect(() => { void muat(); }, [muat]);
+
+  const kodeAda = useMemo(() => [...new Set(rilis.map((r) => r.kode))].sort(), [rilis]);
 
   const bagian = useMemo(() => {
     const peta = new Map<string, Rilis[]>();
-    for (const r of [...rilis].sort((a, b) => a.waktu - b.waktu)) {
+    const tersaring = rilis
+      .filter((r) => saring === 'semua' || r.dampak === saring)
+      .filter((r) => kode === null || r.kode === kode)
+      .sort((a, b) => a.waktu - b.waktu);
+    for (const r of tersaring) {
       const k = kunciHariWib(r.waktu);
       const isi = peta.get(k);
       if (isi === undefined) peta.set(k, [r]); else isi.push(r);
     }
-    return [...peta.entries()].map(([, isi]) => ({
-      title: isi[0] === undefined ? '' : tanggalWib(isi[0].waktu),
-      data: isi,
-    }));
-  }, [rilis]);
+    return [...peta.values()].map((isi) => ({ judul: isi[0] === undefined ? '' : tanggalWib(isi[0].waktu), isi }));
+  }, [rilis, saring, kode]);
 
-  if (keadaan === 'memuat') return <Memuat teks="Mengambil jadwal berita…" />;
-  if (keadaan === 'gagal') return <Kosong judul="Jadwal tidak terbaca" sebab={sebab} aksi={() => { void muat(true); }} />;
+  const isiPadding = { paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG };
+
+  if (keadaan === 'gagal') {
+    return (
+      <View style={[g.akar, isiPadding]}>
+        <Kosong ikon="kalender" judul="Jadwal tidak terbaca" kalimat={sebab} aksi={() => { setKeadaan('memuat'); void muat(true); }} />
+      </View>
+    );
+  }
 
   return (
-    <SectionList
+    <ScrollView
       style={g.akar}
-      contentContainerStyle={{ paddingTop: tinggiKepala, paddingBottom: sisaBilah }}
-      sections={bagian}
-      keyExtractor={(r, i) => `${String(r.waktu)}${r.kode}${String(i)}`}
-      stickySectionHeadersEnabled
-      refreshControl={
-        <RefreshControl
-          refreshing={menyegarkan}
-          tintColor={W.teksRedup}
-          onRefresh={() => { setMenyegarkan(true); void muat(true).finally(() => { setMenyegarkan(false); }); }}
-        />
-      }
-      ListEmptyComponent={
-        <Kosong judul="Tidak ada rilis terjadwal" sebab={`Tidak ada agenda berdampak dalam ${String(HARI)} hari ke depan.`} />
-      }
-      ListFooterComponent={<Text style={g.kaki}>Jam ditulis WIB. Rilis berdampak tinggi biasa menggerakkan emas dan forex paling keras.</Text>}
-      renderSectionHeader={({ section }) => <Text style={g.hari}>{section.title}</Text>}
-      renderItem={({ item }) => (
-        <View style={g.baris}>
-          <Text style={g.jam}>{jamWib(item.waktu)}</Text>
-          <View style={[g.dampak, { backgroundColor: item.dampak === 'tinggi' ? W.turun : W.tanda }]} />
-          <View style={{ flex: 1 }}>
-            <Text style={g.acara} numberOfLines={2}>{item.acara}</Text>
-            <Text style={g.negara}>{item.kode} · {item.nama}</Text>
-          </View>
+      contentContainerStyle={isiPadding}
+      refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup}
+        onRefresh={() => { setMenyegarkan(true); void muat(true).finally(() => { setMenyegarkan(false); }); }} />}
+    >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.chips}>
+        <Chip teks="Semua" on={saring === 'semua'} onPress={() => { setSaring('semua'); }} />
+        <Chip teks="Tinggi" on={saring === 'tinggi'} onPress={() => { setSaring('tinggi'); }} />
+        <Chip teks="Sedang" on={saring === 'sedang'} onPress={() => { setSaring('sedang'); }} />
+        {kodeAda.map((k) => <Chip key={k} teks={k} on={kode === k} onPress={() => { setKode(kode === k ? null : k); }} />)}
+      </ScrollView>
+
+      {keadaan === 'memuat' && (
+        <View style={{ gap: 10, paddingTop: 8 }}>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
+              <Rangka lebar={31} tinggi={10} /><Rangka lebar="62%" tinggi={10} />
+            </View>
+          ))}
         </View>
       )}
-    />
+
+      {keadaan === 'ada' && bagian.length === 0 && (
+        <Kosong ikon="kalender" judul="Tidak ada rilis" kalimat="Tidak ada berita yang cocok dengan saringan ini dalam 30 hari ke depan." />
+      )}
+
+      {bagian.map((b) => (
+        <View key={b.judul}>
+          <Hari>{b.judul}</Hari>
+          {b.isi.map((r, i) => (
+            <View key={`${String(r.waktu)}${r.kode}${String(i)}`} style={[g.rilis, i > 0 && g.garis]}>
+              <Dampak tinggi={r.dampak === 'tinggi'} />
+              <Text style={g.jam}>{jamWib(r.waktu)}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={g.acara} numberOfLines={2}>{r.acara}</Text>
+                <Text style={g.ket} numberOfLines={1}>{r.kode} · dampak {r.dampak}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ))}
+
+      <Mikro>Jadwal dari penyedia kalender ekonomi. Waktu dalam WIB.</Mikro>
+    </ScrollView>
   );
 }
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  hari: { fontSize: H.label, color: W.teksSamar, letterSpacing: 0.6, textTransform: 'uppercase', backgroundColor: W.latar, paddingHorizontal: J.x3, paddingTop: J.x4, paddingBottom: J.x2 },
-  baris: { flexDirection: 'row', alignItems: 'center', gap: J.x3, paddingHorizontal: J.x3, paddingVertical: J.x3, borderBottomWidth: 1, borderBottomColor: W.garisSamar },
-  jam: { fontSize: H.kontrol, color: W.teksKuat, fontWeight: '500', width: 44, ...ANGKA },
-  dampak: { width: 3, alignSelf: 'stretch', borderRadius: R.bulat },
-  acara: { fontSize: H.kontrol, color: W.teks, lineHeight: 17 },
-  negara: { fontSize: H.label, color: W.teksSamar, marginTop: 2 },
-  kaki: { fontSize: H.label, color: W.teksSamar, padding: J.x4, lineHeight: 15 },
+  chips: { flexDirection: 'row', gap: 4, paddingBottom: 4 },
+  rilis: { flexDirection: 'row', gap: 8, alignItems: 'stretch', paddingVertical: 6 },
+  garis: { borderTopWidth: 1, borderTopColor: W.garisSamar },
+  jam: { width: 34, fontSize: H.alat, color: W.teksRedup, paddingTop: 1, fontVariant: ['tabular-nums'] },
+  acara: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, lineHeight: 15, letterSpacing: -0.1 },
+  ket: { fontSize: H.label, color: W.teksSamar, marginTop: 1 },
 });

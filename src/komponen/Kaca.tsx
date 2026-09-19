@@ -10,7 +10,7 @@
  * merender kotak polos tanpa satu pun peringatan — bentuk kegagalan yang
  * paling mahal, karena ia terlihat seperti desain yang memang begitu.
  */
-import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { KACA } from '../gaya/token';
 
@@ -20,7 +20,7 @@ type Props = {
   tebal?: boolean;
   /** Garis rambut di tepi ATAS (bilah tab, lembar) atau BAWAH (bilah nav). */
   tepi?: 'atas' | 'bawah' | 'tidak';
-  gaya?: ViewStyle;
+  gaya?: StyleProp<ViewStyle>;
 };
 
 export function Kaca({ children, tebal = false, tepi = 'tidak', gaya }: Props) {

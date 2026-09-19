@@ -1,101 +1,97 @@
 /**
- * PROFIL — dan KABAR, dua layar yang jujur tentang apa yang belum ada.
+ * PROFIL (mockup 09) dan KABAR (mockup 05) — dua layar yang isinya hidup di
+ * `/api/saya/*`, yang 13 dari 15 fungsinya menolak tanpa identitas Telegram.
  *
- * Keduanya ada di bilah bawah web mobile, jadi orang yang pindah dari web
- * akan mencarinya. Membiarkan namanya hilang membuat ia mengira app-nya
- * rusak; membuatnya kosong membuat ia mengira fiturnya rusak. Jadi keduanya
- * ada, dan keduanya menyebutkan sebabnya dengan angka.
- *
- * Yang menghalangi bukan pekerjaan tampilan: `/api/saya/*` punya 15 fungsi
- * dan 13 di antaranya menolak tanpa identitas Telegram. Layar ini akan berisi
- * data sungguhan pada hari identitas itu lepas — tidak sebelum itu.
+ * Bentuknya BENTUK mockup — avatar, statistik, kelompok menu; saringan dan
+ * daftar — tapi diisi keadaan jujurnya: belum tersambung. Angka karangan di
+ * tempat angka sungguhan adalah kebohongan yang terlihat seperti data, jadi
+ * yang belum ada dicetak "—", bukan nol, dan setiap jalan buntu menunjuk ke
+ * satu pekerjaan yang sama: Sambungkan Telegram.
  */
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ikon } from '../komponen/Ikon';
-import { Kartu, Pisah } from '../komponen/dasar';
-import { W, H, J, R, TALANG } from '../gaya/token';
+import { Blok, Butir, Chip, Kosong, Lbl, Menu, Mikro, Nil, Tombol } from '../komponen/mockup';
+import { W, H, R, TALANG } from '../gaya/token';
+import type { Setelan } from '../data/simpan';
 
-function Terkunci({ ikon, judul, kalimat, isi }: {
-  ikon: 'profil' | 'kabar'; judul: string; kalimat: string; isi: ReadonlyArray<string>;
-}) {
+type Props = { setelan: Setelan; bukaSambung: () => void; bukaPengaturan: () => void; bukaPantauan: () => void };
+
+export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
-      <View style={g.kepala}>
-        <View style={g.lingkaran}>
-          <Ikon nama={ikon} warna={W.teksRedup} ukuran={22} />
-        </View>
-        <Text style={g.judul}>{judul}</Text>
-        <Text style={g.kalimat}>{kalimat}</Text>
-      </View>
-
-      <Kartu judul="Yang akan ada di sini">
-        {isi.map((t, i) => (
-          <View key={t}>
-            {i > 0 && <Pisah />}
-            <Text style={g.butir}>{t}</Text>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      <Blok>
+        <View style={g.baris}>
+          <View style={g.avatar}><Text style={g.avatarHuruf}>?</Text></View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={g.nama}>Belum tersambung</Text>
+            <Lbl polos>Identitas datang dari bot Telegram</Lbl>
+            <View style={{ marginTop: 5, alignSelf: 'flex-start' }}><Chip teks="Gratis" /></View>
           </View>
-        ))}
-      </Kartu>
+        </View>
+        <View style={g.statistik}>
+          <View style={g.sel}><Nil besar>—</Nil><Lbl polos>Analisa dibaca</Lbl></View>
+          <View style={g.sel}><Nil besar>—</Nil><Lbl polos>Pantauan aktif</Lbl></View>
+          <View style={g.sel}><Nil besar>—</Nil><Lbl polos>Hari beruntun</Lbl></View>
+        </View>
+        <View style={{ marginTop: 10 }}>
+          <Tombol teks="Sambungkan Telegram" onPress={bukaSambung} />
+        </View>
+      </Blok>
 
-      <Kartu judul="Kenapa belum">
-        <Text style={g.sebab}>
-          App belum punya cara mengenali kamu. Endpoint akun di bot masih menuntut identitas Telegram, dan app ini sengaja tidak memasang Telegram maupun layar masuk sampai jalur itu dilepas.
-        </Text>
-        <Pisah />
-        <Text style={g.sebab}>
-          Sampai itu selesai, semua yang ada di app berjalan tanpa akun — dan itu juga berarti tidak ada satu pun data pribadi yang dikirim dari HP ini.
-        </Text>
-      </Kartu>
+      <Lbl gaya={{ marginTop: 2 }}>Bawaan saat app dibuka</Lbl>
+      <Menu>
+        <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono onPress={bukaPengaturan} pertama />
+        <Butir ikon="kalender" nama="Timeframe" ket={setelan.tf.toLowerCase()} ketMono onPress={bukaPengaturan} />
+        <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'pertama' : setelan.mesin} ketMono onPress={bukaPengaturan} />
+      </Menu>
+
+      <Lbl gaya={{ marginTop: 2 }}>Pantauan</Lbl>
+      <Menu>
+        <Butir ikon="kabar" nama="Pantauan aktif" ket="butuh Telegram" onPress={bukaPantauan} pertama />
+        <Butir ikon="kalender" nama="Jam sunyi" ket="butuh Telegram" onPress={bukaSambung} />
+      </Menu>
+
+      <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
+      <Menu>
+        <Butir ikon="plus" nama="Kelola langganan" ket="butuh Telegram" onPress={bukaSambung} pertama />
+      </Menu>
+
+      <Mikro>Setelan bawaan tersimpan di perangkat ini. Yang lain menunggu sambungan Telegram.</Mikro>
     </ScrollView>
   );
 }
 
-export function LayarProfil() {
+/** KABAR — mockup 05, dalam keadaan belum tersambung (mockup 15). */
+export function LayarKabar({ bukaSambung }: { bukaSambung: () => void }) {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   return (
-    <Terkunci
-      ikon="profil"
-      judul="Profil"
-      kalimat="Belum ada akun yang tersambung di app."
-      isi={[
-        'Keadaan langganan dan sisa hari AnalisMarket+',
-        'Poin dan riwayat pemakaiannya',
-        'Setelan modal, risiko, dan plafon leverage',
-        'Timeframe bawaan yang ikut ke semua perangkat',
-      ]}
-    />
-  );
-}
-
-export function LayarKabar() {
-  return (
-    <Terkunci
-      ikon="kabar"
-      judul="Kabar"
-      kalimat="Pemberitahuan dikirim ke akun, dan app belum punya satu pun."
-      isi={[
-        'Pantauan yang kamu pasang, dan mana yang sudah berbunyi',
-        'Kabar Otomatis: pasar yang dipantau tanpa diminta',
-        'Jam sunyi dan irama kabar',
-        'Rangkuman pagi: semalam apa saja yang bunyi',
-      ]}
-    />
+    <View style={[g.akar, { paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG }]}>
+      <View style={g.chips}>
+        <Chip teks="Semua" on /><Chip teks="Setup" /><Chip teks="Pantauan" /><Chip teks="Berita" />
+      </View>
+      <Kosong
+        ikon="kabar"
+        judul="Belum ada kabar"
+        kalimat="Kabar datang dari pantauan yang kamu pasang, dan pantauan hidup di akun Telegram-mu. Sambungkan dulu, dan kabarnya masuk ke sini."
+        aksi={bukaSambung}
+        labelAksi="Sambungkan Telegram"
+        catatan="Gratis sampai 3 pantauan"
+      />
+    </View>
   );
 }
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  kepala: { alignItems: 'center', paddingHorizontal: TALANG, paddingBottom: J.x4 },
-  lingkaran: {
-    width: 52, height: 52, borderRadius: R.bulat, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu, marginBottom: J.x3,
-  },
-  judul: { fontSize: H.status, fontWeight: '700', color: W.teksKuat },
-  kalimat: { fontSize: H.nilai, color: W.teksRedup, marginTop: J.x1, textAlign: 'center', lineHeight: 17 },
-  butir: { fontSize: H.nilai, color: W.teks, paddingVertical: 6, lineHeight: 17 },
-  sebab: { fontSize: 11, color: W.teksRedup, lineHeight: 18 },
+  baris: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis },
+  avatarHuruf: { fontSize: 15, fontWeight: '700', color: W.teksSamar },
+  nama: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
+  statistik: { flexDirection: 'row', gap: 6, marginTop: 9 },
+  sel: { flex: 1, backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis, borderRadius: R.besar, padding: 7 },
+  chips: { flexDirection: 'row', gap: 4 },
 });

@@ -1,20 +1,22 @@
 /**
- * LEMBAR PASAR — dibuka dari nama pasar di kepala, dan dari tab Pasar.
+ * LEMBAR PASAR — mockup 03: daftar pasar sebagai lembar KACA di atas chart.
  *
- * Bentuk ini yang membuat web mobile terasa satu layar: memilih pasar TIDAK
- * memindahkan orang ke halaman lain lalu memulangkannya. Ia menutupi layar,
- * dipilih, lalu hilang — dan yang di belakangnya tidak pernah berubah tempat.
+ * Pasar bukan halaman. Memilih pasar dan membacanya adalah satu gerakan;
+ * lembar ini naik di atas chart yang sama, dan chart di baliknya tetap
+ * terlihat lewat kacanya — pasar tidak pernah jadi halaman kosong yang
+ * melempar balik.
  *
- * Versi app pertama membuatnya jadi tab tujuan, dan itu cacat UX yang paling
- * terasa: tiap ganti pasar berarti dua perpindahan layar untuk satu keputusan.
+ * Urutan: yang terpilih dipatok di atas supaya tidak hilang saat disaring,
+ * lalu volume 24 jam menurun. Aturan `DaftarPasar.tsx` di web.
  */
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Pasar } from '../data/api';
-import { LambangPasar } from './LambangPasar';
-import { angka, kategoriTersedia, labelJenis, labelKategori, ubah } from '../data/tampil';
-import { W, H, J, R, ANGKA, SENTUH, TINGGI_BARIS, TALANG, SELA_CHIP, TINGGI_CHIP } from '../gaya/token';
+import { angka, kategoriTersedia, labelJenis, labelKategori, ubah, volumeRingkas } from '../data/tampil';
+import { Kaca } from './Kaca';
+import { BarisPasar, Chip, Lbl, Tarik } from './mockup';
+import { W, H, J, R, SENTUH, TALANG } from '../gaya/token';
 
 type Props = {
   daftar: Pasar[];
@@ -24,6 +26,7 @@ type Props = {
 };
 
 export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
+  const { top, bottom } = useSafeAreaInsets();
   const [cari, setCari] = useState('');
   const [jenis, setJenis] = useState('semua');
   const [kategori, setKategori] = useState('semua');
@@ -37,8 +40,6 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
       (jenis === 'semua' || p.jenis === jenis) &&
       (kategori === 'semua' || p.kategori === kategori) &&
       (q === '' || p.simbol.toUpperCase().includes(q) || p.label.toUpperCase().includes(q)));
-    /* Yang terpilih dipatok di atas supaya ia tidak hilang saat disaring,
-       lalu volume 24 jam menurun. Aturan `DaftarPasar.tsx` di web. */
     return [...saring].sort((a, b) => {
       if (a.simbol === terpilih) return -1;
       if (b.simbol === terpilih) return 1;
@@ -47,120 +48,105 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
   }, [daftar, cari, jenis, kategori, terpilih]);
 
   return (
-    <Modal visible animationType="slide" onRequestClose={tutup} statusBarTranslucent>
-      <SafeAreaView style={g.akar} edges={['top', 'bottom']}>
-        <View style={g.kepala}>
-          <Text style={g.judul}>Pasar</Text>
-          <View style={{ flex: 1 }} />
-          <Pressable onPress={tutup} style={g.tutup}>
-            <Text style={g.tutupTeks}>tutup</Text>
-          </Pressable>
-        </View>
+    <Modal visible animationType="slide" transparent onRequestClose={tutup} statusBarTranslucent>
+      <View style={g.luar}>
+        {/* Tirai tipis: chart di baliknya masih terlihat — itu tujuannya. */}
+        <Pressable style={g.tirai} onPress={tutup} accessibilityLabel="Tutup daftar pasar" />
+        <Kaca tebal tepi="atas" gaya={[g.lembar, { top: top + 96, paddingBottom: bottom }]}>
+          <Pressable onPress={tutup}><Tarik kata="tarik turun untuk menutup" turun /></Pressable>
 
-        <TextInput
-          style={g.cari}
-          value={cari}
-          onChangeText={setCari}
-          placeholder={`Cari dari ${String(daftar.length)} pasar…`}
-          placeholderTextColor={W.teksSamar}
-          autoCorrect={false}
-          autoCapitalize="characters"
-          autoFocus
-        />
+          {/* Cari — mockup 28. */}
+          <View style={g.cari}>
+            <Text style={g.cariIkon}>⌕</Text>
+            <TextInput
+              value={cari}
+              onChangeText={setCari}
+              placeholder={`Cari dari ${String(daftar.length)} pasar…`}
+              placeholderTextColor={W.teksSamar}
+              style={g.cariIsi}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              returnKeyType="search"
+              accessibilityLabel="Cari pasar"
+            />
+            {cari !== '' && <Chip teks="Batal" onPress={() => { setCari(''); }} />}
+          </View>
 
-        {jenisAda.length > 2 && <Saring pilihan={jenisAda} nilai={jenis} pilih={setJenis} label={(k) => (k === 'semua' ? 'semua' : labelJenis(k))} />}
-        {kategoriAda.length > 2 && <Saring pilihan={kategoriAda} nilai={kategori} pilih={setKategori} label={(k) => (k === 'semua' ? 'semua' : labelKategori(k))} />}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.chips}>
+            {jenisAda.map((j) => (
+              <Chip key={j} teks={j === 'semua' ? 'Semua' : labelJenis(j)} on={jenis === j}
+                onPress={() => { setJenis(j); setKategori('semua'); }} />
+            ))}
+            {jenis !== 'semua' && kategoriAda.length > 1 && kategoriAda.map((k) => (
+              <Chip key={`k-${k}`} teks={labelKategori(k)} on={kategori === k} onPress={() => { setKategori(k); }} />
+            ))}
+          </ScrollView>
 
-        <FlatList
-          data={terlihat}
-          keyExtractor={(p) => p.simbol}
-          initialNumToRender={14}
-          windowSize={7}
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={
-            <Text style={g.kosong}>
-              Tidak ada pasar yang cocok dengan &quot;{cari}&quot;{kategori === 'semua' ? '' : ` di ${labelKategori(kategori)}`}.
-            </Text>
-          }
-          ListFooterComponent={
-            terlihat.length === 0 ? null : (
-              <Text style={g.kaki}>{terlihat.length} dari {daftar.length} pasar · urut volume 24 jam</Text>
-            )
-          }
-          renderItem={({ item }) => {
-            const u = item.ubah24hPersen;
-            const warna = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
-            const aktif = item.simbol === terpilih;
-            return (
-              <Pressable
-                onPress={() => { pilih(item); tutup(); }}
-                style={({ pressed }) => [g.baris, aktif && g.barisAktif, pressed && g.barisTekan]}
-              >
-                <LambangPasar simbol={item.simbol} ukuran={20} />
-                <Text style={g.nm} numberOfLines={1}>{item.simbol}</Text>
-                <Text style={g.tag} numberOfLines={1}>{item.label}</Text>
-                <View style={{ flex: 1 }} />
-                <Text style={g.harga}>{angka(item.harga, item.desimal)}</Text>
-                <Text style={[g.ubahTeks, { color: warna }]}>{ubah(u)}</Text>
-              </Pressable>
-            );
-          }}
-        />
-      </SafeAreaView>
+          {cari !== '' && (
+            <Lbl gaya={{ paddingHorizontal: TALANG, paddingTop: 6 }}>{String(terlihat.length)} pasar cocok</Lbl>
+          )}
+
+          <FlatList
+            data={terlihat}
+            keyExtractor={(p) => p.simbol}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingHorizontal: TALANG, paddingBottom: J.x4 }}
+            renderItem={({ item, index }) => {
+              const u = item.ubah24hPersen;
+              const warna = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
+              const tutupPasar = item.harga === null;
+              return (
+                <BarisPasar
+                  simbol={item.simbol}
+                  label={tutupPasar ? `${labelJenis(item.jenis)} · tutup` : item.volume24hUsd > 0 ? `Vol ${volumeRingkas(item.volume24hUsd)}` : item.label}
+                  harga={tutupPasar ? '—' : angka(item.harga, item.desimal)}
+                  ubah={tutupPasar ? '—' : ubah(u)}
+                  ubahWarna={warna}
+                  pertama={index === 0}
+                  redup={tutupPasar}
+                  onPress={() => { pilih(item); tutup(); }}
+                  kanan={item.simbol === terpilih ? (
+                    <View style={{ alignItems: 'flex-end', gap: 3 }}>
+                      <Text style={g.hargaTerpilih}>{angka(item.harga, item.desimal)}</Text>
+                      <Chip teks="dibuka" on />
+                    </View>
+                  ) : undefined}
+                />
+              );
+            }}
+            ListEmptyComponent={
+              <View style={g.kosong}>
+                <Text style={g.kosongJudul}>Tidak ketemu</Text>
+                <Text style={g.kosongKet}>
+                  {String(daftar.length)} pasar yang ada semuanya sudah dibaca bot. Pasar di luar daftar
+                  itu belum punya model biaya, dan tanpa model biaya RR bersihnya tidak bisa dihitung jujur.
+                </Text>
+              </View>
+            }
+          />
+        </Kaca>
+      </View>
     </Modal>
   );
 }
 
-function Saring({ pilihan, nilai, pilih, label }: {
-  pilihan: string[]; nilai: string; pilih: (k: string) => void; label: (k: string) => string;
-}) {
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={g.saringBaris} contentContainerStyle={g.saringIsi}>
-      {pilihan.map((item) => {
-        const on = item === nilai;
-        return (
-          <Pressable key={item} onPress={() => { pilih(item); }} style={[g.chip, on && g.chipOn]}>
-            <Text numberOfLines={1} style={[g.chipTeks, on && g.chipTeksOn]}>{label(item)}</Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
-  );
-}
-
 const g = StyleSheet.create({
-  akar: { flex: 1, backgroundColor: W.latar },
-  kepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH },
-  judul: { fontSize: H.status, fontWeight: '700', color: W.teksKuat },
-  tutup: { minHeight: SENTUH, paddingHorizontal: J.x2, justifyContent: 'center' },
-  tutupTeks: { fontSize: H.nilai, color: W.teksRedup },
+  luar: { flex: 1 },
+  tirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.30)' },
+  lembar: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden', paddingTop: 6,
+  },
   cari: {
-    marginHorizontal: TALANG, marginBottom: J.x2, paddingHorizontal: J.x3, height: SENTUH,
-    backgroundColor: W.latar900, borderRadius: R.sedang, borderWidth: 1, borderColor: W.garis,
-    color: W.teksKuat, fontSize: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 7, marginHorizontal: TALANG,
+    minHeight: SENTUH - 6, paddingHorizontal: 10, borderRadius: R.besar,
+    backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: W.garis,
   },
-  saringBaris: { flexGrow: 0, flexShrink: 0, marginBottom: J.x2 },
-  saringIsi: { paddingHorizontal: TALANG, gap: SELA_CHIP, alignItems: 'center' },
-  chip: {
-    paddingVertical: 6, paddingHorizontal: J.x3, borderRadius: R.sedang,
-    borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu,
-    minHeight: TINGGI_CHIP, justifyContent: 'center',
-  },
-  chipOn: { backgroundColor: W.teksKuat, borderColor: W.teksKuat },
-  chipTeks: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup },
-  chipTeksOn: { color: W.latar, fontWeight: '500' },
-  baris: {
-    flexDirection: 'row', alignItems: 'center', minHeight: TINGGI_BARIS,
-    paddingHorizontal: TALANG, gap: J.x2,
-    borderBottomWidth: 1, borderBottomColor: W.kartu,
-    borderLeftWidth: 2, borderLeftColor: 'transparent',
-  },
-  barisAktif: { backgroundColor: W.kartu, borderLeftColor: W.teksKuat },
-  barisTekan: { backgroundColor: W.kartu },
-  nm: { fontSize: H.pasar, fontWeight: '500', color: W.teksKuat },
-  tag: { fontSize: H.label, color: W.teksRedup, flexShrink: 1 },
-  harga: { fontSize: H.pasar, color: W.teksKuat, ...ANGKA },
-  ubahTeks: { fontSize: H.label, minWidth: 44, textAlign: 'right', ...ANGKA },
-  kosong: { fontSize: H.nilai, color: W.teksRedup, padding: J.x5, textAlign: 'center' },
-  kaki: { fontSize: H.label, color: W.teksSamar, textAlign: 'center', padding: J.x4 },
+  cariIkon: { fontSize: 13, color: W.teksSamar },
+  cariIsi: { flex: 1, color: W.teksKuat, fontSize: H.nilai, paddingVertical: 8 },
+  chips: { flexDirection: 'row', gap: 4, paddingHorizontal: TALANG, paddingVertical: 7 },
+  hargaTerpilih: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500' },
+  kosong: { paddingVertical: 26, paddingHorizontal: J.x3, gap: 5 },
+  kosongJudul: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat },
+  kosongKet: { fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
 });

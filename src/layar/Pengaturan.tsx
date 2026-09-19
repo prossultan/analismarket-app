@@ -1,95 +1,64 @@
 /**
- * PENGATURAN — bawaan yang dipakai saat app dibuka.
+ * PENGATURAN — mockup 29.
  *
- * Semuanya tersimpan DI PERANGKAT (`AsyncStorage`), bukan di akun. Itu bukan
- * kekurangan sementara melainkan batas yang jujur: setelan per-akun hidup di
- * `/api/saya/*`, yang masih menuntut identitas Telegram. Menyimpannya di
- * perangkat berarti ia tidak ikut pindah HP — dan layar ini mengatakannya,
- * bukan membiarkan orang menemukannya sendiri saat ganti telepon.
+ * Semuanya tersimpan DI PERANGKAT, bukan di akun. Itu batas yang jujur:
+ * setelan per-akun hidup di `/api/saya/*`, yang masih menuntut identitas
+ * Telegram. Layar ini mengatakannya — bukan membiarkan orang menemukannya
+ * sendiri saat ganti HP.
  */
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { Kartu } from '../komponen/dasar';
-import { Ikon } from '../komponen/Ikon';
-import { W, H, J, R, SENTUH, TALANG, SISA_BILAH, ANGKA } from '../gaya/token';
+import { useSisaBilah } from '../gaya/jarak';
+import { Blok, Butir, Lbl, Menu, Mikro, PilTf, Saklar } from '../komponen/mockup';
+import { W, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
 type Props = { setelan: Setelan; simpan: (s: Setelan) => void };
 
-/** Timeframe yang boleh jadi bawaan. m1/m5 sengaja tidak ada di sini. */
-const TF = ['m15', 'm30', 'h1', 'h4', 'd1'] as const;
+/** Timeframe yang boleh jadi bawaan. m1/m5 sengaja tidak ada — lihat catatan di bawah. */
+const TF = ['m15', 'm30', 'h1', 'h4', 'd1'];
 
 export function LayarPengaturan({ setelan, simpan }: Props) {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   return (
-    <ScrollView
-      style={g.akar}
-      contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}
-    >
-      <Kartu judul="Bawaan saat app dibuka">
-        <View style={g.baris}>
-          <Ikon nama="pasar" warna={W.teksSamar} ukuran={15} />
-          <Text style={g.nama}>Pasar</Text>
-          <Text style={g.nilai}>{setelan.pasar}</Text>
-        </View>
-        <View style={[g.baris, g.garis]}>
-          <Ikon nama="analisis" warna={W.teksSamar} ukuran={15} />
-          <Text style={g.nama}>Mesin</Text>
-          <Text style={g.nilai}>{setelan.mesin}</Text>
-        </View>
-        <Text style={g.ket}>
-          Keduanya ikut berubah sendiri saat kamu membuka pasar atau mesin lain — tidak perlu
-          diatur dari sini.
-        </Text>
-      </Kartu>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      <Lbl>Bawaan saat app dibuka</Lbl>
+      <Menu>
+        <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono pertama />
+        <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'pertama' : setelan.mesin} ketMono />
+      </Menu>
+      <Mikro>Keduanya ikut berubah sendiri saat kamu membuka pasar atau mesin lain — tidak perlu diatur dari sini.</Mikro>
 
-      <Kartu judul="Timeframe bawaan">
-        <View style={g.pilTf}>
-          {TF.map((t) => {
-            const on = setelan.tf === t;
-            return (
-              <Pressable
-                key={t}
-                onPress={() => { simpan({ ...setelan, tf: t }); }}
-                style={[g.tf, on && g.tfOn]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-              >
-                <Text style={[g.tfTeks, on && g.tfTeksOn]}>{t}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        {/* Kenapa m1 dan m5 tidak ada: sapuan 1.037 kartu menunjukkan nol
-            setup m5 lolos sesudah biaya. Keduanya tetap bisa dibuka sendiri
-            di pasar Binance — yang dilarang cuma menjadikannya BAWAAN. */}
-        <Text style={g.ket}>
-          m1 dan m5 tidak ditawarkan sebagai bawaan: sesudah biaya dihitung, nyaris tidak ada
-          setup di sana yang layak. Keduanya tetap bisa dibuka sendiri di pasar Binance.
-        </Text>
-      </Kartu>
+      <Lbl gaya={{ marginTop: 2 }}>Timeframe bawaan</Lbl>
+      <Blok>
+        <PilTf daftar={TF} aktif={setelan.tf} pilih={(t) => { simpan({ ...setelan, tf: t }); }} />
+        {/* Sapuan 1.037 kartu: nol setup m5 lolos sesudah biaya. Keduanya tetap
+            bisa dibuka sendiri di pasar Binance — yang dilarang cuma jadi BAWAAN. */}
+        <Mikro>m1 dan m5 tidak ditawarkan sebagai bawaan: sesudah biaya dihitung, nyaris tidak ada setup di sana yang layak. Keduanya tetap bisa dibuka sendiri di pasar Binance.</Mikro>
+      </Blok>
 
-      <Kartu judul="Di mana setelan ini disimpan">
-        <Text style={g.sebab}>
-          Di perangkat ini saja. Setelan per-akun butuh identitas yang belum lepas dari Telegram,
-          jadi pilihanmu tidak ikut pindah kalau kamu ganti HP.
-        </Text>
-      </Kartu>
+      <Lbl gaya={{ marginTop: 2 }}>Chart</Lbl>
+      <Menu>
+        <Butir ikon="pasar" nama="Lapisan bawaan" ket="volume · zona · level" pertama />
+        <Butir ikon="analisis" nama="Tetap menyala saat chart terbuka" kanan={<Saklar on={false} />} />
+      </Menu>
+
+      <Lbl gaya={{ marginTop: 2 }}>Tampilan</Lbl>
+      <Menu>
+        <Butir ikon="lainnya" nama="Tema" ket="Gelap" pertama />
+        <Butir ikon="lainnya" nama="Bahasa" ket="Indonesia" />
+        <Butir ikon="kalender" nama="Zona waktu" ket="WIB" ketMono />
+      </Menu>
+
+      <Blok>
+        <Lbl>Di mana setelan ini disimpan</Lbl>
+        <Mikro>Di perangkat ini saja. Setelan per-akun butuh identitas yang belum lepas dari Telegram, jadi pilihanmu tidak ikut pindah kalau kamu ganti HP.</Mikro>
+        <Lbl gaya={{ marginTop: 8 }}>Tema terang belum ada</Lbl>
+        <Mikro>Kartu bot memang terang, tapi app dan web gelap — dan yang disatukan PERAN warnanya, bukan nilainya. Tema terang butuh paletnya sendiri, bukan pembalikan.</Mikro>
+      </Blok>
     </ScrollView>
   );
 }
 
-const g = StyleSheet.create({
-  akar: { flex: 1, backgroundColor: W.latar },
-  baris: { flexDirection: 'row', alignItems: 'center', gap: J.x3, minHeight: SENTUH },
-  garis: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  nama: { fontSize: H.nilai, color: W.teksKuat },
-  nilai: { marginLeft: 'auto', fontSize: H.nilai, color: W.teksRedup, ...ANGKA },
-  ket: { fontSize: H.label, color: W.teksSamar, lineHeight: 13, paddingTop: J.x2 },
-  sebab: { fontSize: H.label, color: W.teksRedup, lineHeight: 14 },
-  pilTf: { flexDirection: 'row', gap: 3, padding: 3, borderRadius: R.bulat, backgroundColor: W.isiSamar },
-  tf: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: R.bulat },
-  tfOn: { backgroundColor: W.kartuTerang },
-  tfTeks: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
-  tfTeksOn: { color: W.teksKuat, fontWeight: '500' },
-});
+const g = StyleSheet.create({ akar: { flex: 1, backgroundColor: W.latar } });

@@ -1,92 +1,71 @@
 /**
- * HALAMAN 10 — LAINNYA: pengaturan, dokumen, dan keterangan jujur tentang
- * apa yang belum ada.
+ * LAINNYA — mockup 10: tiga kelompok bernama, plus blok umur data.
  *
- * Bagian "belum tersedia" bukan basa-basi. App ini belum punya identitas —
- * `/api/saya/*` masih menuntut akun Telegram — jadi pantauan, kabar otomatis,
- * dan setelan akun memang tidak bisa dibuka. Menyembunyikannya membuat orang
- * mencari-cari menu yang tidak ada.
+ * "Ini angka kapan" muncul terus, dan jawabannya sebelumnya tidak ada di
+ * mana pun. Blok umur data di bawah menjawabnya untuk seluruh app.
  */
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { Pressable } from 'react-native';
-import { Kartu, Baris, Pisah } from '../komponen/dasar';
-import { Ikon, type NamaIkon } from '../komponen/Ikon';
-import { W, H, J, SENTUH } from '../gaya/token';
+import { Blok, Butir, Lbl, Menu, Mikro, Nil } from '../komponen/mockup';
+import { Merek } from '../komponen/Merek';
+import { jamWib } from '../data/tampil';
+import { W, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
+
+export type KunciMenu = 'kalender' | 'belajar' | 'profil' | 'pengaturan' | 'tentang' | 'pantauan' | 'sambung';
 
 type Props = {
   setelan: Setelan;
   bukaDokumen: (k: 'syarat' | 'privasi') => void;
-  bukaMenu: (kunci: string) => void;
+  bukaMenu: (kunci: KunciMenu) => void;
   versi: string;
+  /** Detik epoch kapan data terakhir masuk; null = belum ada. */
+  umur?: { harga: number | null; lilin: number | null; kalender: number | null };
 };
 
-type Menu = { kunci: string; nama: string; ikon: NamaIkon; ket: string; emas?: boolean };
-
-const MENU: ReadonlyArray<Menu> = [
-  { kunci: 'profil', nama: 'Profil & akun', ikon: 'profil', ket: 'keadaan akun' },
-  { kunci: 'pengaturan', nama: 'Pengaturan', ikon: 'gir', ket: 'bawaan saat app dibuka' },
-  { kunci: 'kalender', nama: 'Kalender berita', ikon: 'kalender', ket: '14 hari ke depan' },
-  { kunci: 'belajar', nama: 'Belajar', ikon: 'buku', ket: 'cara baca kartu & 16 istilah' },
-  { kunci: 'plus', nama: 'AnalisMarket+', ikon: 'plus', ket: 'apa isinya', emas: true },
-];
-
-export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi }: Props) {
+export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
+  const jam = (d: number | null): string => (d === null ? '—' : jamWib(d));
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
-      <Kartu judul="Menu">
-        {MENU.map((m, i) => (
-          <Pressable key={m.kunci} onPress={() => { bukaMenu(m.kunci); }} style={[g.menu, i > 0 && g.menuGaris]}>
-            <Ikon nama={m.ikon} warna={m.emas === true ? W.plus : W.teksRedup} ukuran={18} />
-            <Text style={[g.menuNama, m.emas === true && { color: W.plus }]}>{m.nama}</Text>
-            <View style={{ flex: 1 }} />
-            <Text style={g.menuKet} numberOfLines={1}>{m.ket}</Text>
-          </Pressable>
-        ))}
-      </Kartu>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      <Lbl>Baca</Lbl>
+      <Menu>
+        <Butir ikon="kalender" nama="Kalender berita" ket="30 hari" onPress={() => { bukaMenu('kalender'); }} pertama />
+        <Butir ikon="buku" nama="Belajar" ket="istilah & cara baca" onPress={() => { bukaMenu('belajar'); }} />
+      </Menu>
 
-      <Kartu judul="Pilihan terakhirmu">
-        <Baris kiri="Pasar" kanan={setelan.pasar} />
-        <Baris kiri="Timeframe" kanan={setelan.tf.toUpperCase()} />
-        <Baris kiri="Mesin" kanan={setelan.mesin === '' ? 'mesin pertama' : setelan.mesin} />
-        <Pisah />
-        <Text style={g.catatan}>
-          Disimpan di HP ini saja. App belum punya akun, jadi tidak ada tempat di server untuk menyimpannya — dan berpura-pura ikut pindah HP akan salah.
-        </Text>
-      </Kartu>
+      <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
+      <Menu>
+        <Butir ikon="profil" nama="Profil" ket="belum tersambung" onPress={() => { bukaMenu('profil'); }} pertama />
+        <Butir ikon="kabar" nama="Pantauan" ket="butuh Telegram" onPress={() => { bukaMenu('pantauan'); }} />
+        <Butir ikon="gir" nama="Pengaturan" ket={`${setelan.tf.toLowerCase()} · ${setelan.pasar}`} ketMono onPress={() => { bukaMenu('pengaturan'); }} />
+      </Menu>
 
-      <Kartu judul="Dokumen">
-        <Pressable onPress={() => { bukaDokumen('syarat'); }} style={g.tautan}>
-          <Text style={g.tautanTeks}>Syarat & Ketentuan</Text>
-        </Pressable>
-        <Pisah />
-        <Pressable onPress={() => { bukaDokumen('privasi'); }} style={g.tautan}>
-          <Text style={g.tautanTeks}>Kebijakan Privasi</Text>
-        </Pressable>
-      </Kartu>
+      <Lbl gaya={{ marginTop: 2 }}>Dokumen</Lbl>
+      <Menu>
+        <Butir ikon="buku" nama="Syarat & Ketentuan" onPress={() => { bukaDokumen('syarat'); }} pertama />
+        <Butir ikon="buku" nama="Kebijakan Privasi" onPress={() => { bukaDokumen('privasi'); }} />
+        <Butir ikon="lainnya" nama="Tentang AnalisMarket" ket={`v${versi}`} ketMono onPress={() => { bukaMenu('tentang'); }} />
+      </Menu>
 
-      <Kartu judul="Tentang">
-        <Text style={g.catatan}>
-          analismarket membaca chart pasar dan menampilkan hasil bacaannya. Ini alat baca, bukan alat prediksi, dan bukan nasihat investasi.
-        </Text>
-        <Pisah />
-        <Baris kiri="Versi app" kanan={versi} />
-      </Kartu>
+      <Blok>
+        <Merek sub={`v${versi} · Binance & Twelve Data`} />
+        <Lbl gaya={{ marginTop: 10 }}>Data terakhir masuk</Lbl>
+        <View style={g.umur}>
+          <View><Nil>{jam(umur?.harga ?? null)}</Nil><Lbl polos>Harga</Lbl></View>
+          <View><Nil>{jam(umur?.lilin ?? null)}</Nil><Lbl polos>Lilin</Lbl></View>
+          <View><Nil>{jam(umur?.kalender ?? null)}</Nil><Lbl polos>Kalender</Lbl></View>
+        </View>
+      </Blok>
+
+      <Mikro>Analisa teknikal otomatis. Bukan nasihat investasi.</Mikro>
     </ScrollView>
   );
 }
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  catatan: { fontSize: 11, color: W.teksRedup, lineHeight: 18 },
-  menu: { flexDirection: 'row', alignItems: 'center', gap: J.x3, minHeight: SENTUH },
-  menuGaris: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  menuNama: { fontSize: H.nilai, color: W.teksKuat },
-  menuKet: { fontSize: H.label, color: W.teksSamar, flexShrink: 1 },
-  tautan: { minHeight: SENTUH, justifyContent: 'center' },
-  tautanTeks: { fontSize: H.nilai, color: W.teksKuat },
+  umur: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
 });

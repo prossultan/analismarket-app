@@ -3,19 +3,23 @@
  *
  * Tab bawah lima: Home · Pasar · Kabar · PLUS+ · Lainnya.
  *
- * PASAR DAN CHART SATU TUJUAN. Sampai 19 Sep keduanya dua tab — "pasar" yang
- * ketukannya dicegat, dan "analisis" yang memuat layar yang sama. Dua tab
- * untuk satu layar berarti satu slot terbuang, dan slot itu sekarang dipakai
- * KABAR: ia satu-satunya layar yang isinya berubah tanpa diminta, jadi
- * satu-satunya yang butuh lencana — dan lencana di dalam menu tidak terlihat.
+ * PASAR DAN CHART SATU TUJUAN. Dulu keduanya dua tab yang memuat layar yang
+ * sama; dua tab untuk satu layar berarti satu slot terbuang, dan slot itu
+ * sekarang dipakai KABAR — satu-satunya layar yang isinya berubah tanpa
+ * diminta, jadi satu-satunya yang butuh lencana.
  *
- * Yang belum ada di sini dan alasannya ada di layar Lainnya: pantauan, kabar
- * otomatis, dan setelan akun butuh identitas yang belum lepas dari Telegram.
+ * SAMBUTAN muncul sekali di pembukaan pertama (mockup 00 dan 0b), lalu
+ * diingat di perangkat. Ia punya "lanjut tanpa masuk" — tanpa itu app ini
+ * tembok buntu, karena jalur masuknya belum ada.
+ *
+ * Yang masih terhalang identitas Telegram dibangun dengan bentuk mockup-nya,
+ * diisi keadaan jujurnya, dan semuanya menunjuk ke satu layar yang sama:
+ * Sambungkan Telegram.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, StatusBar, Text } from 'react-native';
+import { StatusBar } from 'react-native';
 import { NavigationContainer, DarkTheme, type Theme } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,104 +30,163 @@ import { LayarHome } from './src/layar/Home';
 import { LayarProfil, LayarKabar } from './src/layar/Profil';
 import { LayarKalender } from './src/layar/Kalender';
 import { LayarAmPlus } from './src/layar/AmPlus';
-import { Ikon, type NamaIkon } from './src/komponen/Ikon';
-import { LayarLainnya } from './src/layar/Lainnya';
+import { LayarLainnya, type KunciMenu } from './src/layar/Lainnya';
 import { LayarDokumen } from './src/layar/Dokumen';
-import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
+import { LayarTentang } from './src/layar/Tentang';
+import { LayarSambutan, sudahDisambut } from './src/layar/Sambutan';
+import {
+  LayarSambung, LayarPantauan, LayarPantauanBaru, LayarKabarOtomatis, LayarKredit, LayarCekBanyak, LayarBerlangganan,
+} from './src/layar/Akun';
+import { Ikon, type NamaIkon } from './src/komponen/Ikon';
 import { Kaca } from './src/komponen/Kaca';
 import { Merek } from './src/komponen/Merek';
-import { W, H, KACA, TINGGI_BILAH } from './src/gaya/token';
+import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
+import { W, H, TINGGI_BILAH } from './src/gaya/token';
 
-const VERSI = '0.2.0';
+const VERSI = '0.3.0';
 
 /** "Jumat, 19 September" — tanggal hari ini, dalam bahasa produk. */
 function tanggalPanjang(): string {
   return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
-export type DaftarLainParam = {
+/** Rute tumpukan yang dibagi Lainnya, Kabar, dan PLUS+. */
+export type DaftarTumpukan = {
   Lainnya: undefined;
+  Kabar: undefined;
+  AmPlus: undefined;
   Dokumen: { kunci: 'syarat' | 'privasi' };
   Belajar: undefined;
-  Pengaturan: undefined;
   Profil: undefined;
   Kalender: undefined;
-  AmPlus: undefined;
+  Pengaturan: undefined;
+  Tentang: undefined;
+  Sambung: undefined;
+  Pantauan: undefined;
+  PantauanBaru: undefined;
+  KabarOtomatis: undefined;
+  Kredit: undefined;
+  CekBanyak: undefined;
+  Berlangganan: undefined;
 };
-export type DaftarHomeParam = { Home: undefined };
+type Nav = NativeStackNavigationProp<DaftarTumpukan>;
 
-/** Kunci menu → nama layar. Satu peta, supaya Home dan Lainnya tidak menyimpang. */
-const KE_LAYAR: Record<string, 'Profil' | 'Kalender' | 'Belajar' | 'AmPlus' | 'Pengaturan'> = {
-  profil: 'Profil', kalender: 'Kalender', belajar: 'Belajar', plus: 'AmPlus', pengaturan: 'Pengaturan',
+/** Kunci menu → nama layar. Kunci tak dikenal TIDAK membuka apa pun. */
+const KE_LAYAR: Record<KunciMenu, keyof DaftarTumpukan> = {
+  kalender: 'Kalender', belajar: 'Belajar', profil: 'Profil', pengaturan: 'Pengaturan',
+  tentang: 'Tentang', pantauan: 'Pantauan', sambung: 'Sambung',
 };
 
-const TumpukanLain = createNativeStackNavigator<DaftarLainParam>();
+const Tumpukan = createNativeStackNavigator<DaftarTumpukan>();
 const Tab = createBottomTabNavigator();
 
-/** Tema gelap yang memakai palet kita, bukan abu-abu bawaan react-navigation. */
 const TEMA: Theme = {
   ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: W.latar,
-    card: W.latar,
-    text: W.teksKuat,
-    border: W.garis,
-    primary: W.teksKuat,
-  },
+  colors: { ...DarkTheme.colors, background: W.latar, card: W.latar, text: W.teksKuat, border: W.garis, primary: W.plus },
 };
 
-/** Berlaku untuk kepala mana pun — tab maupun tumpukan. */
+/** Kepala kaca — berlaku untuk tab maupun tumpukan. */
 const OPSI_KEPALA = {
-  /** Transparan supaya `headerBackground` yang berkaca itu terlihat. */
   headerTransparent: true,
   headerBackground: () => <Kaca tepi="bawah" gaya={{ flex: 1 }} />,
   headerStyle: { backgroundColor: 'transparent' },
-  headerTitleStyle: { color: W.teksKuat, fontSize: H.nama, fontWeight: '700' as const },
-  headerTintColor: W.teksKuat,
+  headerTitleStyle: { color: W.teksKuat, fontSize: H.pasar, fontWeight: '600' as const },
+  headerTintColor: W.plus,
   headerShadowVisible: false,
+  headerBackTitle: '',
 };
-/** `contentStyle` cuma dikenal tumpukan; menempelkannya di tab cuma bikin peringatan. */
 const OPSI_TUMPUKAN = { ...OPSI_KEPALA, contentStyle: { backgroundColor: W.latar } };
 
-function AlurLain({ setelan, simpan }: { setelan: Setelan; simpan: (s: Setelan) => void }) {
+type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void };
+
+/** Layar-layar bersama yang bisa dibuka dari tumpukan mana pun. */
+function LayarBersama({ setelan, simpan }: IsiTumpukan) {
   return (
-    <TumpukanLain.Navigator screenOptions={OPSI_TUMPUKAN}>
-      <TumpukanLain.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
+    <>
+      <Tumpukan.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar' }} />
+      <Tumpukan.Screen name="Kalender" component={LayarKalender} options={{ title: 'Kalender berita' }} />
+      <Tumpukan.Screen name="Pengaturan" options={{ title: 'Pengaturan' }}>
+        {() => <LayarPengaturan setelan={setelan} simpan={simpan} />}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Tentang" options={{ title: 'Tentang' }}>
+        {() => <LayarTentang versi={VERSI} jumlahPasar={null} />}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Dokumen" options={({ route }) => ({ title: route.params.kunci === 'syarat' ? 'Syarat & Ketentuan' : 'Kebijakan Privasi' })}>
+        {({ route }) => <LayarDokumen kunci={route.params.kunci} />}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Profil" options={{ title: 'Profil' }}>
+        {({ navigation }) => (
+          <LayarProfil setelan={setelan}
+            bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }}
+            bukaPengaturan={() => { (navigation as Nav).navigate('Pengaturan'); }}
+            bukaPantauan={() => { (navigation as Nav).navigate('Pantauan'); }} />
+        )}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Sambung" component={LayarSambung} options={{ title: 'Sambungkan Telegram' }} />
+      <Tumpukan.Screen name="Pantauan" options={{ title: 'Pantauan' }}>
+        {({ navigation }) => <LayarPantauan bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="PantauanBaru" options={{ title: 'Pantauan baru' }}>
+        {({ navigation }) => (
+          <LayarPantauanBaru pasar={setelan.pasar} tf={setelan.tf} mesin={setelan.mesin}
+            bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />
+        )}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="KabarOtomatis" options={{ title: 'Kabar otomatis' }}>
+        {({ navigation }) => <LayarKabarOtomatis bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Kredit" options={{ title: 'Kredit & kuota' }}>
+        {({ navigation }) => <LayarKredit bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="CekBanyak" options={{ title: 'Cek banyak pasar' }}>
+        {({ navigation }) => <LayarCekBanyak bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Berlangganan" component={LayarBerlangganan} options={{ title: 'Berlangganan' }} />
+    </>
+  );
+}
+
+function AlurLain({ setelan, simpan }: IsiTumpukan) {
+  return (
+    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
+      <Tumpukan.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
         {({ navigation }) => (
           <LayarLainnya
             setelan={setelan}
             versi={VERSI}
-            bukaDokumen={(k) => { navigation.navigate('Dokumen', { kunci: k }); }}
-            /* Kunci tak dikenal TIDAK membuka apa pun. Sebelumnya ia jatuh
-               ke 'Belajar', dan itu bentuk paling halus dari mengganti
-               pilihan orang diam-diam: menunya terbuka, isinya salah, dan
-               tidak ada satu pun tanda bahwa yang diminta bukan itu. */
-            bukaMenu={(k) => { const ke = KE_LAYAR[k]; if (ke !== undefined) navigation.navigate(ke); }}
+            bukaDokumen={(k) => { (navigation as Nav).navigate('Dokumen', { kunci: k }); }}
+            bukaMenu={(k) => { (navigation as Nav).navigate(KE_LAYAR[k] as never); }}
           />
         )}
-      </TumpukanLain.Screen>
-      <TumpukanLain.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar' }} />
-      <TumpukanLain.Screen name="Pengaturan" options={{ title: 'Pengaturan' }}>
-        {() => <LayarPengaturan setelan={setelan} simpan={simpan} />}
-      </TumpukanLain.Screen>
-      <TumpukanLain.Screen name="Profil" component={LayarProfil} options={{ title: 'Profil' }} />
-      <TumpukanLain.Screen name="Kalender" component={LayarKalender} options={{ title: 'Kalender berita' }} />
-      <TumpukanLain.Screen name="AmPlus" component={LayarAmPlus} options={{ title: 'AnalisMarket+' }} />
-      <TumpukanLain.Screen name="Dokumen" options={({ route }) => ({ title: route.params.kunci === 'syarat' ? 'Syarat & Ketentuan' : 'Kebijakan Privasi' })}>
-        {({ route }) => <LayarDokumen kunci={route.params.kunci} />}
-      </TumpukanLain.Screen>
-    </TumpukanLain.Navigator>
+      </Tumpukan.Screen>
+      {LayarBersama({ setelan, simpan })}
+    </Tumpukan.Navigator>
   );
 }
 
-/**
- * Ikon tab — path SVG yang SAMA dengan `MenuBawah.tsx` di web.
- *
- * Tab aktif memakai PUTIH, bukan emas, dan itu bukan kerapian: PLUS+ duduk di
- * baris yang sama dan memang emas. Kalau tab aktif ikut emas, keduanya
- * berebut dan PLUS+ berhenti menonjol.
- */
+function AlurKabar({ setelan, simpan }: IsiTumpukan) {
+  return (
+    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
+      <Tumpukan.Screen name="Kabar" options={{ title: 'Kabar' }}>
+        {({ navigation }) => <LayarKabar bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+      </Tumpukan.Screen>
+      {LayarBersama({ setelan, simpan })}
+    </Tumpukan.Navigator>
+  );
+}
+
+function AlurPlus({ setelan, simpan }: IsiTumpukan) {
+  return (
+    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
+      <Tumpukan.Screen name="AmPlus" options={{ title: 'AnalisMarket+' }}>
+        {({ navigation }) => <LayarAmPlus bukaLangganan={() => { (navigation as Nav).navigate('Berlangganan'); }} />}
+      </Tumpukan.Screen>
+      {LayarBersama({ setelan, simpan })}
+    </Tumpukan.Navigator>
+  );
+}
+
+/** Ikon tab — path SVG yang SAMA dengan web. Tab aktif PUTIH, bukan emas. */
 function ikonTab(nama: NamaIkon) {
   return ({ color }: { color: string }) => <Ikon nama={nama} warna={color} ukuran={20} />;
 }
@@ -140,140 +203,103 @@ export default function App() {
 function Isi() {
   const { bottom: bawah } = useSafeAreaInsets();
   const [setelan, setSetelan] = useState<Setelan>(SETELAN_BAWAAN);
-  /** Naik tiap kali tab Pasar ditekan — angka, bukan boolean, supaya ketukan kedua tetap membuka. */
   const [tandaPasar, setTandaPasar] = useState(0);
+  /** null = belum tahu (jangan berkedip), true = tampilkan sambutan. */
+  const [sambutan, setSambutan] = useState<boolean | null>(null);
 
-  useEffect(() => { void bacaSetelan().then(setSetelan); }, []);
-
-  const simpan = useCallback((s: Setelan): void => {
-    setSetelan(s);
-    void simpanSetelan(s);
+  useEffect(() => {
+    void bacaSetelan().then(setSetelan);
+    void sudahDisambut().then((sudah) => { setSambutan(!sudah); });
   }, []);
 
+  const simpan = useCallback((s: Setelan): void => { setSetelan(s); void simpanSetelan(s); }, []);
+
+  if (sambutan === null) return null;
+  if (sambutan) return <LayarSambutan selesai={() => { setSambutan(false); }} />;
+
   return (
-      <NavigationContainer theme={TEMA}>
-        <Tab.Navigator
-          screenOptions={{
-            headerShown: false,
-            /**
-             * `position: absolute` BUKAN pilihan gaya — ia syarat supaya
-             * kacanya terbaca. Bilah yang ikut aliran mendorong isi ke
-             * atasnya, jadi yang disaring blur cuma latar kosong dan
-             * hasilnya terlihat persis seperti panel abu biasa. Melayang,
-             * isi lewat di bawahnya, dan blur punya bahan.
-             *
-             * Konsekuensinya tiap layar WAJIB memberi jarak bawah
-             * `TINGGI_BILAH`; tanpa itu baris terakhirnya tidak pernah
-             * bisa dijangkau.
-             */
-            /**
-             * TINGGINYA IKUT JARAK AMAN, dan itu bukan kerapian.
-             *
-             * Begitu bilah jadi `position: absolute`, react-navigation
-             * BERHENTI menambahkan sendiri jarak aman bawah — ia menganggap
-             * bilah melayang diurus pemanggilnya. Tinggi tetap 58px membuat
-             * label "Home" dan "Lainnya" terpotong separuh di HP berponi,
-             * dan itu terlihat persis seperti desain yang memang begitu.
-             *
-             * Ketahuan dari HP, bukan dari penjaga: penjaga kaca memeriksa
-             * `position: absolute` ADA di sumber, bukan bahwa bilahnya
-             * tergambar utuh. Menembak bahan, bukan artefak akhir.
-             */
-            tabBarStyle: {
-              position: 'absolute',
-              backgroundColor: 'transparent',
-              borderTopWidth: 0,
-              elevation: 0,
-              height: TINGGI_BILAH + bawah,
-              paddingTop: 4,
-              paddingBottom: bawah,
-            },
-            tabBarBackground: () => <Kaca tepi="atas" gaya={{ flex: 1 }} />,
-            tabBarActiveTintColor: W.teksKuat,
-            tabBarInactiveTintColor: W.teksSamar,
-            tabBarLabelStyle: { fontSize: H.alat, fontWeight: '500' },
-            tabBarItemStyle: { paddingVertical: 2 },
+    <NavigationContainer theme={TEMA}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          /**
+           * `position: absolute` BUKAN pilihan gaya — ia syarat supaya kaca
+           * terbaca: isi harus lewat di bawah bilah. Tingginya IKUT JARAK AMAN,
+           * karena react-navigation berhenti menambahkannya untuk bilah
+           * melayang; tanpa `bawah`, label "Home" terpotong separuh di HP
+           * berponi — dan itu terlihat persis seperti desain yang memang begitu.
+           */
+          tabBarStyle: {
+            position: 'absolute',
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            elevation: 0,
+            height: TINGGI_BILAH + bawah,
+            paddingTop: 4,
+            paddingBottom: bawah,
+          },
+          tabBarBackground: () => <Kaca tepi="atas" gaya={{ flex: 1 }} />,
+          tabBarActiveTintColor: W.teksKuat,
+          tabBarInactiveTintColor: W.teksSamar,
+          tabBarLabelStyle: { fontSize: H.alat, fontWeight: '500' },
+          tabBarItemStyle: { paddingVertical: 2 },
+        }}
+      >
+        <Tab.Screen
+          name="home"
+          options={{
+            title: 'Home', headerShown: true, ...OPSI_KEPALA,
+            headerTitle: () => <Merek sub={tanggalPanjang()} />,
+            headerTitleAlign: 'left' as const,
+            tabBarIcon: ikonTab('rumah'),
           }}
         >
-          <Tab.Screen
-            name="home"
-            options={{
-              title: 'Home',
-              headerShown: true,
-              ...OPSI_KEPALA,
-              /* Merek di kepala, bukan kata "Home". Tab di bawah sudah
-                 menyebut di mana orang berdiri; kepala tidak perlu
-                 mengulangnya, dan ruangnya lebih berguna untuk nama
-                 produknya sendiri. */
-              headerTitle: () => <Merek sub={tanggalPanjang()} />,
-              headerTitleAlign: 'left' as const,
-              tabBarIcon: ikonTab('rumah'),
-            }}
-          >
-            {({ navigation }) => (
-              <LayarHome
-                setelan={setelan}
-                bukaChart={() => { navigation.navigate('pasar'); }}
-                bukaPasar={() => { setTandaPasar((n) => n + 1); navigation.navigate('pasar'); }}
-              />
-            )}
-          </Tab.Screen>
+          {({ navigation }) => (
+            <LayarHome
+              setelan={setelan}
+              bukaChart={(p) => { simpan({ ...setelan, pasar: p.simbol }); navigation.navigate('pasar'); }}
+              bukaPasar={() => { setTandaPasar((n) => n + 1); navigation.navigate('pasar'); }}
+            />
+          )}
+        </Tab.Screen>
 
-          {/* PASAR DAN CHART SATU TUJUAN.
-              Dulu dua tab: "pasar" yang ketukannya dicegat, dan "analisis"
-              yang memuat layar yang SAMA. Dua tab untuk satu layar berarti
-              satu slot terbuang — dan di 390px slot adalah barang langka.
+        {/* Ketukan kedua saat tab ini SUDAH aktif membuka lembar pasar. */}
+        <Tab.Screen
+          name="pasar"
+          options={{ title: 'Pasar', tabBarIcon: ikonTab('pasar') }}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              if (!navigation.isFocused()) return;
+              e.preventDefault();
+              setTandaPasar((n) => n + 1);
+            },
+          })}
+        >
+          {() => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} />}
+        </Tab.Screen>
 
-              Ketukan kedua saat tab ini SUDAH aktif membuka lembar pasar,
-              meniru web: memilih pasar dan membacanya satu gerakan, bukan
-              dua tujuan yang saling melempar. Ketukan dari tab lain cuma
-              berpindah, tidak membuka lembar — orang yang datang dari Kabar
-              ingin melihat chart-nya, bukan disodori daftar. */}
-          <Tab.Screen
-            name="pasar"
-            options={{ title: 'Pasar', tabBarIcon: ikonTab('pasar') }}
-            listeners={({ navigation }) => ({
-              tabPress: (e) => {
-                if (!navigation.isFocused()) return;
-                e.preventDefault();
-                setTandaPasar((n) => n + 1);
-              },
-            })}
-          >
-            {() => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} />}
-          </Tab.Screen>
+        <Tab.Screen name="kabar" options={{ title: 'Kabar', tabBarIcon: ikonTab('kabar') }}>
+          {() => <AlurKabar setelan={setelan} simpan={simpan} />}
+        </Tab.Screen>
 
-          {/* KABAR PINDAH DARI DALAM MENU KE BILAH INI.
-              Ia satu-satunya layar yang isinya berubah tanpa diminta, jadi
-              satu-satunya yang butuh lencana — dan lencana yang bersembunyi
-              di dalam Lainnya tidak memberi tahu siapa pun.
+        {/* Satu-satunya emas di bilah ini, dan itu memang aturannya. */}
+        <Tab.Screen
+          name="amplus"
+          options={{
+            title: 'PLUS+',
+            tabBarIcon: ({ focused }) => <Ikon nama="plus" warna={W.plus} ukuran={20} isi={focused ? W.plusRedup : undefined} />,
+            tabBarActiveTintColor: W.plus,
+            tabBarInactiveTintColor: W.plus,
+            tabBarLabelStyle: { fontSize: H.alat, fontWeight: '600' },
+          }}
+        >
+          {() => <AlurPlus setelan={setelan} simpan={simpan} />}
+        </Tab.Screen>
 
-              Catatan jujur: isinya masih terkunci sampai identitas lepas
-              dari Telegram. Memindahkannya ke bilah ini membuat ketergantungan
-              itu LEBIH terlihat, bukan lebih ringan — dan itu disengaja. */}
-          <Tab.Screen
-            name="kabar"
-            component={LayarKabar}
-            options={{ title: 'Kabar', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('kabar') }}
-          />
-
-          {/* Satu-satunya emas di bilah ini, dan itu memang aturannya. */}
-          <Tab.Screen
-            name="amplus"
-            component={LayarAmPlus}
-            options={{
-              title: 'PLUS+', headerShown: true, ...OPSI_KEPALA,
-              tabBarIcon: ({ focused }) => <Ikon nama="plus" warna={W.plus} ukuran={20} isi={focused ? W.plusRedup : undefined} />,
-              tabBarActiveTintColor: W.plus,
-              tabBarInactiveTintColor: W.plus,
-              tabBarLabelStyle: { fontSize: H.alat, fontWeight: '600' },
-            }}
-          />
-
-          <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('lainnya') }}>
-            {() => <AlurLain setelan={setelan} simpan={simpan} />}
-          </Tab.Screen>
-        </Tab.Navigator>
-      </NavigationContainer>
+        <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('lainnya') }}>
+          {() => <AlurLain setelan={setelan} simpan={simpan} />}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }

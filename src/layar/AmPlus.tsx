@@ -1,78 +1,90 @@
 /**
- * HALAMAN 9 — AnalisMarket+.
+ * ANALISMARKET+ — mockup 06.
  *
- * Menjawab "apa isinya" dan berhenti di situ.
+ * SATU-SATUNYA layar dengan bidang emas TERISI. Di tempat lain emas cuma
+ * garis, teks, dan penanda — aturan yang lahir saat emas dijadikan ciri
+ * khas seluruh app: kalau tab aktif dan tombol masuk ikut emas, AM+ berhenti
+ * jadi satu-satunya bidang emas dan seluruh alasan memilih emas runtuh.
  *
- * NOL HARGA, NOL TOMBOL PEMBAYARAN, NOL TAUTAN KELUAR. Aturan
- * toko aplikasi melarang app mengarahkan orang ke pembayaran di luar, dan
- * aturan produk kita melarang app menyebut harga web, menautkannya, atau
- * membandingkannya. Sampai IAP mendarat, pertanyaan "berapa" tidak dijawab
- * setengah — ia tidak dijawab sama sekali.
- *
- * Emas dipakai DI SINI, dan cuma di sini. Itu satu-satunya arti warna itu di
- * seluruh produk.
+ * Tombol belinya MATI, dan kartunya mengatakan kenapa. Tombol mati tanpa
+ * kalimat terbaca sebagai bug.
  */
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FITUR_GRATIS, FITUR_PLUS } from '../data/amplus';
-import { Kartu } from '../komponen/dasar';
-import { W, H, J, R } from '../gaya/token';
+import { Blok, Istilah, Lbl, Mikro, Tombol } from '../komponen/mockup';
+import { W, H, J, R, TALANG } from '../gaya/token';
 
-export function LayarAmPlus() {
+const TANYA: ReadonlyArray<{ t: string; j: string }> = [
+  { t: 'Bisa berhenti kapan saja?', j: 'Bisa. Langganan ditagih bulanan dan berhenti di akhir periode berjalan.' },
+  { t: 'Apa bedanya dengan bot Telegram?', j: 'Sama mesinnya, sama angkanya. AM+ menambah pantauan otomatis dan cek banyak pasar.' },
+  { t: 'Apakah ini memprediksi harga?', j: 'Tidak. Ini alat baca chart. Ia menilai kondisi sekarang, bukan meramal yang berikutnya.' },
+];
+
+export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
-      <View style={g.hero}>
-        <Text style={g.merek}>AnalisMarket+</Text>
-        <Text style={g.tagline}>Pasar dipantau otomatis, dan kamu dikabari saat kondisinya terpenuhi.</Text>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+      {/* Kartu emas bergradasi — satu-satunya di seluruh app. */}
+      <View style={g.kartu}>
+        <View style={[g.gradasi, g.gradasiAtas]} />
+        <View style={[g.gradasi, g.gradasiBawah]} />
+        <Text style={g.cap}>AnalisMarket+</Text>
+        <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
+        <Text style={g.harga}>Rp 99.000 <Text style={g.perBulan}>/ bulan</Text></Text>
+        <View style={g.daftar}>
+          {FITUR_PLUS.map((f) => (
+            <View key={f.nama} style={g.butir}>
+              <Text style={g.centang}>✓</Text>
+              <Text style={g.butirTeks}>{f.nama}</Text>
+            </View>
+          ))}
+        </View>
+        <Tombol teks={bukaLangganan === undefined ? 'Berlangganan lewat web' : 'Lihat cara berlangganan'} jenis="emas" mati={bukaLangganan === undefined} onPress={bukaLangganan} />
+        <Mikro tengah>Pembelian belum tersedia di dalam app.</Mikro>
       </View>
 
-      <Kartu judul="Yang kamu dapat">
-        {FITUR_PLUS.map((f, i) => (
-          <View key={f.nama} style={[g.item, i > 0 && g.itemBergaris]}>
-            <View style={g.titik} />
-            <View style={{ flex: 1 }}>
-              <Text style={g.nama}>{f.nama}</Text>
-              <Text style={g.ket}>{f.keterangan}</Text>
+      <Blok>
+        <Lbl>Yang tetap gratis</Lbl>
+        <View style={[g.daftar, { marginTop: 6 }]}>
+          {FITUR_GRATIS.map((f) => (
+            <View key={f.nama} style={g.butir}>
+              <Text style={g.centang}>✓</Text>
+              <Text style={[g.butirTeks, { color: W.teksRedup }]}>{f.nama}</Text>
             </View>
-          </View>
-        ))}
-      </Kartu>
+          ))}
+        </View>
+      </Blok>
 
-      <Kartu judul="Yang sudah gratis, dan tetap gratis">
-        {FITUR_GRATIS.map((f, i) => (
-          <View key={f.nama} style={[g.item, i > 0 && g.itemBergaris]}>
-            <View style={g.titikSamar} />
-            <View style={{ flex: 1 }}>
-              <Text style={g.namaGratis}>{f.nama}</Text>
-              <Text style={g.ket}>{f.keterangan}</Text>
-            </View>
-          </View>
-        ))}
-      </Kartu>
-
-      <Kartu judul="Baca dulu">
-        <Text style={g.jujur}>
-          Kabar Otomatis dikirim lewat Telegram, dan untuk itu akunmu perlu tersambung ke bot. Berlangganan dari dalam app belum tersedia — halaman ini baru menjelaskan isinya.
-        </Text>
-      </Kartu>
+      <Blok>
+        <Lbl>Pertanyaan yang sering masuk</Lbl>
+        <View style={{ marginTop: 4 }}>
+          {TANYA.map((q, i) => <Istilah key={q.t} judul={q.t} isi={q.j} pertama={i === 0} />)}
+        </View>
+      </Blok>
     </ScrollView>
   );
 }
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  hero: { paddingHorizontal: J.x3, paddingBottom: J.x4 },
-  merek: { fontSize: H.harga, fontWeight: '700', color: W.plus, letterSpacing: -0.3 },
-  tagline: { fontSize: H.kontrol, color: W.teksRedup, marginTop: J.x2, lineHeight: 18 },
-  item: { flexDirection: 'row', gap: J.x3, paddingVertical: J.x2, alignItems: 'flex-start' },
-  itemBergaris: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  titik: { width: 6, height: 6, borderRadius: R.bulat, backgroundColor: W.plus, marginTop: 6 },
-  titikSamar: { width: 6, height: 6, borderRadius: R.bulat, backgroundColor: W.teksSamar, marginTop: 6 },
-  nama: { fontSize: H.kontrol, color: W.teksKuat, fontWeight: '500' },
-  namaGratis: { fontSize: H.kontrol, color: W.teks },
-  ket: { fontSize: 11, color: W.teksRedup, marginTop: 2 },
-  jujur: { fontSize: 11, color: W.teksRedup, lineHeight: 18 },
+  kartu: {
+    borderRadius: R.kartu, padding: 12, overflow: 'hidden', gap: 0,
+    borderWidth: 1, borderColor: 'rgba(201,169,97,0.38)', backgroundColor: 'rgba(201,169,97,0.07)',
+  },
+  /* Gradasi 158deg dari mockup, ditiru dengan dua bidang miring lembut —
+     RN tidak punya linear-gradient tanpa paket tambahan. */
+  gradasi: { position: 'absolute', left: -40, right: -40, height: 140, backgroundColor: 'rgba(201,169,97,0.13)' },
+  gradasiAtas: { top: -90, transform: [{ rotate: '-8deg' }] },
+  gradasiBawah: { bottom: -110, backgroundColor: 'rgba(201,169,97,0.06)', transform: [{ rotate: '-8deg' }] },
+  cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plus, fontWeight: '600' },
+  judul: { marginTop: 6, fontSize: 14, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
+  harga: { fontSize: 19, fontWeight: '700', color: '#E3CE97', marginTop: 7, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  perBulan: { fontSize: H.alat, color: W.teksRedup, fontWeight: '400' },
+  daftar: { marginTop: 9, gap: 5 },
+  butir: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
+  centang: { color: W.plus, fontSize: 9, marginTop: 2 },
+  butirTeks: { flex: 1, fontSize: H.alat, color: W.teks, lineHeight: 14 },
 });

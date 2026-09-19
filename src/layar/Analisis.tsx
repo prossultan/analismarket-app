@@ -29,13 +29,16 @@ import { ASAL } from '../data/antrian';
 import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
 import { angka, ubah } from '../data/tampil';
 import { LembarPasar } from '../komponen/LembarPasar';
-import { SkalaJarum } from '../komponen/SkalaJarum';
-import { BarBiaya, Kosong, Memuat } from '../komponen/dasar';
+import { Kosong, Memuat } from '../komponen/dasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
 import { LambangPasar } from '../komponen/LambangPasar';
 import { Kaca } from '../komponen/Kaca';
-import { W, H, J, R, ANGKA, SENTUH, TALANG, TINGGI_KENDALI } from '../gaya/token';
+import { Ikon } from '../komponen/Ikon';
+import { Blok, Chip, Harga, Lbl, Nil, PilTf, PitaMesin, Rangka, Tarik, type SelMesin } from '../komponen/mockup';
+import { useSisaBilah } from '../gaya/jarak';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { W, H, J, R, ANGKA, SENTUH, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
 const SUNTIK = `
@@ -74,6 +77,8 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
   const [lapisBanding, setLapisBanding] = useState(false);
   const [lapisBacaan, setLapisBacaan] = useState(false);
   const dariChart = useRef(false);
+  const sisaBilah = useSisaBilah();
+  const { top: atas } = useSafeAreaInsets();
 
   /* Tab Pasar di bilah bawah membuka lembar ini, bukan pindah halaman —
      persis `MenuBawah` di web. Tandanya angka yang naik, supaya ketukan
@@ -135,169 +140,199 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
     } catch { /* pesan yang tidak kami mengerti diabaikan */ }
   };
 
+  const wajibAktif = m === null ? [] : syaratWajib(m);
+  const lolosAktif = wajibAktif.filter((c) => c.lolos).length;
+  const ditahan = m !== null && (m.entry === undefined || m.sl === undefined || m.tp === undefined);
+
+  /** Pita mesin: kata status HANYA untuk setup/pantau — lihat catatan di web `labelStatusRingkas`. */
+  const selMesin: SelMesin[] = (bacaan?.mesin ?? []).map((x) => {
+    const w = syaratWajib(x);
+    const st = x.status.toUpperCase();
+    return {
+      kode: x.mesin,
+      kata: st === 'SETUP' ? 'setup' : st === 'PANTAU' ? 'pantau' : '',
+      angka: `${String(w.filter((c) => c.lolos).length)}/${String(w.length)}`,
+      titik: st === 'SETUP' ? 'hijau' : x.mesin === aktif ? 'putih' : 'polos',
+    };
+  });
+
   return (
     <View style={g.akar}>
-      {/* ── KEPALA ─────────────────────────────────────────────────────── */}
-      <View style={g.kepala}>
-        <Pressable onPress={() => { setLembarPasar(true); }} style={g.pasarTombol} hitSlop={6}>
-          <LambangPasar simbol={pasar.simbol} ukuran={19} />
-          <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
-          <Text style={g.tanda}>▾</Text>
-        </Pressable>
-        <View style={{ flex: 1 }} />
-        <View style={[g.titik, { backgroundColor: bacaan === null ? W.teksSamar : W.naik }]} />
-        <Text style={g.harga}>{angka(harga ?? pasar.harga, pasar.desimal)}</Text>
-        <Text style={[g.ubahTeks, { color: warnaUbah }]}>{ubah(u)}</Text>
-      </View>
-
-      {/* ── BARIS 1: timeframe + alat ─────────────────────────────────── */}
-      <View style={g.kendali}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.kendaliIsi}>
-          {pasar.timeframes.map((t) => {
-            const k = t.toLowerCase();
-            const on = k === tf;
-            return (
-              <Pressable key={t} onPress={() => { setTf(k); simpan({ ...setelan, pasar: pasar.simbol, tf: k }); setMemuatChart(true); }} style={[g.kTombol, on && g.kTombolOn]}>
-                <Text style={[g.kTeks, on && g.kTeksOn]}>{k}</Text>
-              </Pressable>
-            );
-          })}
-
-          <View style={g.pisah} />
-
-          {ALAT.map((a) => {
-            const on = alat.has(a);
-            return (
-              <Pressable key={a} onPress={() => { gantiAlat(a); }} style={[g.kTombol, on && g.kTombolOn]}>
-                <Text style={[g.kTeks, on && g.kTeksOn]}>{a}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* ── BARIS 2: MESIN, pita sendiri di bawah timeframe ───────────────
-          Sebelumnya mesin berdesakan di satu baris bersama timeframe dan
-          alat. Di 390px itu berarti nama mesin ketiga sudah di luar layar —
-          dan mesin adalah kendali UTAMA halaman ini, bukan kendali ketiga.
-          Bentuknya sama dengan pita mesin di desktop. */}
-      {(bacaan?.mesin ?? []).length > 0 && (
-        <View style={g.pitaMesin}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {(bacaan?.mesin ?? []).map((x) => {
-              const on = x.mesin === aktif;
-              const w = syaratWajib(x);
-              const l = w.filter((c) => c.lolos).length;
-              const setup = x.status.toUpperCase() === 'SETUP';
-              return (
-                <Pressable key={x.mesin} onPress={() => { setMesin(x.mesin); setMemuatChart(true); }} style={[g.mesinTab, on && g.mesinTabOn]}>
-                  <View style={g.mesinKepala}>
-                    {on && <View style={g.mesinTitik} />}
-                    <Text style={[g.mesinNama, on && g.mesinNamaOn]} numberOfLines={1}>{x.mesin.toUpperCase()}</Text>
-                  </View>
-                  <Text style={[g.mesinStatus, setup && g.mesinStatusSetup]} numberOfLines={1}>
-                    {x.status.toLowerCase()} {l}/{w.length}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-          <Pressable onPress={() => { setLapisBanding(true); }} style={g.bandingTombol} hitSlop={6}>
-            <Text style={g.bandingTeks}>banding</Text>
+      {/* ── KEPALA KACA: lambang · simbol ⌄ · harga · ubah ─────────────── */}
+      <Kaca tepi="bawah" gaya={{ paddingTop: atas }}>
+        <View style={g.kepala}>
+          <Pressable onPress={() => { setLembarPasar(true); }} style={g.pasarTombol} hitSlop={6}
+            accessibilityRole="button" accessibilityLabel="Ganti pasar">
+            <LambangPasar simbol={pasar.simbol} ukuran={19} />
+            <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
+            <Text style={g.tanda}>⌄</Text>
           </Pressable>
+          <View style={{ flex: 1 }} />
+          <Harga kecil>{angka(harga ?? pasar.harga, pasar.desimal)}</Harga>
+          <Text style={[g.ubahTeks, { color: warnaUbah }]}>{ubah(u)}</Text>
         </View>
-      )}
+      </Kaca>
 
-      {/* ── PASAR TUTUP ────────────────────────────────────────────────
-          `pasarTutupAlasan` sudah ada di muatan sejak awal dan TIDAK pernah
-          ditampilkan. Akibatnya harga yang berhenti bergerak terbaca sebagai
-          aplikasi yang rusak — dan yang paling sering terjadi justru itu:
-          emas dan forex libur Jumat 21.00 sampai Minggu 21.00 UTC. */}
-      {bacaan?.pasarTutupAlasan != null && bacaan.pasarTutupAlasan !== '' && (
-        <View style={g.pasarTutup}>
-          <Text style={g.pasarTutupJudul}>Pasar tutup</Text>
-          <Text style={g.pasarTutupSebab} numberOfLines={2}>{bacaan.pasarTutupAlasan}</Text>
-        </View>
-      )}
-
-      {/* ── CHART ──────────────────────────────────────────────────────── */}
-      <View style={g.wadahChart}>
-        <WebView
-          key={url}
-          source={{ uri: url }}
-          style={g.web}
-          backgroundColor={W.chart}
-          onLoadStart={() => { setMemuatChart(true); }}
-          onLoadEnd={() => { setMemuatChart(false); }}
-          onMessage={pesan}
-          injectedJavaScript={SUNTIK}
-          scalesPageToFit={false}
-          setBuiltInZoomControls={false}
-          scrollEnabled={false}
-          bounces={false}
-          overScrollMode="never"
-          javaScriptEnabled
-          domStorageEnabled
-          originWhitelist={[ASAL]}
+      <View style={g.isi}>
+        {/* ── TIMEFRAME: pil ────────────────────────────────────────────── */}
+        <PilTf
+          daftar={pasar.timeframes.map((t) => t.toLowerCase())}
+          aktif={tf}
+          pilih={(k) => { setTf(k); simpan({ ...setelan, pasar: pasar.simbol, tf: k }); setMemuatChart(true); }}
         />
-        {memuatChart && (
-          <View style={g.tunggu} pointerEvents="none"><ActivityIndicator color={W.teksRedup} /></View>
+
+        {/* ── MESIN: lima kolom rata, dengan tombol banding di ujung ────── */}
+        {selMesin.length > 0 ? (
+          <PitaMesin daftar={selMesin} aktif={aktif} pilih={(k) => { setMesin(k); setMemuatChart(true); }} />
+        ) : (
+          <View style={g.mesinRangka}>
+            {[0, 1, 2, 3, 4].map((i) => <Rangka key={i} lebar={48} tinggi={8} />)}
+          </View>
         )}
+
+        {/* ── PASAR TUTUP ───────────────────────────────────────────────── */}
+        {bacaan?.pasarTutupAlasan != null && bacaan.pasarTutupAlasan !== '' && (
+          <Blok emas rapat>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ikon nama="kalender" warna={W.plus} ukuran={14} />
+              <View style={{ flex: 1 }}>
+                <Text style={g.tutupJudul}>Pasar tutup</Text>
+                <Lbl polos>{bacaan.pasarTutupAlasan}</Lbl>
+              </View>
+            </View>
+          </Blok>
+        )}
+
+        {/* ── CHART: mengambil semua sisa tinggi ────────────────────────── */}
+        <View style={g.wadahChart}>
+          <WebView
+            key={url}
+            source={{ uri: url }}
+            style={g.web}
+            backgroundColor={W.chart}
+            onLoadStart={() => { setMemuatChart(true); }}
+            onLoadEnd={() => { setMemuatChart(false); }}
+            onMessage={pesan}
+            injectedJavaScript={SUNTIK}
+            scalesPageToFit={false}
+            setBuiltInZoomControls={false}
+            scrollEnabled={false}
+            bounces={false}
+            overScrollMode="never"
+            javaScriptEnabled
+            domStorageEnabled
+            originWhitelist={[ASAL]}
+          />
+          {memuatChart && (
+            <View style={g.tunggu} pointerEvents="none">
+              <Lbl polos>membaca 1.300 lilin…</Lbl>
+            </View>
+          )}
+          <Kaca gaya={g.chipKaca}>
+            <Text style={g.chipKacaTeks}>harga <Text style={g.chipKacaNilai}>{angka(harga ?? pasar.harga, pasar.desimal)}</Text></Text>
+          </Kaca>
+          {m !== null && (
+            <Kaca gaya={[g.chipKaca, g.chipKacaKanan]}>
+              <Text style={g.chipKacaNilai}>ATR {angka(m.atr, pasar.desimal)}</Text>
+            </Kaca>
+          )}
+        </View>
+
+        {/* ── ALAT: di BAWAH chart, tepat di sebelah benda yang diubahnya ── */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.alatRow}>
+          {ALAT.map((a) => <Chip key={a} teks={a} on={alat.has(a)} onPress={() => { gantiAlat(a); }} />)}
+          <Chip teks="banding" onPress={() => { setLapisBanding(true); }} />
+        </ScrollView>
+
+        {/* Ruang untuk lembar yang melayang di bawah. */}
+        <View style={{ height: TINGGI_LEMBAR }} />
       </View>
 
-      {/* ── PENGGARIS JARAK ATR ────────────────────────────────────────── */}
-      {bacaan !== null && (
-        <SkalaJarum daftar={bacaan.mesin} aktif={aktif} pilih={(k) => { setMesin(k); setMemuatChart(true); }} />
-      )}
+      {/* ── LEMBAR KACA: berhenti DI ATAS bilah tab ──────────────────────── */}
+      <Pressable
+        onPress={() => { if (m !== null) setLapisBacaan(true); }}
+        style={[g.lembar, { bottom: sisaBilah - 8 }]}
+        accessibilityRole="button" accessibilityLabel="Buka bacaan lengkap"
+      >
+        <Kaca tebal tepi="atas" gaya={g.lembarIsi}>
+          <Tarik kata="tarik untuk detail" />
+          {gagal !== '' ? (
+            <View style={g.lembarBaris}>
+              <View>
+                <Lbl>tidak tersambung</Lbl>
+                <Text style={g.lembarStatus}>Mesin tidak menjawab</Text>
+              </View>
+              <View style={{ flex: 1 }} />
+              <Chip teks="Coba lagi" onPress={() => { void muatBacaan(pasar.simbol, tf, true); }} />
+            </View>
+          ) : m === null ? (
+            <View style={g.lembarBaris}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Rangka lebar="34%" tinggi={8} /><Rangka lebar="58%" tinggi={14} />
+              </View>
+            </View>
+          ) : ditahan ? (
+            <View style={g.ditahan}>
+              <Lbl warna={W.plus}>angka rencana ditahan</Lbl>
+              <Text style={g.ditahanJudul}>{m.sebabTanpaAngka ?? m.keputusan.label}</Text>
+              <Text style={g.ditahanKet} numberOfLines={2}>{m.keputusan.alasan}</Text>
+            </View>
+          ) : (
+            <>
+              <View style={g.lembarBaris}>
+                <View style={{ minWidth: 0, flex: 1 }}>
+                  <Lbl>{aktif} · {tf}</Lbl>
+                  <Text style={g.lembarStatus} numberOfLines={1}>
+                    {m.status.charAt(0) + m.status.slice(1).toLowerCase()} · {lolosAktif} dari {wajibAktif.length}
+                  </Text>
+                </View>
+                {m.biayaPorsi !== null && <Chip teks={`Biaya ${Math.round(m.biayaPorsi * 100)}% risiko`} mono />}
+              </View>
+              <View style={g.angkaBaris}>
+                <View><Lbl>Entry</Lbl><Nil>{angka(m.entry, pasar.desimal)}</Nil></View>
+                <View><Lbl>SL</Lbl><Nil warna={W.turun}>{angka(m.sl, pasar.desimal)}</Nil></View>
+                <View><Lbl>TP</Lbl><Nil warna={W.naik}>{angka(m.tp, pasar.desimal)}</Nil></View>
+                <View><Lbl>RR</Lbl><Nil>{m.rrBersih.toFixed(2).replace('.', ',')}</Nil></View>
+              </View>
+            </>
+          )}
+        </Kaca>
+      </Pressable>
 
-      {/* ── BANDING: kelima mesin bersebelahan, dari muatan yang SAMA.
-          Ia lapisan, bukan halaman: pertanyaan "mesin mana yang paling
-          layak" muncul saat sedang melihat chart, dan jawabannya tidak
-          boleh menuntut meninggalkan chart itu. */}
+      {/* ── LAPISAN BACAAN LENGKAP ────────────────────────────────────────── */}
+      <Modal visible={lapisBacaan && m !== null} animationType="slide" transparent onRequestClose={() => { setLapisBacaan(false); }}>
+        <View style={g.lapisLuar}>
+          <Pressable style={g.lapisTirai} onPress={() => { setLapisBacaan(false); }} />
+          <Kaca tebal tepi="atas" gaya={g.lapis}>
+            <Tarik kata="tarik turun untuk menutup" turun />
+            <View style={g.lapisKepala}>
+              <Lbl>bacaan · {pasar.simbol} {tf} · {aktif}</Lbl>
+              <View style={{ flex: 1 }} />
+              <Pressable onPress={() => { setLapisBacaan(false); }} style={g.tutup} hitSlop={8}>
+                <Text style={g.tutupTeks}>tutup</Text>
+              </Pressable>
+            </View>
+            {m !== null && bacaan !== null && <IsiBacaan m={m} desimal={pasar.desimal} />}
+          </Kaca>
+        </View>
+      </Modal>
+
+      {/* ── BANDING MESIN ─────────────────────────────────────────────────── */}
       <Modal visible={lapisBanding} animationType="slide" transparent onRequestClose={() => { setLapisBanding(false); }}>
         <View style={g.lapisLuar}>
           <Pressable style={g.lapisTirai} onPress={() => { setLapisBanding(false); }} />
           <Kaca tebal tepi="atas" gaya={g.lapis}>
+            <Tarik kata="tarik turun untuk menutup" turun />
             <View style={g.lapisKepala}>
-              <Text style={g.lapisMerek}>banding mesin · {pasar.simbol} {tf}</Text>
+              <Lbl>banding mesin · {pasar.simbol} {tf}</Lbl>
               <View style={{ flex: 1 }} />
               <Pressable onPress={() => { setLapisBanding(false); }} style={g.tutup} hitSlop={8}>
                 <Text style={g.tutupTeks}>tutup</Text>
               </Pressable>
             </View>
             {bacaan !== null && (
-              <BandingMesin
-                daftar={bacaan.mesin}
-                aktif={aktif}
-                pilih={(k) => { setMesin(k); setMemuatChart(true); setLapisBanding(false); }}
-              />
-            )}
-          </Kaca>
-        </View>
-      </Modal>
-
-      {/* ── STRIP: status · mesin · biaya. Ditekan membuka bacaan. ─────── */}
-      <Pressable onPress={() => { if (m !== null) setLapisBacaan(true); }} style={g.strip}>
-        <Strip mesin={m} gagal={gagal} cobaLagi={() => { void muatBacaan(pasar.simbol, tf, true); }} />
-        <Text style={g.stripBuka}>▴</Text>
-      </Pressable>
-
-      <Text style={g.mikro}>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Text>
-
-      {/* ── LAPISAN BACAAN ─────────────────────────────────────────────── */}
-      <Modal visible={lapisBacaan && m !== null} animationType="slide" transparent onRequestClose={() => { setLapisBacaan(false); }}>
-        <View style={g.lapisLuar}>
-          <Pressable style={g.lapisTirai} onPress={() => { setLapisBacaan(false); }} />
-          <Kaca tebal tepi="atas" gaya={g.lapis}>
-            <View style={g.lapisKepala}>
-              <Text style={g.lapisMerek}>analismarket.com</Text>
-              <View style={{ flex: 1 }} />
-              <Pressable onPress={() => { setLapisBacaan(false); }} style={g.tutup} hitSlop={8}>
-                <Text style={g.tutupTeks}>tutup</Text>
-              </Pressable>
-            </View>
-            {m !== null && bacaan !== null && (
-              <IsiBacaan m={m} desimal={pasar.desimal} />
+              <BandingMesin daftar={bacaan.mesin} aktif={aktif}
+                pilih={(k) => { setMesin(k); setMemuatChart(true); setLapisBanding(false); }} />
             )}
           </Kaca>
         </View>
@@ -322,126 +357,42 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
   );
 }
 
-/**
- * ISI STRIP. Urutan prioritas saat sempit: status > biaya > nama mesin.
- *
- * Status itu jawabannya, dan ia tidak pernah dipotong. Biaya yang membedakan
- * produk ini dari penampil chart gratis. Nama mesin cuma konteks, jadi ia
- * yang pertama menyusut. Aturan yang sama dengan `StripFull` di web.
- */
-function Strip({ mesin, gagal, cobaLagi }: { mesin: Mesin | null; gagal: string; cobaLagi: () => void }) {
-  if (gagal !== '') {
-    return (
-      <>
-        <Text style={g.stripStatus} numberOfLines={1}>Mesin tidak menjawab</Text>
-        <View style={{ flex: 1 }} />
-        <Pressable onPress={cobaLagi} hitSlop={8}><Text style={g.cobaLagi}>Coba lagi</Text></Pressable>
-      </>
-    );
-  }
-  if (mesin === null) return <Text style={g.stripTunggu}>Menunggu jawaban mesin…</Text>;
-
-  const wajib = syaratWajib(mesin);
-  const lolos = wajib.filter((c) => c.lolos).length;
-  /* SYARAT KOSONG BERARTI BELUM DIUKUR, BUKAN NOL. Bar sepanjang nol terbaca
-     sebagai "biayanya nol" — kebalikan dari yang sebenarnya. */
-  const adaBiaya = mesin.biayaPorsi !== null && wajib.length > 0;
-
-  return (
-    <>
-      <Text style={g.stripStatus} numberOfLines={1}>{mesin.keputusan.label}</Text>
-      <Text style={g.stripMesin} numberOfLines={1}>{mesin.mesin}</Text>
-      <Text style={g.stripSyarat}>{lolos}/{wajib.length}</Text>
-      <View style={{ flex: 1 }} />
-      {adaBiaya && (
-        <>
-          <Text style={g.stripPersen}>{Math.round((mesin.biayaPorsi ?? 0) * 100)}%</Text>
-          <View style={g.stripBar}><BarBiaya porsi={mesin.biayaPorsi} ringkas /></View>
-        </>
-      )}
-    </>
-  );
-}
+/** Tinggi lembar yang melayang — ruang yang harus disisakan isi di atasnya. */
+const TINGGI_LEMBAR = 118;
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  kepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH, gap: J.x2 },
-  pasarTombol: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: SENTUH },
-  simbol: { fontSize: H.pasar, fontWeight: '700', color: W.teksKuat },
-  tanda: { fontSize: H.label, color: W.teksSamar },
-  titik: { width: 6, height: 6, borderRadius: R.bulat },
-  harga: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, ...ANGKA },
+  kepala: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: TALANG, paddingVertical: 8, minHeight: SENTUH },
+  pasarTombol: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: SENTUH - 8, paddingRight: 4 },
+  simbol: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2, flexShrink: 1 },
+  tanda: { fontSize: 12, color: W.teksSamar, marginTop: -3 },
   ubahTeks: { fontSize: H.label, ...ANGKA },
-
-  kendali: { borderTopWidth: 1, borderTopColor: W.garis, borderBottomWidth: 1, borderBottomColor: W.garis },
-  kendaliIsi: { alignItems: 'center', paddingHorizontal: 8 },
-  kTombol: { paddingHorizontal: 9, minHeight: TINGGI_KENDALI, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  kTombolOn: { borderBottomColor: W.teksKuat },
-  kTeks: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup },
-  kTeksOn: { color: W.teksKuat, fontWeight: '500' },
-  pisah: { width: 1, height: 16, backgroundColor: W.garis, marginHorizontal: 6 },
-
-  /* Pita mesin — tinggi TIDAK dipatok: dua baris teks yang tingginya ditebak
-     akan terpotong. Padding yang menentukan, isinya yang mengukur. */
-  pitaMesin: { borderBottomWidth: 1, borderBottomColor: W.garis, backgroundColor: W.latar900 },
-  mesinTab: {
-    paddingHorizontal: 13, paddingVertical: 7,
-    borderRightWidth: 1, borderRightColor: W.garis,
-    borderBottomWidth: 2, borderBottomColor: 'transparent',
-  },
-  mesinTabOn: { backgroundColor: W.kartu, borderBottomColor: W.teksKuat },
-  mesinKepala: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  mesinTitik: { width: 5, height: 5, borderRadius: R.bulat, backgroundColor: W.teksKuat },
-  mesinNama: { fontSize: H.nilai, lineHeight: 16, color: W.teksRedup, letterSpacing: 0.3 },
-  mesinNamaOn: { color: W.teksKuat, fontWeight: '500' },
-  mesinStatus: {
-    fontSize: H.label, lineHeight: 13, color: W.teksSamar,
-    letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 2,
-  },
-  mesinStatusSetup: { color: W.naik },
-
-  wadahChart: { flex: 1, backgroundColor: W.chart },
+  isi: { flex: 1, paddingHorizontal: TALANG, paddingTop: 9, gap: 6 },
+  mesinRangka: { flexDirection: 'row', gap: 6, paddingVertical: 8, paddingHorizontal: 6, borderWidth: 1, borderColor: W.garis, borderRadius: R.besar },
+  tutupJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat },
+  wadahChart: { flex: 1, minHeight: 120, borderRadius: R.besar, overflow: 'hidden', borderWidth: 1, borderColor: W.garis, backgroundColor: W.chart },
   web: { flex: 1, backgroundColor: W.chart },
   tunggu: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  chipKaca: { position: 'absolute', top: 6, left: 6, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
+  chipKacaKanan: { left: undefined, right: 6 },
+  chipKacaTeks: { fontSize: 8, color: W.teksRedup },
+  chipKacaNilai: { fontSize: 8, color: W.teksKuat, fontWeight: '600', ...ANGKA },
+  alatRow: { flexDirection: 'row', gap: 4, paddingVertical: 2 },
 
-  strip: {
-    flexDirection: 'row', alignItems: 'center', gap: J.x2,
-    minHeight: SENTUH, paddingHorizontal: TALANG,
-    borderTopWidth: 1, borderTopColor: W.garis, backgroundColor: W.latar900,
-  },
-  stripStatus: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, flexShrink: 0 },
-  stripMesin: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.1, textTransform: 'uppercase', flexShrink: 1 },
-  stripSyarat: { fontSize: H.label, color: W.teksRedup, ...ANGKA },
-  stripPersen: { fontSize: H.label, color: W.teksRedup, ...ANGKA },
-  stripBar: { width: 56 },
-  stripBuka: { fontSize: H.label, color: W.teksSamar, marginLeft: 2 },
-  stripTunggu: { fontSize: H.nilai, color: W.teksSamar },
-  cobaLagi: { fontSize: H.nilai, color: W.teksKuat, textDecorationLine: 'underline' },
-
-  mikro: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: TALANG, paddingVertical: 6, lineHeight: 13 },
+  lembar: { position: 'absolute', left: 0, right: 0 },
+  lembarIsi: { borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingHorizontal: TALANG, paddingTop: 5, paddingBottom: 10, overflow: 'hidden' },
+  lembarBaris: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  lembarStatus: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, marginTop: 1 },
+  angkaBaris: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  ditahan: { gap: 3 },
+  ditahanJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat, lineHeight: 15 },
+  ditahanKet: { fontSize: H.label, color: W.teksRedup, lineHeight: 13 },
 
   lapisLuar: { flex: 1, justifyContent: 'flex-end' },
-  /* Tirai tipis, bukan gelap penuh: kepala dan kendali di belakangnya harus
-     tetap TERBACA, karena keduanya masih hidup saat lapisan terbuka. */
-  pasarTutup: {
-    marginHorizontal: TALANG, marginBottom: J.x2, paddingHorizontal: J.x3, paddingVertical: J.x2,
-    borderRadius: R.besar, borderWidth: 1, borderColor: 'rgba(201,169,97,0.32)',
-    backgroundColor: W.plusRedup,
-  },
-  pasarTutupJudul: { fontSize: H.nilai, fontWeight: '600', color: W.plus },
-  pasarTutupSebab: { fontSize: H.label, color: W.teksRedup, marginTop: 2, lineHeight: 13 },
-  bandingTombol: {
-    paddingHorizontal: J.x3, justifyContent: 'center', alignSelf: 'stretch',
-    borderLeftWidth: 1, borderLeftColor: W.garis,
-  },
-  bandingTeks: { fontSize: H.label, color: W.teksRedup },
   lapisTirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: W.tirai },
-  /* TANPA backgroundColor: warnanya datang dari <Kaca>. Latar padat di sini
-     membuat blur tidak punya apa pun untuk ditembus, dan kacanya kembali
-     jadi panel abu biasa — persis cacat yang diperbaiki putaran ini. */
-  lapis: { maxHeight: '88%', borderTopLeftRadius: R.kartu, borderTopRightRadius: R.kartu, overflow: 'hidden' },
-  lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH, borderBottomWidth: 1, borderBottomColor: W.garis },
-  lapisMerek: { fontSize: H.label, color: W.teksSamar, letterSpacing: 0.5 },
+  /* TANPA backgroundColor: warnanya datang dari <Kaca>. */
+  lapis: { maxHeight: '88%', borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden', paddingTop: 6 },
+  lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH - 6, borderBottomWidth: 1, borderBottomColor: W.garis },
   tutup: { minHeight: SENTUH, justifyContent: 'center', paddingHorizontal: J.x2 },
   tutupTeks: { fontSize: H.nilai, color: W.teksRedup },
 });
