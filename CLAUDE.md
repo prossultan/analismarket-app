@@ -300,3 +300,19 @@ Yang mockup punya tapi API tidak (dan karena itu SENGAJA tidak dibuat):
 feed Kabar per-peristiwa dengan "belum dibaca", statistik "Analisa dibaca /
 Hari beruntun", "Terkirim 7 hari terakhir", jatah harian 412/800 per pasar.
 Semuanya butuh endpoint baru di bot.
+
+## Izin dan skema dari PUSTAKA cuma terlihat di APK, bukan di prebuild
+
+`periksa-izin.mjs` (prebuild) berkata "1 izin ikut". APK yang jadi memuat
+`USE_BIOMETRIC`, `USE_FINGERPRINT`, `ACCESS_NETWORK_STATE`, install-referrer,
+DAN skema intent `solana-wallet://` — semuanya terseret paket Clerk
+(`androidx.biometric` lewat expo-secure-store; `@solana-mobile/*` lewat
+@clerk/clerk-expo). Penggabungan manifes pustaka terjadi di Gradle, sesudah
+prebuild. Jadi:
+
+- `skrip/periksa-apk.mjs <apk>` adalah penjaga yang MENENTUKAN — ia mengurai
+  AXML di dalam APK hasil EAS. Jalankan pada tiap artefak sebelum dibagikan.
+- Modul Solana dikeluarkan dari penautan (`expo.autolinking.exclude` +
+  `react-native.config.js`); izin biometrik & referrer diblokir di app.json.
+  `ACCESS_NETWORK_STATE` dibiarkan: tingkat normal, tidak ditampilkan ke
+  pengguna, dipakai pustaka memeriksa sambungan.

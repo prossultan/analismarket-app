@@ -19,6 +19,11 @@
  * yang berbahaya adalah izin KELIMA yang disuntikkan pustaka baru besok, dan
  * itu cuma terlihat dari manifesnya.
  *
+ * BATAS PENJAGA INI: prebuild TIDAK melihat izin yang digabung dari pustaka
+ * native (AAR) saat Gradle berjalan. 19 Sep ia berkata "1 izin ikut" sementara
+ * APK yang jadi memuat empat tambahan dari paket Clerk. Jadi ini penjaga
+ * TAHAP AWAL; yang menentukan adalah `periksa-apk.mjs` atas APK hasil EAS.
+ *
  * Lambat (prebuild ~1 menit), jadi TIDAK ikut `npm run periksa`. Jalankan
  * sebelum rilis:  npm run periksa-rilis
  */

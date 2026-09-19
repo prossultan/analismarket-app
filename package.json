@@ -43,7 +43,18 @@
     "uji-e2e": "npx --yes tsx skrip/uji-e2e.mts",
     "periksa-izin": "node skrip/periksa-izin.mjs",
     "periksa-rilis": "npm run periksa && npm run periksa-izin && npm run periksa-bundel && npm run uji-e2e",
-    "periksa-bundel": "npx --yes tsx skrip/periksa-bundel.mjs"
+    "periksa-bundel": "npx --yes tsx skrip/periksa-bundel.mjs",
+    "periksa-apk": "node skrip/periksa-apk.mjs"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "autolinking": {
+      "exclude": [
+        "@solana-mobile/mobile-wallet-adapter-protocol",
+        "@solana-mobile/mobile-wallet-adapter-protocol-web3js",
+        "@solana-mobile/wallet-adapter-mobile",
+        "@solana-mobile/wallet-standard-mobile"
+      ]
+    }
+  }
 }
