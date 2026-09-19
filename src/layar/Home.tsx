@@ -18,13 +18,15 @@ import { ambilRingkas, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
 import { useSesi } from './Akun';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
-import { Butir, Kosong, Lbl, Menu, Mikro, PitaBasi, Tombol } from '../komponen/mockup';
+import { Kosong, Lbl, Mikro, PitaBasi, Tombol } from '../komponen/mockup';
 import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 import { ISTILAH } from '../data/istilah';
+import { ChartTertanam } from '../komponen/ChartTertanam';
+import { ASAL } from '../data/antrian';
 
 export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'Kredit' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
-type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya') => void; bukaDokumen: (k: 'syarat' | 'privasi') => void };
+type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya') => void; bukaPemanis: () => void };
 
 /** Satu sel kisi: lencana di atas, ikon, label — mengikuti referensi pemilik. */
 function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
@@ -42,7 +44,7 @@ function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
   );
 }
 
-export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaDokumen }: Props) {
+export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPemanis }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   const sesi = useSesi();
@@ -109,18 +111,22 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaDokumen }: Pr
         <Sel ikon="turunkan" label="Lainnya" onPress={() => { bukaTab('lainnya'); }} />
       </View>
 
-      <Lbl gaya={{ marginTop: 2 }}>Pintasan</Lbl>
-      <Menu>
-        <Butir ikon="pasar" nama={`${setelan.pasar} · ${setelan.tf.toLowerCase()}`} ket="chart bawaan" onPress={bukaPasar} pertama />
-        <Butir ikon="kalender" nama="Kalender berita" ket="30 hari" onPress={() => { buka('Kalender'); }} />
-      </Menu>
-
-      <Lbl gaya={{ marginTop: 2 }}>Bantuan & dokumen</Lbl>
-      <Menu>
-        <Butir ikon="buku" nama="Syarat & Ketentuan" onPress={() => { bukaDokumen('syarat'); }} pertama />
-        <Butir ikon="buku" nama="Kebijakan Privasi" onPress={() => { bukaDokumen('privasi'); }} />
-        <Butir ikon="lainnya" nama="Tentang AnalisMarket" onPress={() => { bukaTab('lainnya'); }} />
-      </Menu>
+      {/* PEMANIS — satu chart hidup, BTCUSDT m15. Binance, jadi tanpa jatah
+          kredit; m15 supaya terlihat bergerak sepanjang hari. Ketukan membuka
+          tab Pasar di pasar itu. Ini satu-satunya "pasar" di Home, dan ia
+          hiasan yang hidup — bukan daftar harga. */}
+      <Lbl gaya={{ marginTop: 2 }}>Pemanis · BTCUSDT m15</Lbl>
+      <Pressable onPress={bukaPemanis} accessibilityRole="button" accessibilityLabel="Buka chart BTCUSDT m15"
+        style={({ pressed }) => [g.pemanis, pressed && { opacity: 0.85 }]}>
+        <View style={g.pemanisChart} pointerEvents="none">
+          <ChartTertanam url={`${ASAL}/chart-embed?pair=BTCUSDT&tf=m15&alat=volume`} asal={ASAL}
+            suntik="true;" latar={W.chart} onMuat={() => undefined} onPesan={() => undefined} />
+        </View>
+        <View style={g.pemanisKaki}>
+          <Text style={g.pemanisTeks}>Bitcoin · 15 menit · Binance</Text>
+          <Text style={g.pemanisTaut}>Buka di Pasar ›</Text>
+        </View>
+      </Pressable>
 
       {/* ISI, BUKAN RUANG KOSONG. Pemilik: "di home jangan sampai ada ruang
           kosong". Yang mengisi harus isi sungguhan — satu istilah dari Belajar,
@@ -156,6 +162,11 @@ const g = StyleSheet.create({
   lencana: { position: 'absolute', top: -2, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
   lencanaEmas: { backgroundColor: W.plus }, lencanaPutih: { backgroundColor: 'rgba(255,255,255,0.12)' }, lencanaMerah: { backgroundColor: W.turun },
   lencanaTeks: { fontSize: 9, fontWeight: '700' },
+  pemanis: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, overflow: 'hidden' },
+  pemanisChart: { height: 210, backgroundColor: W.chart },
+  pemanisKaki: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
+  pemanisTeks: { fontSize: H.alat, color: W.teksRedup },
+  pemanisTaut: { fontSize: H.alat, color: W.plus, fontWeight: '600' },
   istilah: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, padding: 13 },
   istilahKepala: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
   istilahNama: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.2 },
