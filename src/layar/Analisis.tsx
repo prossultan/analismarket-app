@@ -32,6 +32,7 @@ import { angka, ubah, biayaPersen } from '../data/tampil';
 import { LembarPasar } from '../komponen/LembarPasar';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Kosong, Memuat } from '../komponen/dasar';
+import { useSesi } from './Akun';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -66,6 +67,7 @@ const ALAT = ['volume', 'zona', 'struktur', 'level', 'pola lilin'] as const;
 type Props = { setelan: Setelan; simpan: (s: Setelan) => void; bukaPasarTanda: number };
 
 export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
+  const sesiChart = useSesi();
   /* Menahan layar HANYA kalau orangnya sendiri yang memintanya di Pengaturan.
      `useKeepAwake` tidak bisa dipakai di sini: ia tidak punya cara dimatikan
      bersyarat, dan memanggil hook di dalam `if` melanggar aturan hook. Jadi
@@ -228,7 +230,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
 
         {/* ── CHART: mengambil semua sisa tinggi ────────────────────────── */}
         <View style={g.wadahChart}>
-          <ChartTertanam url={url} asal={ASAL} suntik={SUNTIK} latar={W.chart}
+          <ChartTertanam sesi={sesiChart?.jenis === 'mini' ? sesiChart.sesi : undefined} url={url} asal={ASAL} suntik={SUNTIK} latar={W.chart}
             onMuat={setMemuatChart} onPesan={pesan} />
           {memuatChart && (
             <View style={g.tunggu} pointerEvents="none">

@@ -396,3 +396,16 @@ Telegram · Sambungkan" tampil tanpa syarat). Dua permukaan yang berbeda
 pendapat lebih buruk daripada satu yang salah: orang tidak tahu mana yang
 benar. Tiap permukaan yang menyebut langganan atau tautan Telegram WAJIB
 membaca `useSesi()` + `ambilRingkas()`, bukan mengetik keadaannya.
+
+## Sesi ikut ke SEMUA permintaan, termasuk chart tertanam (19 Sep)
+
+`antrian.ts` (bacaan, pasar) tidak pernah membawa Bearer, jadi m5 emas/forex
+milik pelanggan AM+ dijawab 402 di app — server menjawab 200 untuk sesi yang
+sama. Chart tertanam (WebView) juga anonim; diperbaiki dengan menyuntik token
+mini ke `localStorage['am_sesi_mini']` (kunci yang dibaca `miniapp.ts` web)
+lewat `injectedJavaScriptBeforeContentLoaded`. Dibuktikan lewat Playwright
+pada `chart-embed` XAU m5: 402 → 200. Ini kali KETIGA bug "sesi tidak ikut"
+muncul di produk ini (Mini App 13 Sep, app 19 Sep dua kali) — tiap permukaan
+baru yang memanggil `/api/bacaan` wajib diuji dengan sesi AM+ sungguhan.
+Cara mencetak sesi uji tanpa Telegram dan tanpa menulis: `terbitkanSesiMini`
+fungsi murni; lihat riwayat commit ini.

@@ -17,9 +17,18 @@ type Props = {
   latar: string;
   onMuat: (memuat: boolean) => void;
   onPesan: (e: WebViewMessageEvent) => void;
+  /**
+   * Token sesi MINI (bukan Clerk) — disuntik ke `localStorage['am_sesi_mini']`
+   * SEBELUM halaman dimuat, kunci yang sama yang dibaca web di `miniapp.ts`.
+   * Tanpa ini chart tertanam selalu anonim, jadi m5 emas/forex milik pelanggan
+   * AM+ dijawab tembok "bagian AnalisMarket+" — persis bug Mini App 13 Sep,
+   * terulang di permukaan ketiga. Clerk tidak bisa lewat sini: tokennya
+   * pendek umur dan halaman embed punya Clerk-nya sendiri.
+   */
+  sesi?: string;
 };
 
-export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan }: Props) {
+export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan, sesi }: Props) {
   if (Platform.OS === 'web') {
     return createElement('iframe', {
       src: url,
@@ -43,6 +52,9 @@ export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan }: Pro
       onLoadEnd={() => { onMuat(false); }}
       onMessage={onPesan}
       injectedJavaScript={suntik}
+      injectedJavaScriptBeforeContentLoaded={sesi === undefined || sesi === ''
+        ? undefined
+        : `try{localStorage.setItem('am_sesi_mini',${JSON.stringify(sesi)})}catch(e){};true;`}
       scalesPageToFit={false}
       setBuiltInZoomControls={false}
       scrollEnabled={false}

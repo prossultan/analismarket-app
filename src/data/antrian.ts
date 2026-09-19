@@ -20,6 +20,7 @@
  */
 
 import { Platform } from 'react-native';
+import { headerSesi } from './sesi';
 /**
  * Di web asalnya RELATIF: web dipakai untuk memotret layar, dan pemotretnya
  * memproksi /api dan /chart-embed ke produksi — API produksi tidak memasang
@@ -133,7 +134,12 @@ export async function ambil<T>(kunci: string, jalur: string, segarkan = false): 
     const henti = new AbortController();
     const jam = setTimeout(() => { henti.abort(); }, BATAS_MS);
     try {
-      const res = await fetch(`${ASAL}${jalur}`, { signal: henti.signal });
+      /* SESI IKUT. Tanpa ini /api/bacaan dan /api/pasar selalu anonim, jadi
+         fitur AM+ di sisi bacaan — m5 emas/forex — tergerbang 402 untuk
+         pelanggan yang sudah masuk. Diuji 19 Sep dengan sesi asli pemilik:
+         server menjawab 200 dengan sesi dan 402 tanpanya; app-nya yang tidak
+         pernah membawa sesinya. */
+      const res = await fetch(`${ASAL}${jalur}`, { signal: henti.signal, headers: await headerSesi() });
       const cacheNginx = res.headers.get('x-cache-status');
 
       if (res.status === 429) {
