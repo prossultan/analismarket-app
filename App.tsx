@@ -57,6 +57,7 @@ import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/
 import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH, TEPI_BILAH, ANGKAT_BILAH } from './src/gaya/token';
 import { TombolTab } from './src/komponen/TombolTab';
+import konfigApp from './app.json';
 import * as SplashScreen from 'expo-splash-screen';
 
 /**
@@ -68,7 +69,11 @@ import * as SplashScreen from 'expo-splash-screen';
  */
 void SplashScreen.preventAutoHideAsync().catch(() => { /* web atau sudah tersembunyi */ });
 
-const VERSI = '0.3.0';
+/* SATU SUMBER VERSI: app.json. Sebelumnya diketik '0.3.0' di sini sementara
+   app.json sudah 1.0.0 — layar Tentang dan Lainnya memperlihatkan versi yang
+   tidak pernah dirilis. Angka yang dilihat orang harus angka yang dikirim ke
+   toko. */
+const VERSI: string = konfigApp.expo.version;
 
 /** "Jumat, 19 September" — tanggal hari ini, dalam bahasa produk. */
 function tanggalPendek(): string {
