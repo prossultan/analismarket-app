@@ -91,7 +91,7 @@ function PerluSesi({ apa, buka }: { apa: string; buka: () => void }) {
  * tersambung", dan `PerluSesi` muncul sendiri di tiap layar ini.
  */
 function useAkun<T>(ambil: () => Promise<JawabanSaya<T>>, sesi: Sesi | null): {
-  isi: T | null; sebab: string | null; ulangi: () => void;
+  isi: T | null; sebab: string | null; gagal: boolean; ulangi: () => void;
 } {
   const bungkus = useCallback(async (): Promise<Hasil<T | null>> => {
     if (sesi === null) return { ok: true, isi: null };
@@ -105,6 +105,12 @@ function useAkun<T>(ambil: () => Promise<JawabanSaya<T>>, sesi: Sesi | null): {
     isi: keadaan.fase === 'ada' ? keadaan.isi : null,
     sebab: keadaan.fase === 'gagal' ? keadaan.kalimat
       : keadaan.fase === 'ada' ? keadaan.basi : null,
+    /* `isi === null` punya DUA arti — masih memuat, atau gagal — dan layar
+       yang cuma melihat null menggambar rangka selamanya untuk yang kedua.
+       Terlihat 19 Sep: akun Google membuka Kabar otomatis, server menjawab
+       409 perlu-telegram, pita sebabnya tampil, dan blok timeframe tetap
+       berkedip seolah sedang memuat. */
+    gagal: keadaan.fase === 'gagal',
     ulangi,
   };
 }
@@ -376,7 +382,7 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
 /* ══ 24 · KABAR OTOMATIS ════════════════════════════════════════════════ */
 export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void }) {
   const sesi = useSesi();
-  const { isi: d, sebab, ulangi: muat } = useAkun(ambilKabarOtomatis, sesi);
+  const { isi: d, sebab, gagal, ulangi: muat } = useAkun(ambilKabarOtomatis, sesi);
   const [sibuk, setSibuk] = useState('');
 
   return (
@@ -400,7 +406,7 @@ export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void })
               disebut namanya. */}
           {d !== null && d.dipilih.length > 0
             ? <Chip teks="Matikan semua" onPress={() => { void setelKabarOtomatis({ semua: false }).then(muat); }} />
-            : <Chip teks={d?.plus === true ? 'AM+ aktif' : 'Butuh AM+'} emas={d?.plus === true} lencana />}
+            : <Chip teks={d === null ? (gagal ? 'Tidak terbaca' : 'Memuat…') : d.plus ? 'AM+ aktif' : 'Butuh AM+'} emas={d?.plus === true} lencana />}
         </View>
       </Blok>
 
@@ -421,7 +427,9 @@ export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void })
 
       <Lbl gaya={{ marginTop: 2 }}>Timeframe yang dipantau otomatis</Lbl>
       {d === null ? (
-        <Blok><Rangka lebar="60%" tinggi={10} /><Rangka lebar="45%" tinggi={10} gaya={{ marginTop: 8 }} /></Blok>
+        gagal
+          ? <Blok><View style={g.rata}><Lbl polos>Daftarnya tidak bisa dimuat — sebabnya di atas.</Lbl><Chip teks="Coba lagi" onPress={muat} /></View></Blok>
+          : <Blok><Rangka lebar="60%" tinggi={10} /><Rangka lebar="45%" tinggi={10} gaya={{ marginTop: 8 }} /></Blok>
       ) : (
         <Menu>
           {/* SATU BARIS PER PASANGAN (timeframe, mesin) — bukan per timeframe.
