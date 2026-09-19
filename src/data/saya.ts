@@ -42,15 +42,18 @@ async function panggil<T>(jalur: string, metode: 'GET' | 'POST', badan?: unknown
       return { ok: false, jenis: 'sesi', kalimat: 'Sesi sudah habis. Sambungkan ulang lewat bot.' };
     }
     const isi = (await res.json().catch(() => ({}))) as T & { galat?: string; pesan?: string };
+    /* KONTRAKNYA `galat`, BUKAN kode status. `perlu-telegram` berarti akun
+       ini (mis. masuk lewat Google) belum ditautkan ke bot — BUKAN soal
+       langganan — dan server mengirimnya sebagai 409 (`PERLU_TELEGRAM` di
+       `api-saya.ts` bot), sementara `perlu-plus` datang sebagai 402. Versi
+       pertama cuma memeriksanya di dalam cabang 402, jadi cabang 'telegram'
+       tidak pernah tercapai dan akun Google jatuh ke 'lain'. Kalimatnya
+       kebetulan tetap benar karena server ikut mengirim `pesan` — itulah
+       kenapa tidak ada yang melihatnya. */
+    if (isi.galat === 'perlu-telegram') {
+      return { ok: false, jenis: 'telegram', kalimat: isi.pesan ?? 'Fitur ini butuh akun Telegram yang tersambung ke bot.' };
+    }
     if (res.status === 402) {
-      /* DUA HAL BERBEDA DATANG SEBAGAI 402. `perlu-telegram` berarti akun
-         ini (mis. masuk lewat Google) belum ditautkan ke bot — dan itu
-         BUKAN soal langganan. Dulu keduanya dipetakan ke 'plus', jadi orang
-         yang baru menyambung disuruh berlangganan padahal yang kurang
-         tautannya. */
-      if (isi.galat === 'perlu-telegram') {
-        return { ok: false, jenis: 'telegram', kalimat: isi.pesan ?? 'Fitur ini butuh akun Telegram yang tersambung ke bot.' };
-      }
       return { ok: false, jenis: 'plus', kalimat: isi.pesan ?? 'Fitur ini bagian dari AnalisMarket+.' };
     }
     if (res.status === 429) {
