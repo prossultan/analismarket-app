@@ -501,3 +501,22 @@ lewat `gradleCommand` di `eas.json`:
 
 Kalau suatu saat perlu menjalankan app di emulator x86, JANGAN mencabut baris
 ini — pakai profil `development`, yang memang untuk itu.
+
+## Push butuh DUA kredensial Firebase, dua arah berbeda (19 Sep)
+
+Diunggah ke EAS: **service account key** — surat kuasa supaya Expo boleh
+MENGIRIM atas nama app. Rahasia, tidak pernah masuk repo.
+
+Ikut di dalam APK: **`google-services.json`** — yang memberi tahu app
+*dirinya siapa* di mata Firebase, supaya Android bisa MENDAFTARKANNYA ke FCM
+dan menerbitkan token. Bukan rahasia; ia memang bisa dibaca siapa pun yang
+membongkar APK, jadi ia masuk repo.
+
+Tanpa yang kedua, `getExpoPushTokenAsync` gagal, token tidak pernah lahir,
+dan saklar notifikasi balik mati tanpa app maupun server melakukan kesalahan.
+Gejalanya menyesatkan karena sisi server sudah benar sepenuhnya.
+
+Cara memeriksanya dari APK tanpa memasang: `google_app_id` di
+`resources.arsc` harus TERISI (berbentuk `1:<angka>:android:<hex>`). Nama
+kolomnya selalu ada — dibawa SDK Firebase — jadi keberadaan NAMA bukan bukti;
+yang dibaca harus NILAINYA.
