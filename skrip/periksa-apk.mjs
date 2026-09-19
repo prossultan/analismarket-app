@@ -22,6 +22,8 @@ const BOLEH_IZIN = new Set([
   // Kabar pantauan ke HP. Diminta dari SAKLAR di Pengaturan, bukan saat app
   // pertama dibuka — dialog izin Android cuma muncul sekali seumur pemasangan.
   'android.permission.POST_NOTIFICATIONS',
+  'com.google.android.c2dm.permission.RECEIVE', // menerima pesan FCM — tanpa ini push tidak pernah sampai
+  'android.permission.WAKE_LOCK', // membangunkan perangkat untuk memproses push prioritas tinggi
   'android.permission.ACCESS_NETWORK_STATE',  // pustaka memeriksa sambungan; tingkat normal, tidak ditampilkan ke pengguna
 ]);
 /** Izin privat milik app sendiri dari AndroidX — sah. */

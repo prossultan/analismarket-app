@@ -36,6 +36,12 @@ const BOLEH = new Set([
   // Kabar pantauan ke HP. Diminta dari SAKLAR di Pengaturan, bukan saat app
   // pertama dibuka — dialog izin Android cuma muncul sekali seumur pemasangan.
   'android.permission.POST_NOTIFICATIONS',
+  /* c2dm.RECEIVE dan WAKE_LOCK TIDAK didaftar di sini, dan itu bukan
+     kelalaian: keduanya disumbang manifes AAR dan baru digabung Gradle saat
+     BUILD. Manifes prebuild belum memuatnya, jadi menuntutnya ada di sini
+     membuat penjaga ini merah selamanya atas sesuatu yang benar.
+     Tempatnya di `periksa-apk.mjs`, yang membaca APK sungguhan — dan di sana
+     keduanya memang wajib ada. Dua penjaga, dua permukaan, dua daftar. */
 ]);
 
 const adaSebelumnya = existsSync('android');

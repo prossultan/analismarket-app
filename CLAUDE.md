@@ -469,3 +469,21 @@ migrasi `0050_perangkat_push` belum dijalankan (migrasi produksi bukan
 wewenang sesi mana pun), `pilihSaluran` masih menjawab `['telegram']`, dan
 kunci FCM V1 baru diunggah ke EAS hari ini sehingga belum pernah diuji
 mengirim ke perangkat sungguhan.
+
+## Dua penjaga izin melihat DUA permukaan yang berbeda (19 Sep)
+
+`periksa-izin` membaca manifes hasil **prebuild**; `periksa-apk` membaca
+**APK sungguhan**. Keduanya tidak melihat daftar yang sama, dan itu bukan
+kelemahan salah satunya: izin yang disumbang manifes AAR pustaka baru
+digabung Gradle saat BUILD, jadi `com.google.android.c2dm.permission.RECEIVE`
+dan `WAKE_LOCK` TIDAK ADA di manifes prebuild tapi ADA di APK. Menaruhnya di
+daftar putih `periksa-izin` membuat penjaga itu merah selamanya atas sesuatu
+yang benar. Tiap izin baru harus ditanya: ia lahir di prebuild atau di build?
+
+`expo-notifications` menarik **19 izin** yang tidak diminta. Tujuh belas di
+antaranya dari ShortcutBadger — angka di ikon app — termasuk
+`WRITE_SETTINGS` untuk launcher Huawei dan Oppo. App ini memasang
+`shouldSetBadge: false`, jadi tidak satu pun dipakai; semuanya diblokir.
+Yang ketiga kalinya pustaka menyelundupkan izin ke APK di proyek ini
+(Clerk/Solana, expo-secure-store biometrik, sekarang ShortcutBadger), dan
+ketiganya ditemukan penjaga, bukan mata.
