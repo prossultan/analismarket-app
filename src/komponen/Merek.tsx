@@ -14,7 +14,7 @@ import { W, H, J } from '../gaya/token';
 
 const LOGO = require('../../assets/logo-am.png') as number;
 
-export function Merek({ sub, ukuran = 21 }: { sub?: string; ukuran?: number }) {
+export function Merek({ sub, ukuran = 30 }: { sub?: string; ukuran?: number }) {
   return (
     <View style={g.akar}>
       <Image
@@ -33,8 +33,8 @@ export function Merek({ sub, ukuran = 21 }: { sub?: string; ukuran?: number }) {
 }
 
 const g = StyleSheet.create({
-  akar: { flexDirection: 'row', alignItems: 'center', gap: J.x2 },
-  nama: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
+  akar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nama: { fontSize: 18, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.5 },
   emas: { color: W.plus },
-  sub: { fontSize: H.label, color: W.teksSamar },
+  sub: { fontSize: H.alat, color: W.teksSamar, marginTop: 1 },
 });

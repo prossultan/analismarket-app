@@ -10,13 +10,17 @@
  * lalu volume 24 jam menurun. Aturan `DaftarPasar.tsx` di web.
  */
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSisaBilah } from '../gaya/jarak';
 import type { Pasar } from '../data/api';
 import { angka, kategoriTersedia, labelJenis, labelKategori, ubah, volumeRingkas } from '../data/tampil';
 import { Kaca } from './Kaca';
 import { BarisPasar, Chip, Lbl, Tarik } from './mockup';
 import { W, H, J, R, SENTUH, TALANG } from '../gaya/token';
+
+/** Chip saringan berhuruf kapital di depan, seperti mockup — labelnya datang dari data dalam huruf kecil. */
+const kapital = (t: string): string => t.charAt(0).toUpperCase() + t.slice(1);
 
 type Props = {
   daftar: Pasar[];
@@ -26,7 +30,8 @@ type Props = {
 };
 
 export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
-  const { top, bottom } = useSafeAreaInsets();
+  const { top } = useSafeAreaInsets();
+  const sisaBilah = useSisaBilah();
   const [cari, setCari] = useState('');
   const [jenis, setJenis] = useState('semua');
   const [kategori, setKategori] = useState('semua');
@@ -52,7 +57,7 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
       <View style={g.luar}>
         {/* Tirai tipis: chart di baliknya masih terlihat — itu tujuannya. */}
         <Pressable style={g.tirai} onPress={tutup} accessibilityLabel="Tutup daftar pasar" />
-        <Kaca tebal tepi="atas" gaya={[g.lembar, { top: top + 96, paddingBottom: bottom }]}>
+        <Kaca tebal tepi="atas" gaya={[g.lembar, { top: top + 96, bottom: sisaBilah - 8 }]}>
           <Pressable onPress={tutup}><Tarik kata="tarik turun untuk menutup" turun /></Pressable>
 
           {/* Cari — mockup 28. */}
@@ -72,15 +77,15 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
             {cari !== '' && <Chip teks="Batal" onPress={() => { setCari(''); }} />}
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.chips}>
+          <View style={g.chips}>
             {jenisAda.map((j) => (
-              <Chip key={j} teks={j === 'semua' ? 'Semua' : labelJenis(j)} on={jenis === j}
+              <Chip key={j} teks={j === 'semua' ? 'Semua' : kapital(labelJenis(j))} on={jenis === j}
                 onPress={() => { setJenis(j); setKategori('semua'); }} />
             ))}
             {jenis !== 'semua' && kategoriAda.length > 1 && kategoriAda.map((k) => (
-              <Chip key={`k-${k}`} teks={labelKategori(k)} on={kategori === k} onPress={() => { setKategori(k); }} />
+              <Chip key={`k-${k}`} teks={kapital(labelKategori(k))} on={kategori === k} onPress={() => { setKategori(k); }} />
             ))}
-          </ScrollView>
+          </View>
 
           {cari !== '' && (
             <Lbl gaya={{ paddingHorizontal: TALANG, paddingTop: 6 }}>{String(terlihat.length)} pasar cocok</Lbl>
@@ -134,7 +139,7 @@ const g = StyleSheet.create({
   luar: { flex: 1 },
   tirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.30)' },
   lembar: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
+    position: 'absolute', left: 0, right: 0,
     borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden', paddingTop: 6,
   },
   cari: {
@@ -144,7 +149,7 @@ const g = StyleSheet.create({
   },
   cariIkon: { fontSize: 13, color: W.teksSamar },
   cariIsi: { flex: 1, color: W.teksKuat, fontSize: H.nilai, paddingVertical: 8 },
-  chips: { flexDirection: 'row', gap: 4, paddingHorizontal: TALANG, paddingVertical: 7 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: TALANG, paddingVertical: 7 },
   hargaTerpilih: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500' },
   kosong: { paddingVertical: 26, paddingHorizontal: J.x3, gap: 5 },
   kosongJudul: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat },

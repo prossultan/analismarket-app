@@ -50,7 +50,7 @@ export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
     setPasar(p);
     setJumlahPasar(j.isi.pasar.length);
     setTeratas([...j.isi.pasar].filter((x) => x.simbol !== p?.simbol)
-      .sort((a, b) => (b.volume24hUsd ?? 0) - (a.volume24hUsd ?? 0)).slice(0, 8));
+      .sort((a, b) => (b.volume24hUsd ?? 0) - (a.volume24hUsd ?? 0)).slice(0, 12));
     if (p === null) { setSiap(true); return; }
     const punya = p.timeframes.map((t) => t.toLowerCase());
     const tf = punya.includes(setelan.tf) ? setelan.tf : (punya[0] ?? 'h1');
@@ -76,7 +76,7 @@ export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
   return (
     <ScrollView
       style={g.akar}
-      contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}
+      contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}
       refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup}
         onRefresh={() => { setMenyegarkan(true); void muat(true).finally(() => { setMenyegarkan(false); }); }} />}
     >
@@ -121,8 +121,9 @@ export function LayarHome({ setelan, bukaChart, bukaPasar }: Props) {
         </View>
       </Blok>
 
-      {/* Yang bergerak — urut volume 24 jam. */}
-      <Blok>
+      {/* Yang bergerak — urut volume 24 jam. flex:1 supaya ia mengisi sisa
+          tinggi layar; ruang kosong di app data bukan kelegaan. */}
+      <Blok gaya={{ flex: 1 }}>
         <View style={[g.baris, { justifyContent: 'space-between' }]}>
           <Lbl>Yang bergerak</Lbl>
           <Pressable onPress={bukaPasar} hitSlop={8}><Lbl polos>vol 24 jam ›</Lbl></Pressable>

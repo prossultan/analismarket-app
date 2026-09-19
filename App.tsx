@@ -17,7 +17,7 @@
  * Sambungkan Telegram.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar, Text } from 'react-native';
 import { NavigationContainer, DarkTheme, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -41,6 +41,7 @@ import { Ikon, type NamaIkon } from './src/komponen/Ikon';
 import { Kaca } from './src/komponen/Kaca';
 import { Merek } from './src/komponen/Merek';
 import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
+import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH } from './src/gaya/token';
 
 const VERSI = '0.3.0';
@@ -109,7 +110,7 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
         {() => <LayarPengaturan setelan={setelan} simpan={simpan} />}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="Tentang" options={{ title: 'Tentang' }}>
-        {() => <LayarTentang versi={VERSI} jumlahPasar={null} />}
+        {() => <LayarTentang versi={VERSI} />}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="Dokumen" options={({ route }) => ({ title: route.params.kunci === 'syarat' ? 'Syarat & Ketentuan' : 'Kebijakan Privasi' })}>
         {({ route }) => <LayarDokumen kunci={route.params.kunci} />}
@@ -119,12 +120,17 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
           <LayarProfil setelan={setelan}
             bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }}
             bukaPengaturan={() => { (navigation as Nav).navigate('Pengaturan'); }}
-            bukaPantauan={() => { (navigation as Nav).navigate('Pantauan'); }} />
+            bukaPantauan={() => { (navigation as Nav).navigate('Pantauan'); }}
+            buka={(ke) => { (navigation as Nav).navigate(ke); }} />
         )}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="Sambung" component={LayarSambung} options={{ title: 'Sambungkan Telegram' }} />
       <Tumpukan.Screen name="Pantauan" options={{ title: 'Pantauan' }}>
-        {({ navigation }) => <LayarPantauan bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+        {({ navigation }) => (
+          <LayarPantauan pasar={setelan.pasar} tf={setelan.tf}
+            bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }}
+            bukaBaru={() => { (navigation as Nav).navigate('PantauanBaru'); }} />
+        )}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="PantauanBaru" options={{ title: 'Pantauan baru' }}>
         {({ navigation }) => (
@@ -156,6 +162,7 @@ function AlurLain({ setelan, simpan }: IsiTumpukan) {
             versi={VERSI}
             bukaDokumen={(k) => { (navigation as Nav).navigate('Dokumen', { kunci: k }); }}
             bukaMenu={(k) => { (navigation as Nav).navigate(KE_LAYAR[k] as never); }}
+            umur={{ harga: umurTerakhir('/api/bacaan'), lilin: umurTerakhir('/api/bacaan'), kalender: umurTerakhir('/api/jadwal-berita') }}
           />
         )}
       </Tumpukan.Screen>
@@ -168,7 +175,11 @@ function AlurKabar({ setelan, simpan }: IsiTumpukan) {
   return (
     <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
       <Tumpukan.Screen name="Kabar" options={{ title: 'Kabar' }}>
-        {({ navigation }) => <LayarKabar bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+        {({ navigation }) => (
+          <LayarKabar setelan={setelan}
+            bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }}
+            bukaChart={() => { navigation.getParent()?.navigate('pasar'); }} />
+        )}
       </Tumpukan.Screen>
       {LayarBersama({ setelan, simpan })}
     </Tumpukan.Navigator>
@@ -288,9 +299,9 @@ function Isi() {
           options={{
             title: 'PLUS+',
             tabBarIcon: ({ focused }) => <Ikon nama="plus" warna={W.plus} ukuran={20} isi={focused ? W.plusRedup : undefined} />,
-            tabBarActiveTintColor: W.plus,
-            tabBarInactiveTintColor: W.plus,
-            tabBarLabelStyle: { fontSize: H.alat, fontWeight: '600' },
+            /* Label diberi warna SENDIRI, bukan lewat tint: tint per-layar
+               menular ke seluruh bilah saat layar ini aktif. */
+            tabBarLabel: () => <Text style={{ fontSize: H.alat, fontWeight: '600', color: W.plus }}>PLUS+</Text>,
           }}
         >
           {() => <AlurPlus setelan={setelan} simpan={simpan} />}

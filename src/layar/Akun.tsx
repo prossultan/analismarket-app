@@ -7,11 +7,15 @@
  * tersambung, bukan angka karangan. Satu-satunya yang benar-benar bekerja
  * hari ini adalah tombol yang membuka bot — dan itu memang langkah pertama.
  */
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
+import { volumeRingkas } from '../data/tampil';
+import { LambangPasar } from '../komponen/LambangPasar';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
-import { BarIsi, BarisPakai, Blok, Butir, Chip, Kosong, Langkah, Lbl, Menu, Mikro, Nil, Radio, Saklar, Tombol } from '../komponen/mockup';
+import { BarIsi, BarisPakai, Blok, Butir, Chip, Langkah, Lbl, Menu, Mikro, Nil, Radio, Rangka, Saklar, Tombol } from '../komponen/mockup';
 import { W, H, R, TALANG } from '../gaya/token';
 
 /**
@@ -25,7 +29,7 @@ function Wadah({ children }: { children: React.ReactNode }) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
       {children}
     </ScrollView>
   );
@@ -42,22 +46,36 @@ export function LayarSambung() {
       </Blok>
       {/* Penomoran di sini SAH: urutannya menentukan. Tanpa langkah 2 tautannya tidak pernah ada. */}
       <Blok rapat gaya={{ paddingHorizontal: 10 }}>
-        <Langkah no={1} judul={`Buka @${BOT}`} ket="Tombol di bawah membukanya langsung." pertama />
+        <Langkah no={1} judul={`Buka @${BOT}`} ket="Cari namanya di Telegram — nama lengkapnya ada di bawah." pertama />
         <Langkah no={2} judul="Tekan “Sambungkan web & app”" ket="Bot mengirim satu tautan sekali pakai." />
         <Langkah no={3} judul="Tautannya membuka app ini" ket="Sesi tersimpan 12 jam, lalu diperbarui sendiri." />
       </Blok>
-      <Blok>
+      {/* Blok nama bot LANGSUNG sesudah langkahnya — ia aksinya. Blok "yang
+          terbuka" mengisi sisa tinggi di bawahnya, bukan spacer kosong. */}
+      <Blok emas gaya={{ alignItems: 'center', paddingVertical: 16 }}>
+        <Lbl warna={W.plus}>Nama bot di Telegram</Lbl>
+        <Text selectable style={g.handle}>@{BOT}</Text>
+        <Mikro tengah>Tekan lama untuk menyalin. Buka Telegram, tempel di pencarian.</Mikro>
+        <Mikro tengah>App ini tidak memasang tautan keluar.</Mikro>
+      </Blok>
+      <Blok gaya={{ flex: 1, justifyContent: 'center' }}>
         <Lbl>Yang terbuka sesudah tersambung</Lbl>
-        <View style={{ marginTop: 6, gap: 5 }}>
-          {['Pantauan dan kabar otomatis', 'Setelan bawaan ikut dari bot', 'Status AnalisMarket+ terbaca'].map((t) => (
-            <View key={t} style={g.centangBaris}><Text style={g.centang}>✓</Text><Text style={g.centangTeks}>{t}</Text></View>
+        <View style={{ marginTop: 8, gap: 8 }}>
+          {[
+            ['Pantauan dan kabar otomatis', 'Dikabari saat syarat setup lolos, tanpa membuka app.'],
+            ['Setelan bawaan ikut dari bot', 'Pasar, timeframe, dan mesin yang sama di Telegram, web, dan app.'],
+            ['Status AnalisMarket+ terbaca', 'Kredit, kuota, dan sisa hari langganan tampil di Profil.'],
+            ['Tiga pantauan pertama gratis', 'AM+ membuka sisanya dan kabar otomatisnya.'],
+          ].map(([j, k]) => (
+            <View key={j} style={g.centangBaris}>
+              <Text style={g.centang}>✓</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[g.centangTeks, { color: W.teksKuat, fontWeight: '600' }]}>{j}</Text>
+                <Text style={g.centangTeks}>{k}</Text>
+              </View>
+            </View>
           ))}
         </View>
-      </Blok>
-      <Blok gaya={{ alignItems: 'center' }}>
-        <Lbl>Nama bot di Telegram</Lbl>
-        <Text selectable style={g.handle}>@{BOT}</Text>
-        <Mikro tengah>Buka Telegram, cari nama itu. App ini tidak memasang tautan keluar.</Mikro>
       </Blok>
       <Mikro>
         Langkah 3 belum bisa diselesaikan app ini: tautan sekali pakai dari bot saat ini membuka
@@ -68,21 +86,77 @@ export function LayarSambung() {
 }
 
 /* ── 22 · PANTAUAN (keadaan 15: belum ada) ─────────────────────────────── */
-export function LayarPantauan({ bukaSambung }: { bukaSambung: () => void }) {
-  const tinggiKepala = useHeaderHeight();
-  const sisaBilah = useSisaBilah();
+export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
+  bukaSambung: () => void; bukaBaru: () => void; pasar: string; tf: string;
+}) {
+  /* Yang BISA ditampilkan tanpa akun: lima mesin pasar bawaan, dengan status
+     sekarang — persis bentuk baris pantauan, dan tiap baris bisa dijadikan
+     pantauan lewat formulirnya. Layar kosong yang cuma bilang "belum ada"
+     tidak menjawab "lalu saya pasang apa". */
+  const [mesin, setMesin] = useState<Mesin[] | null>(null);
+  const [ramai, setRamai] = useState<Pasar[]>([]);
+  useEffect(() => {
+    void ambilBacaan(pasar, tf).then((b) => { setMesin(b.ok ? b.isi.mesin : []); });
+    /* Pasar lain yang ramai — kandidat pantauan berikutnya, dari daftar yang sudah ada di simpanan. */
+    void ambilPasar().then((j) => {
+      if (!j.ok) return;
+      setRamai([...j.isi.pasar].filter((x) => x.simbol !== pasar).sort((a, b) => b.volume24hUsd - a.volume24hUsd).slice(0, 8));
+    });
+  }, [pasar, tf]);
   return (
-    <View style={[g.akar, { paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG }]}>
+    <Wadah>
       <View style={g.chips}><Chip teks="Aktif" on /><Chip teks="Menunggu" /><Chip teks="Selesai" /></View>
-      <Kosong
-        ikon="kabar"
-        judul="Belum ada pantauan"
-        kalimat="Pantauan mengabari kamu saat syarat setup sebuah mesin lolos — tanpa perlu membuka app. Ia hidup di akun Telegram-mu."
-        aksi={bukaSambung}
-        labelAksi="Sambungkan Telegram"
-        catatan="Gratis sampai 3 pantauan"
-      />
-    </View>
+      <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
+        <View style={[g.rata, { gap: 8 }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={g.pilihJudul}>Belum ada pantauan aktif</Text>
+            <Lbl polos>Pantauan hidup di akun Telegram-mu. Tiga pertama gratis.</Lbl>
+          </View>
+          <Chip teks="Sambungkan" emas onPress={bukaSambung} />
+        </View>
+      </Blok>
+      <Blok gaya={{ flex: 1 }}>
+        <View style={g.rata}>
+          <Lbl>Bisa dipantau sekarang · {pasar} {tf.toLowerCase()}</Lbl>
+          <Chip teks="+ Baru" onPress={bukaBaru} />
+        </View>
+        {mesin === null && [0, 1, 2].map((i) => (
+          <View key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'center', paddingVertical: 10 }}>
+            <Rangka lebar={22} tinggi={22} gaya={{ borderRadius: 11 }} /><Rangka lebar="55%" tinggi={10} />
+          </View>
+        ))}
+        {mesin?.map((m, i) => {
+          const w = syaratWajib(m); const lolos = w.filter((c) => c.lolos).length;
+          const setup = m.status.toUpperCase() === 'SETUP';
+          return (
+            <View key={m.mesin} style={[g.pantau, i > 0 && g.garis]}>
+              <LambangPasar simbol={pasar} ukuran={22} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={g.pilihJudul} numberOfLines={1}>{pasar} <Text style={{ color: W.teksRedup, fontWeight: '400' }}>{tf.toLowerCase()}</Text> · {m.mesin}</Text>
+                <Lbl polos>Kabari saat syarat wajib lolos semua</Lbl>
+              </View>
+              <Chip teks={`${String(lolos)}/${String(w.length)}`} mono emas={setup} onPress={bukaBaru} />
+            </View>
+          );
+        })}
+        <Mikro>Menekan baris membuka formulir pantauan. Menyimpannya butuh sambungan Telegram.</Mikro>
+        {ramai.length > 0 && (
+          <>
+            <Lbl gaya={{ marginTop: 12 }}>Pasar lain yang ramai hari ini</Lbl>
+            {ramai.map((x, i) => (
+              <View key={x.simbol} style={[g.pantau, i > 0 && g.garis]}>
+                <LambangPasar simbol={x.simbol} ukuran={22} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={g.pilihJudul} numberOfLines={1}>{x.simbol} <Text style={{ color: W.teksRedup, fontWeight: '400' }}>{tf.toLowerCase()}</Text></Text>
+                  <Lbl polos>{x.label} · vol {volumeRingkas(x.volume24hUsd)}</Lbl>
+                </View>
+                <Chip teks="+ pantau" onPress={bukaBaru} />
+              </View>
+            ))}
+          </>
+        )}
+      </Blok>
+    </Wadah>
   );
 }
 
@@ -249,12 +323,13 @@ const g = StyleSheet.create({
   centang: { color: W.plus, fontSize: 9, marginTop: 2 },
   centangTeks: { flex: 1, fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
   pilih: { flexDirection: 'row', gap: 9, alignItems: 'flex-start', paddingHorizontal: 11, paddingVertical: 9 },
+  pantau: { flexDirection: 'row', gap: 8, alignItems: 'center', paddingVertical: 8 },
   pilihJudul: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat },
   ket: { marginTop: 5, fontSize: H.alat, color: W.teksRedup, lineHeight: 15 },
   besar: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, fontVariant: ['tabular-nums'] },
   dari: { fontSize: H.alat, color: W.teksRedup, fontWeight: '400' },
   kartuEmas: { borderRadius: R.kartu, padding: 13, borderWidth: 1, borderColor: 'rgba(201,169,97,0.38)', backgroundColor: 'rgba(201,169,97,0.10)' },
-  handle: { marginTop: 4, fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, fontVariant: ['tabular-nums'] },
+  handle: { marginTop: 6, marginBottom: 6, fontSize: 22, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plus, fontWeight: '600' },
   harga: { fontSize: 19, fontWeight: '700', color: '#E3CE97', marginTop: 5, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
 });

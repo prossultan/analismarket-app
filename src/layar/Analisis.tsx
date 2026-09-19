@@ -24,7 +24,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
-import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import type { WebViewMessageEvent } from 'react-native-webview';
+import { ChartTertanam } from '../komponen/ChartTertanam';
 import { ASAL } from '../data/antrian';
 import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
 import { angka, ubah } from '../data/tampil';
@@ -205,47 +206,23 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
 
         {/* ── CHART: mengambil semua sisa tinggi ────────────────────────── */}
         <View style={g.wadahChart}>
-          <WebView
-            key={url}
-            source={{ uri: url }}
-            style={g.web}
-            backgroundColor={W.chart}
-            onLoadStart={() => { setMemuatChart(true); }}
-            onLoadEnd={() => { setMemuatChart(false); }}
-            onMessage={pesan}
-            injectedJavaScript={SUNTIK}
-            scalesPageToFit={false}
-            setBuiltInZoomControls={false}
-            scrollEnabled={false}
-            bounces={false}
-            overScrollMode="never"
-            javaScriptEnabled
-            domStorageEnabled
-            originWhitelist={[ASAL]}
-          />
+          <ChartTertanam url={url} asal={ASAL} suntik={SUNTIK} latar={W.chart}
+            onMuat={setMemuatChart} onPesan={pesan} />
           {memuatChart && (
             <View style={g.tunggu} pointerEvents="none">
               <Lbl polos>membaca 1.300 lilin…</Lbl>
             </View>
           )}
-          <Kaca gaya={g.chipKaca}>
-            <Text style={g.chipKacaTeks}>harga <Text style={g.chipKacaNilai}>{angka(harga ?? pasar.harga, pasar.desimal)}</Text></Text>
-          </Kaca>
-          {m !== null && (
-            <Kaca gaya={[g.chipKaca, g.chipKacaKanan]}>
-              <Text style={g.chipKacaNilai}>ATR {angka(m.atr, pasar.desimal)}</Text>
-            </Kaca>
-          )}
         </View>
 
         {/* ── ALAT: di BAWAH chart, tepat di sebelah benda yang diubahnya ── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.alatRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={g.alatRow}>
           {ALAT.map((a) => <Chip key={a} teks={a} on={alat.has(a)} onPress={() => { gantiAlat(a); }} />)}
           <Chip teks="banding" onPress={() => { setLapisBanding(true); }} />
         </ScrollView>
 
         {/* Ruang untuk lembar yang melayang di bawah. */}
-        <View style={{ height: TINGGI_LEMBAR }} />
+        <View style={{ height: TINGGI_LEMBAR + sisaBilah - 8 }} />
       </View>
 
       {/* ── LEMBAR KACA: berhenti DI ATAS bilah tab ──────────────────────── */}
@@ -286,7 +263,10 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
                     {m.status.charAt(0) + m.status.slice(1).toLowerCase()} · {lolosAktif} dari {wajibAktif.length}
                   </Text>
                 </View>
-                {m.biayaPorsi !== null && <Chip teks={`Biaya ${Math.round(m.biayaPorsi * 100)}% risiko`} mono />}
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <Chip teks={`ATR ${angka(m.atr, pasar.desimal)}`} mono />
+                  {m.biayaPorsi !== null && <Chip teks={`Biaya ${Math.round(m.biayaPorsi * 100)}% risiko`} mono />}
+                </View>
               </View>
               <View style={g.angkaBaris}>
                 <View><Lbl>Entry</Lbl><Nil>{angka(m.entry, pasar.desimal)}</Nil></View>
@@ -301,7 +281,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
 
       {/* ── LAPISAN BACAAN LENGKAP ────────────────────────────────────────── */}
       <Modal visible={lapisBacaan && m !== null} animationType="slide" transparent onRequestClose={() => { setLapisBacaan(false); }}>
-        <View style={g.lapisLuar}>
+        <View style={[g.lapisLuar, { paddingBottom: sisaBilah - 8 }]}>
           <Pressable style={g.lapisTirai} onPress={() => { setLapisBacaan(false); }} />
           <Kaca tebal tepi="atas" gaya={g.lapis}>
             <Tarik kata="tarik turun untuk menutup" turun />
@@ -319,7 +299,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
 
       {/* ── BANDING MESIN ─────────────────────────────────────────────────── */}
       <Modal visible={lapisBanding} animationType="slide" transparent onRequestClose={() => { setLapisBanding(false); }}>
-        <View style={g.lapisLuar}>
+        <View style={[g.lapisLuar, { paddingBottom: sisaBilah - 8 }]}>
           <Pressable style={g.lapisTirai} onPress={() => { setLapisBanding(false); }} />
           <Kaca tebal tepi="atas" gaya={g.lapis}>
             <Tarik kata="tarik turun untuk menutup" turun />
@@ -358,7 +338,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
 }
 
 /** Tinggi lembar yang melayang — ruang yang harus disisakan isi di atasnya. */
-const TINGGI_LEMBAR = 118;
+const TINGGI_LEMBAR = 134;
 
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
@@ -370,13 +350,11 @@ const g = StyleSheet.create({
   isi: { flex: 1, paddingHorizontal: TALANG, paddingTop: 9, gap: 6 },
   mesinRangka: { flexDirection: 'row', gap: 6, paddingVertical: 8, paddingHorizontal: 6, borderWidth: 1, borderColor: W.garis, borderRadius: R.besar },
   tutupJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat },
-  wadahChart: { flex: 1, minHeight: 120, borderRadius: R.besar, overflow: 'hidden', borderWidth: 1, borderColor: W.garis, backgroundColor: W.chart },
+  wadahChart: { flex: 1, minHeight: 120, position: 'relative', borderRadius: R.besar, overflow: 'hidden', borderWidth: 1, borderColor: W.garis, backgroundColor: W.chart },
   web: { flex: 1, backgroundColor: W.chart },
   tunggu: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  chipKaca: { position: 'absolute', top: 6, left: 6, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
-  chipKacaKanan: { left: undefined, right: 6 },
-  chipKacaTeks: { fontSize: 8, color: W.teksRedup },
-  chipKacaNilai: { fontSize: 8, color: W.teksKuat, fontWeight: '600', ...ANGKA },
+  /* Gaya utuh, bukan timpaan `left: undefined` — di web timpaan itu tidak
+     berlaku dan dua chip menumpuk di pojok yang sama. */
   alatRow: { flexDirection: 'row', gap: 4, paddingVertical: 2 },
 
   lembar: { position: 'absolute', left: 0, right: 0 },

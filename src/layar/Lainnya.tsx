@@ -29,7 +29,7 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
   const sisaBilah = useSisaBilah();
   const jam = (d: number | null): string => (d === null ? '—' : jamWib(d));
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
       <Lbl>Baca</Lbl>
       <Menu>
         <Butir ikon="kalender" nama="Kalender berita" ket="30 hari" onPress={() => { bukaMenu('kalender'); }} pertama />
@@ -50,7 +50,7 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
         <Butir ikon="lainnya" nama="Tentang AnalisMarket" ket={`v${versi}`} ketMono onPress={() => { bukaMenu('tentang'); }} />
       </Menu>
 
-      <Blok>
+      <Blok gaya={{ flex: 1, justifyContent: 'center' }}>
         <Merek sub={`v${versi} · Binance & Twelve Data`} />
         <Lbl gaya={{ marginTop: 10 }}>Data terakhir masuk</Lbl>
         <View style={g.umur}>

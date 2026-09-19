@@ -10,6 +10,7 @@
  * kalimat terbaca sebagai bug.
  */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { FITUR_GRATIS, FITUR_PLUS } from '../data/amplus';
@@ -20,17 +21,23 @@ const TANYA: ReadonlyArray<{ t: string; j: string }> = [
   { t: 'Bisa berhenti kapan saja?', j: 'Bisa. Langganan ditagih bulanan dan berhenti di akhir periode berjalan.' },
   { t: 'Apa bedanya dengan bot Telegram?', j: 'Sama mesinnya, sama angkanya. AM+ menambah pantauan otomatis dan cek banyak pasar.' },
   { t: 'Apakah ini memprediksi harga?', j: 'Tidak. Ini alat baca chart. Ia menilai kondisi sekarang, bukan meramal yang berikutnya.' },
+  { t: 'Lewat mana kabarnya dikirim?', j: 'Lewat Telegram, ke akun yang tersambung. App ini menampilkan salinannya di tab Kabar.' },
+  { t: 'Pantauan gratis tetap ada?', j: 'Ada. Tiga pantauan pertama gratis; AM+ membuka sisanya dan kabar otomatisnya.' },
 ];
 
 export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
       {/* Kartu emas bergradasi — satu-satunya di seluruh app. */}
       <View style={g.kartu}>
-        <View style={[g.gradasi, g.gradasiAtas]} />
-        <View style={[g.gradasi, g.gradasiBawah]} />
+        <LinearGradient
+          colors={['rgba(201,169,97,0.20)', 'rgba(201,169,97,0.05)', 'rgba(201,169,97,0.11)']}
+          locations={[0, 0.58, 1]}
+          start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         <Text style={g.cap}>AnalisMarket+</Text>
         <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
         <Text style={g.harga}>Rp 99.000 <Text style={g.perBulan}>/ bulan</Text></Text>
@@ -58,7 +65,7 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
         </View>
       </Blok>
 
-      <Blok>
+      <Blok gaya={{ flex: 1 }}>
         <Lbl>Pertanyaan yang sering masuk</Lbl>
         <View style={{ marginTop: 4 }}>
           {TANYA.map((q, i) => <Istilah key={q.t} judul={q.t} isi={q.j} pertama={i === 0} />)}
@@ -76,9 +83,6 @@ const g = StyleSheet.create({
   },
   /* Gradasi 158deg dari mockup, ditiru dengan dua bidang miring lembut —
      RN tidak punya linear-gradient tanpa paket tambahan. */
-  gradasi: { position: 'absolute', left: -40, right: -40, height: 140, backgroundColor: 'rgba(201,169,97,0.13)' },
-  gradasiAtas: { top: -90, transform: [{ rotate: '-8deg' }] },
-  gradasiBawah: { bottom: -110, backgroundColor: 'rgba(201,169,97,0.06)', transform: [{ rotate: '-8deg' }] },
   cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plus, fontWeight: '600' },
   judul: { marginTop: 6, fontSize: 14, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
   harga: { fontSize: 19, fontWeight: '700', color: '#E3CE97', marginTop: 7, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },

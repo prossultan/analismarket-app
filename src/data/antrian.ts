@@ -19,7 +19,13 @@
  * frame yang SAMA — dan di layar yang baru dibuka, keduanya terjadi.
  */
 
-export const ASAL = 'https://analismarket.com';
+import { Platform } from 'react-native';
+/**
+ * Di web asalnya RELATIF: web dipakai untuk memotret layar, dan pemotretnya
+ * memproksi /api dan /chart-embed ke produksi — API produksi tidak memasang
+ * header CORS, jadi asal absolut dari 127.0.0.1 ditolak peramban.
+ */
+export const ASAL = Platform.OS === 'web' ? '' : 'https://analismarket.com';
 
 /**
  * 1.100 ms, bukan 1.000.
@@ -45,6 +51,23 @@ export type Jawaban<T> =
 type Simpanan = { pada: number; isi: unknown; cacheNginx: string | null };
 
 const simpanan = new Map<string, Simpanan>();
+
+/**
+ * UMUR DATA — kapan jawaban terakhir untuk sebuah awalan jalur masuk.
+ *
+ * Dibaca layar Lainnya untuk blok "data terakhir masuk". Yang dijawab adalah
+ * "ini angka kapan", pertanyaan yang muncul terus dan sebelumnya tidak punya
+ * jawaban di mana pun. `null` = belum pernah, dan dicetak "—", bukan jam
+ * karangan.
+ */
+export function umurTerakhir(awalanJalur: string): number | null {
+  let terbaru: number | null = null;
+  for (const [k, v] of simpanan) {
+    if (!k.includes(awalanJalur)) continue;
+    if (terbaru === null || v.pada > terbaru) terbaru = v.pada;
+  }
+  return terbaru === null ? null : Math.floor(terbaru / 1000);
+}
 const berjalan = new Map<string, Promise<Jawaban<unknown>>>();
 
 let giliranBerikut = 0;

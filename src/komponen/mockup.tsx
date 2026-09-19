@@ -398,7 +398,7 @@ const g = StyleSheet.create({
 
   rangka: { borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.07)' },
 
-  tombol: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: R.besar + 3, backgroundColor: W.teksKuat },
+  tombol: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, paddingHorizontal: 18, borderRadius: R.besar + 3, backgroundColor: W.teksKuat },
   tombolTeks: { fontSize: H.nilai, fontWeight: '700', color: '#14130F', letterSpacing: -0.1 },
   tombolEmas: { backgroundColor: W.plus },
   tombolEmasTeks: { color: '#1A1508' },

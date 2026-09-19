@@ -6,7 +6,7 @@
  * Telegram. Layar ini mengatakannya — bukan membiarkan orang menemukannya
  * sendiri saat ganti HP.
  */
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { Blok, Butir, Lbl, Menu, Mikro, PilTf, Saklar } from '../komponen/mockup';
@@ -22,7 +22,7 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
       <Lbl>Bawaan saat app dibuka</Lbl>
       <Menu>
         <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono pertama />
@@ -51,6 +51,7 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
         <Butir ikon="kalender" nama="Zona waktu" ket="WIB" ketMono />
       </Menu>
 
+      <View style={{ flex: 1 }} />
       <Blok>
         <Lbl>Di mana setelan ini disimpan</Lbl>
         <Mikro>Di perangkat ini saja. Setelan per-akun butuh identitas yang belum lepas dari Telegram, jadi pilihanmu tidak ikut pindah kalau kamu ganti HP.</Mikro>

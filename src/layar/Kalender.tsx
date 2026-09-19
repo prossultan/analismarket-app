@@ -11,7 +11,7 @@ import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { ambilJadwal, type Rilis } from '../data/api';
 import { jamWib, kunciHariWib, tanggalWib } from '../data/tampil';
-import { Chip, Dampak, Hari, Kosong, Mikro, Rangka } from '../komponen/mockup';
+import { Chip, Dampak, Hari, Kosong, Lbl, Mikro, Rangka } from '../komponen/mockup';
 import { W, H, TALANG } from '../gaya/token';
 
 const HARI = 30;
@@ -50,7 +50,7 @@ export function LayarKalender() {
     return [...peta.values()].map((isi) => ({ judul: isi[0] === undefined ? '' : tanggalWib(isi[0].waktu), isi }));
   }, [rilis, saring, kode]);
 
-  const isiPadding = { paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG };
+  const isiPadding = { flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG };
 
   if (keadaan === 'gagal') {
     return (
@@ -67,7 +67,7 @@ export function LayarKalender() {
       refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup}
         onRefresh={() => { setMenyegarkan(true); void muat(true).finally(() => { setMenyegarkan(false); }); }} />}
     >
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={g.chips}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={g.chips}>
         <Chip teks="Semua" on={saring === 'semua'} onPress={() => { setSaring('semua'); }} />
         <Chip teks="Tinggi" on={saring === 'tinggi'} onPress={() => { setSaring('tinggi'); }} />
         <Chip teks="Sedang" on={saring === 'sedang'} onPress={() => { setSaring('sedang'); }} />
@@ -104,7 +104,14 @@ export function LayarKalender() {
         </View>
       ))}
 
-      <Mikro>Jadwal dari penyedia kalender ekonomi. Waktu dalam WIB.</Mikro>
+      <View style={{ flex: 1 }} />
+      <View style={g.legenda}>
+        <Lbl>Cara membacanya</Lbl>
+        <View style={g.legendaBaris}><Dampak tinggi /><Text style={g.legendaTeks}><Text style={g.legendaTebal}>Dampak tinggi</Text> — emas dan forex sering melebar beberapa menit sebelum dan sesudahnya. Setup di sekitarnya lebih jarang lolos.</Text></View>
+        <View style={g.legendaBaris}><Dampak tinggi={false} /><Text style={g.legendaTeks}><Text style={g.legendaTebal}>Dampak sedang</Text> — jarang menggeser harga sendirian, tapi menumpuk dengan rilis lain di hari yang sama.</Text></View>
+        <Text style={g.legendaTeks}>Jam dalam WIB. Kripto tidak libur; emas dan forex tutup Sabtu–Minggu.</Text>
+      </View>
+      <Mikro>Jadwal dari penyedia kalender ekonomi.</Mikro>
     </ScrollView>
   );
 }
@@ -117,4 +124,8 @@ const g = StyleSheet.create({
   jam: { width: 34, fontSize: H.alat, color: W.teksRedup, paddingTop: 1, fontVariant: ['tabular-nums'] },
   acara: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, lineHeight: 15, letterSpacing: -0.1 },
   ket: { fontSize: H.label, color: W.teksSamar, marginTop: 1 },
+  legenda: { marginTop: 8, marginBottom: 7, padding: 10, gap: 7, borderRadius: 14, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu },
+  legendaBaris: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
+  legendaTeks: { flex: 1, fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
+  legendaTebal: { color: W.teksKuat, fontWeight: '600' },
 });

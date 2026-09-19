@@ -23,6 +23,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Kaca } from '../komponen/Kaca';
 import { Ikon } from '../komponen/Ikon';
 import { BarisPasar, PilTf, PitaMesin, Tombol } from '../komponen/mockup';
+import { ChartTertanam } from '../komponen/ChartTertanam';
+import { ASAL } from '../data/antrian';
 import { W, H, R, TALANG } from '../gaya/token';
 
 const LOGO = require('../../assets/logo-am.png') as number;
@@ -76,10 +78,9 @@ export function LayarSambutan({ selesai }: { selesai: () => void }) {
           { kode: 'ema200', kata: 'setup', angka: '4/6', titik: 'hijau' }, { kode: 'ichi…', kata: '', angka: '5/8', titik: 'polos' },
           { kode: 'fibo…', kata: '', angka: '4/9', titik: 'polos' },
         ]} />
-        <View style={g.chartPalsu}>
-          {[46, 40, 48, 38, 42, 36, 30, 34, 26, 22, 24, 18, 14, 16, 10].map((h, i) => (
-            <View key={i} style={[g.lilin, { height: h + 24, backgroundColor: i % 3 === 2 ? W.turun : W.naik, marginTop: 60 - h }]} />
-          ))}
+        <View style={g.chartBalik}>
+          <ChartTertanam url={`${ASAL}/chart-embed?pair=BTCUSDT&tf=h1&alat=volume,zona`} asal={ASAL}
+            suntik="true;" latar={W.chart} onMuat={() => undefined} onPesan={() => undefined} />
         </View>
         <BarisPasar simbol="XAU/USD" label="Emas spot" harga="4.351,04" ubah="+0,62%" ubahWarna={W.naik} pertama />
         <BarisPasar simbol="ETHUSDT" label="Kripto" harga="2.408,44" ubah="−1,04%" ubahWarna={W.turun} />
@@ -105,6 +106,7 @@ export function LayarSambutan({ selesai }: { selesai: () => void }) {
           </View>
           {/* Bukan tautan: app ini tidak memasang tautan keluar. Nama botnya
               ditampilkan, dan langkahnya dijelaskan di layar Sambungkan. */}
+          <View style={{ height: 12 }} />
           <Tombol teks="Sambungkan Telegram · @analismarketbot" mati
             ikon={<Ikon nama="kabar" warna="rgba(232,231,229,0.45)" ukuran={14} />} />
           <View style={{ marginTop: 7 }}>
@@ -123,26 +125,25 @@ export function LayarSambutan({ selesai }: { selesai: () => void }) {
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   tengah: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 26, gap: 14 },
-  logoBesar: { width: 76, height: 76, borderRadius: 21 },
-  nama: { fontSize: 21, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.6 },
+  logoBesar: { width: 104, height: 104, borderRadius: 28 },
+  nama: { fontSize: 28, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.9 },
   tagline: { fontSize: H.nilai, color: W.teksSamar, lineHeight: 17, textAlign: 'center' },
   kaki: { position: 'absolute', fontSize: 8.5, color: W.teksSamar, letterSpacing: 1.2 },
 
   balik: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, paddingHorizontal: TALANG, gap: 7, opacity: 0.8 },
-  chartPalsu: { height: 150, flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 12, borderRadius: R.besar, borderWidth: 1, borderColor: W.garis, backgroundColor: W.chart, overflow: 'hidden' },
-  lilin: { width: 7, borderRadius: 1 },
+  chartBalik: { height: 300, position: 'relative', borderRadius: R.besar, borderWidth: 1, borderColor: W.garis, backgroundColor: W.chart, overflow: 'hidden' },
 
   tembok: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: TALANG, backgroundColor: 'rgba(12,11,9,0.45)' },
   kartu: { borderRadius: 22, paddingHorizontal: 15, paddingTop: 17, paddingBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
   merek: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 13 },
-  logoKecil: { width: 21, height: 21, borderRadius: 6 },
-  merekNama: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
+  logoKecil: { width: 28, height: 28, borderRadius: 8 },
+  merekNama: { fontSize: 17, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4 },
   judul: { fontSize: 17, fontWeight: '600', color: W.teksKuat, textAlign: 'center', lineHeight: 21, letterSpacing: -0.5 },
   ajak: { marginTop: 7, fontSize: H.alat, color: W.teksRedup, lineHeight: 15, textAlign: 'center' },
   untung: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 13 },
-  untungSel: { width: '48%', flexGrow: 1, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: W.garisSamar, backgroundColor: 'rgba(255,255,255,0.035)' },
+  untungSel: { width: '48.5%', minHeight: 64, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: W.garisSamar, backgroundColor: 'rgba(255,255,255,0.035)' },
   untungJudul: { marginTop: 5, fontSize: H.alat, fontWeight: '600', color: W.teksKuat },
-  untungKet: { marginTop: 1, fontSize: H.label, color: W.teksSamar, lineHeight: 12 },
+  untungKet: { marginTop: 1, fontSize: H.label, color: W.teksSamar, lineHeight: 12, minHeight: 24 },
   syarat: { marginTop: 11, fontSize: 8.5, color: W.teksSamar, textAlign: 'center', lineHeight: 13 },
   lewati: { alignSelf: 'center', marginTop: 8, minHeight: 32, justifyContent: 'center' },
   lewatiTeks: { fontSize: H.alat, color: W.teksRedup },
