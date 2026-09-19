@@ -57,6 +57,16 @@ import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/
 import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH, TEPI_BILAH, ANGKAT_BILAH } from './src/gaya/token';
 import { TombolTab } from './src/komponen/TombolTab';
+import * as SplashScreen from 'expo-splash-screen';
+
+/**
+ * SPLASH DITAHAN sampai gerbang sesi memutuskan. Tanpa ini splash hilang
+ * begitu root mount — dan root pertama kali merender NULL, karena setelan
+ * dibaca dari AsyncStorage dan Clerk boleh mengambil sampai 2,5 detik.
+ * Hasilnya layar gelap kosong tanpa merek, tiap kali app dibuka dingin:
+ * inilah "kurang smooth" yang dilihat pemilik di HP. Di web ini no-op.
+ */
+void SplashScreen.preventAutoHideAsync().catch(() => { /* web atau sudah tersembunyi */ });
 
 const VERSI = '0.3.0';
 
@@ -322,9 +332,18 @@ function Isi() {
 
   const simpan = useCallback((s: Setelan): void => { setSetelan(s); void simpanSetelan(s); }, []);
 
-  /* Menunggu KEDUANYA. Menahan satu layar kosong sepersekian detik jauh
-     lebih murah daripada satu putaran permintaan yang dibuang. */
-  if (setelan === null || !siapSesi) return null;
+  /* Splash turun tepat saat gerbang terbuka — dan paling lambat 6 detik,
+     supaya kegagalan membaca simpanan tidak mengurung orang di balik logo. */
+  const siap = setelan !== null && siapSesi;
+  useEffect(() => {
+    if (siap) { void SplashScreen.hideAsync().catch(() => {}); return undefined; }
+    const t = setTimeout(() => { void SplashScreen.hideAsync().catch(() => {}); }, 6000);
+    return () => { clearTimeout(t); };
+  }, [siap]);
+
+  /* Menunggu KEDUANYA. Menahan splash sepersekian detik jauh lebih murah
+     daripada satu putaran permintaan yang dibuang. */
+  if (!siap) return null;
   if (sesi === null) return <LayarSambutan />;
 
   return (

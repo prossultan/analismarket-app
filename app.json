@@ -10,11 +10,6 @@
     "primaryColor": "#C9A961",
     "scheme": "analismarket",
     "description": "Analisa teknikal otomatis untuk 131 pasar. Alat baca chart, bukan alat prediksi.",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0C0B09"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -57,7 +52,16 @@
     "owner": "polosan",
     "plugins": [
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0C0B09"
+        }
+      ]
     ]
   }
 }
