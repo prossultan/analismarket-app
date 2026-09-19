@@ -32,6 +32,7 @@ import { LembarPasar } from '../komponen/LembarPasar';
 import { SkalaJarum } from '../komponen/SkalaJarum';
 import { BarBiaya, Kosong, Memuat } from '../komponen/dasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
+import { Kaca } from '../komponen/Kaca';
 import { W, H, J, R, ANGKA, SENTUH, TALANG, TINGGI_KENDALI } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
@@ -242,7 +243,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
       <Modal visible={lapisBacaan && m !== null} animationType="slide" transparent onRequestClose={() => { setLapisBacaan(false); }}>
         <View style={g.lapisLuar}>
           <Pressable style={g.lapisTirai} onPress={() => { setLapisBacaan(false); }} />
-          <View style={g.lapis}>
+          <Kaca tebal tepi="atas" gaya={g.lapis}>
             <View style={g.lapisKepala}>
               <Text style={g.lapisMerek}>analismarket.com</Text>
               <View style={{ flex: 1 }} />
@@ -253,7 +254,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
             {m !== null && bacaan !== null && (
               <IsiBacaan m={m} desimal={pasar.desimal} />
             )}
-          </View>
+          </Kaca>
         </View>
       </Modal>
 
@@ -378,7 +379,10 @@ const g = StyleSheet.create({
   /* Tirai tipis, bukan gelap penuh: kepala dan kendali di belakangnya harus
      tetap TERBACA, karena keduanya masih hidup saat lapisan terbuka. */
   lapisTirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: W.tirai },
-  lapis: { maxHeight: '88%', backgroundColor: W.latar, borderTopLeftRadius: R.kartu, borderTopRightRadius: R.kartu, borderTopWidth: 1, borderColor: W.garis },
+  /* TANPA backgroundColor: warnanya datang dari <Kaca>. Latar padat di sini
+     membuat blur tidak punya apa pun untuk ditembus, dan kacanya kembali
+     jadi panel abu biasa — persis cacat yang diperbaiki putaran ini. */
+  lapis: { maxHeight: '88%', borderTopLeftRadius: R.kartu, borderTopRightRadius: R.kartu, overflow: 'hidden' },
   lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH, borderBottomWidth: 1, borderBottomColor: W.garis },
   lapisMerek: { fontSize: H.label, color: W.teksSamar, letterSpacing: 0.5 },
   tutup: { minHeight: SENTUH, justifyContent: 'center', paddingHorizontal: J.x2 },

@@ -10,16 +10,18 @@
  * dan 13 di antaranya menolak tanpa identitas Telegram. Layar ini akan berisi
  * data sungguhan pada hari identitas itu lepas — tidak sebelum itu.
  */
+import { useHeaderHeight } from '@react-navigation/elements';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ikon } from '../komponen/Ikon';
 import { Kartu, Pisah } from '../komponen/dasar';
-import { W, H, J, R, TALANG } from '../gaya/token';
+import { W, H, J, R, TALANG, SISA_BILAH } from '../gaya/token';
 
 function Terkunci({ ikon, judul, kalimat, isi }: {
   ikon: 'profil' | 'kabar'; judul: string; kalimat: string; isi: ReadonlyArray<string>;
 }) {
+  const tinggiKepala = useHeaderHeight();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingVertical: J.x3 }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}>
       <View style={g.kepala}>
         <View style={g.lingkaran}>
           <Ikon nama={ikon} warna={W.teksRedup} ukuran={22} />
@@ -51,6 +53,7 @@ function Terkunci({ ikon, judul, kalimat, isi }: {
 }
 
 export function LayarProfil() {
+  const tinggiKepala = useHeaderHeight();
   return (
     <Terkunci
       ikon="profil"

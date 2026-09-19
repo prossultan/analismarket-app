@@ -12,14 +12,16 @@
  * Emas dipakai DI SINI, dan cuma di sini. Itu satu-satunya arti warna itu di
  * seluruh produk.
  */
+import { useHeaderHeight } from '@react-navigation/elements';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FITUR_GRATIS, FITUR_PLUS } from '../data/amplus';
 import { Kartu } from '../komponen/dasar';
-import { W, H, J, R } from '../gaya/token';
+import { W, H, J, R, SISA_BILAH } from '../gaya/token';
 
 export function LayarAmPlus() {
+  const tinggiKepala = useHeaderHeight();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingVertical: J.x3 }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}>
       <View style={g.hero}>
         <Text style={g.merek}>AnalisMarket+</Text>
         <Text style={g.tagline}>Pasar dipantau otomatis, dan kamu dikabari saat kondisinya terpenuhi.</Text>

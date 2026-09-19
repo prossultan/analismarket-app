@@ -11,11 +11,12 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import { angka, ubah } from '../data/tampil';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
 import { Kartu, Memuat, Pil } from '../komponen/dasar';
-import { W, H, J, R, ANGKA, SENTUH, TALANG } from '../gaya/token';
+import { W, H, J, R, ANGKA, SENTUH, TALANG, SISA_BILAH } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
 type Props = {
@@ -34,6 +35,7 @@ const MENU: ReadonlyArray<{ kunci: 'profil' | 'kalender' | 'belajar' | 'kabar' |
 ];
 
 export function LayarHome({ setelan, bukaChart, bukaPasar, bukaMenu }: Props) {
+  const tinggiKepala = useHeaderHeight();
   const [pasar, setPasar] = useState<Pasar | null>(null);
   const [mesin, setMesin] = useState<Mesin | null>(null);
   const [harga, setHarga] = useState<number | null>(null);
@@ -66,7 +68,7 @@ export function LayarHome({ setelan, bukaChart, bukaPasar, bukaMenu }: Props) {
   return (
     <ScrollView
       style={g.akar}
-      contentContainerStyle={{ paddingVertical: J.x3 }}
+      contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}
       refreshControl={
         <RefreshControl
           refreshing={menyegarkan}

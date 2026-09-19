@@ -104,9 +104,46 @@ export const TINGGI_BAR = 6;
  * Terukur sebelum ditokenkan: angka 14 diketik mentah di 18 tempat. Talang
  * yang berbeda antar layar terbaca sebagai layar yang bergeser saat dipindah.
  */
+/**
+ * JARAK BAWAH yang WAJIB diberikan tiap layar bertab.
+ *
+ * Bilah tab MELAYANG (`position: absolute`) supaya isi lewat di bawahnya dan
+ * kacanya punya bahan untuk dikaburkan. Harganya: baris terakhir tiap layar
+ * berada di bawah bilah dan tidak bisa dijangkau — kecuali layarnya
+ * menyisakan ruang sebesar ini di ujung gulirannya.
+ *
+ * Diketik sekali di sini, bukan di sepuluh layar. Yang tersebar akan
+ * menyimpang, dan yang menyimpang menyembunyikan baris terakhir di satu
+ * layar saja — persis jenis cacat yang tidak pernah dilaporkan sebagai bug.
+ */
+export const SISA_BILAH = TINGGI_BILAH + 8;
+
 export const TALANG = 14;
 /** Jarak antar chip dan antar tab. Terukur diketik mentah di 16 tempat. */
 export const SELA_CHIP = 6;
+
+/**
+ * KACA — permukaan tembus pandang untuk lapisan yang MENGAMBANG.
+ *
+ * Aturannya satu kalimat: kaca itu chrome, bukan isi. Bilah navigasi, bilah
+ * tab, dan lembar bawah tembus pandang; isi halaman duduk padat di atas
+ * dasar. Kaca ditumpuk di atas kaca jadi bubur.
+ *
+ * Yang membuat kaca TERBACA bukan angka blur-nya melainkan apa yang ada di
+ * baliknya. Karena itu `tabBarStyle` WAJIB `position: absolute` dan tiap
+ * layar memberi jarak bawah sebesar `TINGGI_BILAH` — supaya isi benar-benar
+ * lewat di bawah bilahnya. Tanpa itu yang disaring cuma latar kosong, dan
+ * hasilnya terlihat persis seperti panel abu biasa.
+ */
+export const KACA = {
+  /** Bilah: isi di baliknya harus tetap terbaca. */
+  tipis: { intensitas: 34, warna: 'rgba(26,24,21,0.42)' },
+  /** Lembar: ia menutupi sesuatu, jadi lebih pekat. */
+  tebal: { intensitas: 52, warna: 'rgba(20,19,16,0.62)' },
+  /** Garis rambut atas — kilau tepi yang membuat kaca punya ketebalan. */
+  tepi: 'rgba(255,255,255,0.16)',
+  rim: 'rgba(255,255,255,0.13)',
+} as const;
 
 export const J = { x1: 4, x2: 8, x3: 12, x4: 18, x5: 26 } as const;
 export const R = { kecil: 4, sedang: 6, besar: 8, kartu: 12, bulat: 999 } as const;

@@ -1,16 +1,19 @@
 /**
  * Analis Market — app native.
  *
- * Tab bawah lima, dengan Pasar sebagai tumpukan: Pasar → Chart → Bacaan →
- * (Banding | Syarat | Zona). Tumpukan, bukan tab, karena keempat layar itu
- * SELALU tentang pasar dan timeframe yang sedang dibuka — kalau mereka jadi
- * tab, orang bisa berdiri di "Syarat" untuk pasar yang sudah ia tinggalkan.
+ * Tab bawah lima: Home · Pasar · Kabar · PLUS+ · Lainnya.
+ *
+ * PASAR DAN CHART SATU TUJUAN. Sampai 19 Sep keduanya dua tab — "pasar" yang
+ * ketukannya dicegat, dan "analisis" yang memuat layar yang sama. Dua tab
+ * untuk satu layar berarti satu slot terbuang, dan slot itu sekarang dipakai
+ * KABAR: ia satu-satunya layar yang isinya berubah tanpa diminta, jadi
+ * satu-satunya yang butuh lencana — dan lencana di dalam menu tidak terlihat.
  *
  * Yang belum ada di sini dan alasannya ada di layar Lainnya: pantauan, kabar
  * otomatis, dan setelan akun butuh identitas yang belum lepas dari Telegram.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { StatusBar, Text } from 'react-native';
+import { Platform, StatusBar, Text } from 'react-native';
 import { NavigationContainer, DarkTheme, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -26,7 +29,8 @@ import { Ikon, type NamaIkon } from './src/komponen/Ikon';
 import { LayarLainnya } from './src/layar/Lainnya';
 import { LayarDokumen } from './src/layar/Dokumen';
 import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
-import { W, H } from './src/gaya/token';
+import { Kaca } from './src/komponen/Kaca';
+import { W, H, KACA, TINGGI_BILAH } from './src/gaya/token';
 
 const VERSI = '0.2.0';
 
@@ -35,15 +39,14 @@ export type DaftarLainParam = {
   Dokumen: { kunci: 'syarat' | 'privasi' };
   Belajar: undefined;
   Profil: undefined;
-  Kabar: undefined;
   Kalender: undefined;
   AmPlus: undefined;
 };
 export type DaftarHomeParam = { Home: undefined };
 
 /** Kunci menu → nama layar. Satu peta, supaya Home dan Lainnya tidak menyimpang. */
-const KE_LAYAR: Record<string, 'Profil' | 'Kabar' | 'Kalender' | 'Belajar' | 'AmPlus'> = {
-  profil: 'Profil', kabar: 'Kabar', kalender: 'Kalender', belajar: 'Belajar', plus: 'AmPlus',
+const KE_LAYAR: Record<string, 'Profil' | 'Kalender' | 'Belajar' | 'AmPlus'> = {
+  profil: 'Profil', kalender: 'Kalender', belajar: 'Belajar', plus: 'AmPlus',
 };
 
 const TumpukanLain = createNativeStackNavigator<DaftarLainParam>();
@@ -64,7 +67,10 @@ const TEMA: Theme = {
 
 /** Berlaku untuk kepala mana pun — tab maupun tumpukan. */
 const OPSI_KEPALA = {
-  headerStyle: { backgroundColor: W.latar },
+  /** Transparan supaya `headerBackground` yang berkaca itu terlihat. */
+  headerTransparent: true,
+  headerBackground: () => <Kaca tepi="bawah" gaya={{ flex: 1 }} />,
+  headerStyle: { backgroundColor: 'transparent' },
   headerTitleStyle: { color: W.teksKuat, fontSize: H.nama, fontWeight: '700' as const },
   headerTintColor: W.teksKuat,
   headerShadowVisible: false,
@@ -87,7 +93,6 @@ function AlurLain({ setelan }: { setelan: Setelan }) {
       </TumpukanLain.Screen>
       <TumpukanLain.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar' }} />
       <TumpukanLain.Screen name="Profil" component={LayarProfil} options={{ title: 'Profil' }} />
-      <TumpukanLain.Screen name="Kabar" component={LayarKabar} options={{ title: 'Kabar' }} />
       <TumpukanLain.Screen name="Kalender" component={LayarKalender} options={{ title: 'Kalender berita' }} />
       <TumpukanLain.Screen name="AmPlus" component={LayarAmPlus} options={{ title: 'AnalisMarket+' }} />
       <TumpukanLain.Screen name="Dokumen" options={({ route }) => ({ title: route.params.kunci === 'syarat' ? 'Syarat & Ketentuan' : 'Kebijakan Privasi' })}>
@@ -127,7 +132,26 @@ export default function App() {
         <Tab.Navigator
           screenOptions={{
             headerShown: false,
-            tabBarStyle: { backgroundColor: W.latar, borderTopColor: W.garis, height: 58, paddingTop: 4 },
+            /**
+             * `position: absolute` BUKAN pilihan gaya — ia syarat supaya
+             * kacanya terbaca. Bilah yang ikut aliran mendorong isi ke
+             * atasnya, jadi yang disaring blur cuma latar kosong dan
+             * hasilnya terlihat persis seperti panel abu biasa. Melayang,
+             * isi lewat di bawahnya, dan blur punya bahan.
+             *
+             * Konsekuensinya tiap layar WAJIB memberi jarak bawah
+             * `TINGGI_BILAH`; tanpa itu baris terakhirnya tidak pernah
+             * bisa dijangkau.
+             */
+            tabBarStyle: {
+              position: 'absolute',
+              backgroundColor: 'transparent',
+              borderTopWidth: 0,
+              elevation: 0,
+              height: TINGGI_BILAH,
+              paddingTop: 4,
+            },
+            tabBarBackground: () => <Kaca tepi="atas" gaya={{ flex: 1 }} />,
             tabBarActiveTintColor: W.teksKuat,
             tabBarInactiveTintColor: W.teksSamar,
             tabBarLabelStyle: { fontSize: H.alat, fontWeight: '500' },
@@ -138,36 +162,50 @@ export default function App() {
             {({ navigation }) => (
               <LayarHome
                 setelan={setelan}
-                bukaChart={() => { navigation.navigate('analisis'); }}
-                bukaPasar={() => { setTandaPasar((n) => n + 1); navigation.navigate('analisis'); }}
+                bukaChart={() => { navigation.navigate('pasar'); }}
+                bukaPasar={() => { setTandaPasar((n) => n + 1); navigation.navigate('pasar'); }}
                 bukaMenu={(k) => { navigation.navigate('lainnya', { screen: KE_LAYAR[k] ?? 'Belajar' }); }}
               />
             )}
           </Tab.Screen>
 
-          {/* PASAR ADALAH AKSI, BUKAN TUJUAN.
-              Di web, menekan Pasar membuka LEMBAR di atas halaman yang sama —
-              orang tidak pernah meninggalkan chart-nya. Tab ini meniru itu:
-              ketukannya dicegat, lembarnya dibuka, dan layarnya tidak
-              berpindah. Layar di baliknya sengaja layar Analisis yang sama,
-              supaya kalaupun perpindahan terjadi, tidak ada yang berubah. */}
+          {/* PASAR DAN CHART SATU TUJUAN.
+              Dulu dua tab: "pasar" yang ketukannya dicegat, dan "analisis"
+              yang memuat layar yang SAMA. Dua tab untuk satu layar berarti
+              satu slot terbuang — dan di 390px slot adalah barang langka.
+
+              Ketukan kedua saat tab ini SUDAH aktif membuka lembar pasar,
+              meniru web: memilih pasar dan membacanya satu gerakan, bukan
+              dua tujuan yang saling melempar. Ketukan dari tab lain cuma
+              berpindah, tidak membuka lembar — orang yang datang dari Kabar
+              ingin melihat chart-nya, bukan disodori daftar. */}
           <Tab.Screen
             name="pasar"
             options={{ title: 'Pasar', tabBarIcon: ikonTab('pasar') }}
             listeners={({ navigation }) => ({
               tabPress: (e) => {
+                if (!navigation.isFocused()) return;
                 e.preventDefault();
                 setTandaPasar((n) => n + 1);
-                navigation.navigate('analisis');
               },
             })}
           >
             {() => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} />}
           </Tab.Screen>
 
-          <Tab.Screen name="analisis" options={{ title: 'Analisis', tabBarIcon: ikonTab('analisis') }}>
-            {() => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} />}
-          </Tab.Screen>
+          {/* KABAR PINDAH DARI DALAM MENU KE BILAH INI.
+              Ia satu-satunya layar yang isinya berubah tanpa diminta, jadi
+              satu-satunya yang butuh lencana — dan lencana yang bersembunyi
+              di dalam Lainnya tidak memberi tahu siapa pun.
+
+              Catatan jujur: isinya masih terkunci sampai identitas lepas
+              dari Telegram. Memindahkannya ke bilah ini membuat ketergantungan
+              itu LEBIH terlihat, bukan lebih ringan — dan itu disengaja. */}
+          <Tab.Screen
+            name="kabar"
+            component={LayarKabar}
+            options={{ title: 'Kabar', headerShown: true, ...OPSI_KEPALA, tabBarIcon: ikonTab('kabar') }}
+          />
 
           {/* Satu-satunya emas di bilah ini, dan itu memang aturannya. */}
           <Tab.Screen
