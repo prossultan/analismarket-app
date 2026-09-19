@@ -16,9 +16,9 @@ import * as Clipboard from 'expo-clipboard';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import {
-  ambilKabarOtomatis, ambilKredit, ambilPantauan, ambilRingkas,
+  ambilKabarOtomatis, ambilPantauan, ambilRingkas,
   cekBanyak, matikanPantauan, setelJamKabar, setelKabarOtomatis, tambahPantauan, MAKS_SLOT_CEK_BANYAK,
-  type BarisCekBanyak, type DaftarPantauan, type HasilCekBanyak, type JawabanSaya, type KabarOtomatis, type Kredit, type Ringkas,
+  type BarisCekBanyak, type DaftarPantauan, type HasilCekBanyak, type JawabanSaya, type KabarOtomatis, type Ringkas,
 } from '../data/saya';
 import { bacaSesi, dengarSesi, hapusSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
 import { useMuat, type Hasil } from '../data/muat';
@@ -130,7 +130,7 @@ export function LayarSambung() {
             {[
               ['Pantauan dan kabar otomatis', 'Dikabari saat syarat setup lolos, tanpa membuka app.'],
               ['Setelan bawaan ikut dari bot', 'Pasar, timeframe, dan mesin yang sama di Telegram, web, dan app.'],
-              ['Kredit dan status AM+', 'Terbaca di Profil dan halaman Kredit.'],
+              ['Status AM+', 'Terbaca di Home dan Profil.'],
             ].map(([j, k]) => (
               <View key={j} style={g.centangBaris}>
                 <Text style={[g.centang, { color: W.naik }]}>✓</Text>
@@ -224,7 +224,7 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
           <Blok rapat gaya={{ paddingHorizontal: 10 }}>
             <View style={g.rata}>
               <View><Text style={g.pilihJudul}>{aktif.length} pantauan aktif</Text>
-                <Lbl polos>Batas {punya?.maks ?? '—'} · minimum {punya?.minPoin ?? '—'} poin untuk dikabari</Lbl></View>
+                <Lbl polos>Batas {punya?.maks ?? '—'} pantauan</Lbl></View>
               <Chip teks="+ Baru" onPress={bukaBaru} />
             </View>
           </Blok>
@@ -460,55 +460,6 @@ export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void })
   );
 }
 
-/* ══ 25 · KREDIT & KUOTA ════════════════════════════════════════════════ */
-export function LayarKredit({ bukaSambung }: { bukaSambung: () => void }) {
-  const sesi = useSesi();
-  const { isi: d, sebab } = useAkun(ambilKredit, sesi);
-
-  return (
-    <Wadah>
-      {sebab !== null && <PitaBasi kalimat={sebab} />}
-      {sesi === null && <PerluSesi apa="Kredit dan kuota" buka={bukaSambung} />}
-
-      <Blok>
-        <Lbl>Poin tersisa</Lbl>
-        <View style={[g.baris, { marginTop: 6, alignItems: 'baseline' }]}>
-          <Text style={g.besar}>{d === null ? '—' : String(d.poin)}</Text>
-          <Text style={g.dari}>{d === null ? '' : `· ${String(d.poinPerAnalisa)} poin per analisa berkuota`}</Text>
-        </View>
-        {d !== null && (
-          <>
-            <View style={{ marginTop: 8 }}><BarIsi porsi={Math.min(1, d.poin / Math.max(1, d.minPoinNotifikasi * 10))} /></View>
-            <View style={[g.rata, { marginTop: 5 }]}>
-              <Lbl polos>Minimum {d.minPoinNotifikasi} poin supaya pantauan berbunyi</Lbl>
-            </View>
-          </>
-        )}
-      </Blok>
-
-      <Blok>
-        <Lbl>Yang TIDAK menagih poin</Lbl>
-        <Text style={g.ket}>Seluruh pasar Binance. Poin cuma ditagih untuk emas dan forex, yang datanya dibeli per panggilan.</Text>
-      </Blok>
-
-      <Blok gaya={{ flex: 1 }}>
-        <Lbl>Riwayat 30 terakhir</Lbl>
-        {d === null && [0, 1, 2].map((i) => (
-          <View key={i} style={{ paddingVertical: 9 }}><Rangka lebar="70%" tinggi={10} /></View>
-        ))}
-        {d !== null && d.riwayat.length === 0 && (
-          <Text style={g.ket}>Belum ada pemakaian poin.</Text>
-        )}
-        {d?.riwayat.slice(0, 12).map((r, i) => (
-          <BarisPakai key={`${r.pada}${String(i)}`} kiri={r.sebab} kanan={`${r.delta > 0 ? '+' : ''}${String(r.delta)}`} pertama={i === 0} />
-        ))}
-      </Blok>
-
-      {d?.topupDiBot === true && <Mikro>Tambah poin lewat bot Telegram. App ini tidak memproses pembayaran.</Mikro>}
-      {sesi === null && <Tombol teks="Sambungkan Telegram untuk melihat poin" onPress={bukaSambung} />}
-    </Wadah>
-  );
-}
 
 /* ══ 26 · CEK BANYAK PASAR ══════════════════════════════════════════════ */
 export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; tf: string }) {
@@ -601,7 +552,7 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
       <View style={g.baris}>
         <View style={{ flex: 1 }}><Lbl>Timeframe</Lbl><Nil gaya={{ marginTop: 2 }}>{tf.toLowerCase()}</Nil></View>
         <View style={{ flex: 1 }}><Lbl>Mesin</Lbl><Nil gaya={{ marginTop: 2 }}>semua {String(mesinSemua.length || 5)}</Nil></View>
-        <View style={{ flex: 1 }}><Lbl>Poin</Lbl><Nil gaya={{ marginTop: 2 }}>{String(slot)}</Nil></View>
+        <View style={{ flex: 1 }}><Lbl>Slot</Lbl><Nil gaya={{ marginTop: 2 }}>{String(slot)} / {String(MAKS_SLOT_CEK_BANYAK)}</Nil></View>
       </View>
 
       <Blok gaya={{ flex: 1 }}>
@@ -610,7 +561,7 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
             <Lbl>Hasil</Lbl>
             <Text style={g.ket}>
               {galatJalan !== '' ? galatJalan
-                : `Menjalankan ${String(slot)} pasar sekaligus menagih ${String(slot)} poin — sama dengan membukanya satu per satu. Yang dihemat waktunya, bukan kuotanya.`}
+                : `Menjalankan ${String(slot)} pasar sekaligus, kelima mesin, satu timeframe. Hasilnya tampil di sini.`}
             </Text>
           </>
         ) : (
@@ -644,7 +595,7 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
         mati={plus === false || sibuk || lewat || (sesi !== null && slot === 0)}
         onPress={sesi === null ? bukaSambung : () => { void jalankan(); }}
       />
-      <Mikro tengah>{lewat ? `Maksimum ${String(MAKS_SLOT_CEK_BANYAK)} pasar per pemeriksaan.` : 'Dijalankan di server, hasilnya tampil di sini. Poin ditagih per pasar.'}</Mikro>
+      <Mikro tengah>{lewat ? `Maksimum ${String(MAKS_SLOT_CEK_BANYAK)} pasar per pemeriksaan.` : 'Dijalankan di server, hasilnya tampil di sini.'}</Mikro>
     </Wadah>
   );
 }

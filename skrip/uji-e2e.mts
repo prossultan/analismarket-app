@@ -163,12 +163,11 @@ process.stdout.write('\n── Jalur akun (sesi) ──\n');
 {
   const RUTE: [string, 'GET' | 'POST'][] = [
     ['/api/saya', 'GET'], ['/api/saya/pantauan', 'GET'], ['/api/saya/kabar-otomatis', 'GET'],
-    ['/api/saya/kredit', 'GET'],
     ['/api/saya/pantauan/tambah', 'POST'], ['/api/saya/pantauan/matikan', 'POST'],
     ['/api/saya/kabar-otomatis/jam', 'POST'], ['/api/saya/kabar-otomatis/setel', 'POST'],
     ['/api/saya/cek-banyak', 'POST'],
   ];
-  /* `/api/saya/plus` sengaja TIDAK di daftar: app tidak memanggilnya.
+  /* `/api/saya/plus` dan `/api/saya/kredit` sengaja TIDAK di daftar: app tidak memanggilnya.
      Daftar ini menjawab "rute yang dipakai app masih ada", dan rute yang
      tidak dipakai di dalamnya membuat jawabannya berbohong ke dua arah. */
   let hilang = 0;

@@ -376,3 +376,13 @@ Dua jebakan tata letak yang ketahuan dari potret, bukan dari kode: kartu
 kecil tanpa `flex: 1, minWidth: 0` meluap keluar layar; baris yang dipaksa
 sama tinggi (`flex: 1` di baris bawah) membuat sparkline menimpa harga.
 Sekarang kartu kecil ditentukan isinya; kartu besar yang meregang mengikuti.
+
+## Kredit/poin sudah TIDAK berlaku — jangan ditampilkan
+
+`KREDIT_AKTIF` di bot bawaan `false` dan tidak disetel di `.env` produksi
+(dicek 19 Sep): poin tidak pernah ditagih. API `/api/saya` dan
+`/api/saya/kredit` masih MENGIRIM `poin` — itu sisa, bukan fitur. App
+sempat menampilkannya di Home, Profil, Pantauan, Cek banyak, dan satu layar
+Kredit penuh, karena bentuk API disalin tanpa memeriksa saklarnya. Semua
+dicabut atas permintaan pemilik. Kalau suatu hari kredit dinyalakan lagi,
+mulai dari saklarnya: API perlu mengirim `kreditAktif`, bukan app menebak.

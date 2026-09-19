@@ -69,6 +69,9 @@ async function panggil<T>(jalur: string, metode: 'GET' | 'POST', badan?: unknown
 
 /* ── Bentuk jawaban, disalin dari `src/lib/api-saya.ts` di bot ─────────── */
 
+/* `poin` masih dikirim server tapi TIDAK dipakai app: `KREDIT_AKTIF` bawaan
+   false dan tidak disetel di produksi (dicek 19 Sep). Kredit sudah tidak
+   ditagih; seluruh permukaannya dicabut dari app atas permintaan pemilik. */
 export type Ringkas = {
   telegramTersambung: boolean;
   langganan: 'plus' | 'gratis';
@@ -96,13 +99,6 @@ export type KabarOtomatis = {
   tfTersedia: { tf: string; mesin: { kode: string; nama: string }[] }[];
 };
 
-export type Kredit = {
-  poin: number; poinPerAnalisa: number; minPoinNotifikasi: number;
-  paket: { nama: string; poin: number; harga: number }[];
-  riwayat: { delta: number; sebab: string; pada: string }[];
-  topupDiBot: boolean;
-};
-
 /* `/api/saya/plus` TIDAK dipakai app, dan tipenya sempat dideklarasikan salah
    di sini — `aktif` dan `harga`, padahal server mengirim `plus`, `sisaHari`,
    `telegramTersambung`, dan `paket[]`. Tipe yang salah atas fungsi yang tidak
@@ -111,7 +107,6 @@ export type Kredit = {
 export const ambilRingkas = (): Promise<JawabanSaya<Ringkas>> => panggil('/api/saya', 'GET');
 export const ambilPantauan = (): Promise<JawabanSaya<DaftarPantauan>> => panggil('/api/saya/pantauan', 'GET');
 export const ambilKabarOtomatis = (): Promise<JawabanSaya<KabarOtomatis>> => panggil('/api/saya/kabar-otomatis', 'GET');
-export const ambilKredit = (): Promise<JawabanSaya<Kredit>> => panggil('/api/saya/kredit', 'GET');
 
 export const tambahPantauan = (b: { pair: string; tf: string; strategi?: string }): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/pantauan/tambah', 'POST', b);

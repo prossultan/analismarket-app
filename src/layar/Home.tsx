@@ -24,8 +24,8 @@ import type { Setelan } from '../data/simpan';
 import { KartuPasarMini } from '../komponen/KartuPasarMini';
 import { KartuPlus } from '../komponen/KartuPlus';
 
-export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'Kredit' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
-type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya') => void; bukaPasarDi: (simbol: string) => void };
+export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
+type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya' | 'kabar') => void; bukaPasarDi: (simbol: string) => void };
 
 /** Satu sel kisi: lencana di atas, ikon, label — mengikuti referensi pemilik. */
 function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
@@ -86,10 +86,10 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
             {plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari lagi` : 'Paket gratis'} · {google ? 'Google' : 'Telegram'}
           </Text>
         </View>
-        <View style={g.angka}><Text style={g.angkaBesar}>{angka(r?.poin)}</Text><Text style={g.angkaLabel}>poin</Text></View>
         <View style={g.angka}><Text style={g.angkaBesar}>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Text><Text style={g.angkaLabel}>pantauan</Text></View>
+        <View style={g.angka}><Text style={g.angkaBesar}>{plus ? angka(r?.sisaHariPlus) : '—'}</Text><Text style={g.angkaLabel}>hari AM+</Text></View>
       </View>
-      {perluTelegram && <Tombol teks="Tautkan Telegram — pantauan & kredit ada di bot" jenis="kedua" onPress={() => { buka('Sambung'); }} />}
+      {perluTelegram && <Tombol teks="Tautkan Telegram — pantauan & kabar ada di bot" jenis="kedua" onPress={() => { buka('Sambung'); }} />}
 
       {/* Kisi menu — SEMUA pintu di satu tempat, ikon di atas label. */}
       <View style={g.kisi}>
@@ -97,7 +97,7 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
         <Sel ikon="kabar" label="Pantauan" lencana={r === null ? undefined : `${String(r.pantauanAktif)} aktif`} warnaLencana="putih" onPress={() => { buka('Pantauan'); }} />
         <Sel ikon="tambah" label="Pantauan baru" onPress={() => { buka('PantauanBaru'); }} />
         <Sel ikon="kalender" label="Kabar otomatis" lencana="AM+" emas={plus} onPress={() => { buka('KabarOtomatis'); }} />
-        <Sel ikon="analisis" label="Kredit" onPress={() => { buka('Kredit'); }} />
+        <Sel ikon="kabar" label="Kabar" onPress={() => { bukaTab('kabar'); }} />
         <Sel ikon="kisi" label="Cek banyak" lencana="AM+" emas={plus} onPress={() => { buka('CekBanyak'); }} />
         <Sel ikon="kalender" label="Kalender" onPress={() => { buka('Kalender'); }} />
         <Sel ikon="buku" label="Belajar" onPress={() => { buka('Belajar'); }} />

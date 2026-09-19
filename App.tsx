@@ -45,7 +45,7 @@ import { LayarTentang } from './src/layar/Tentang';
 import { LayarSambutan } from './src/layar/Sambutan';
 import {
   useSesi,
-  LayarSambung, LayarPantauan, LayarPantauanBaru, LayarKabarOtomatis, LayarKredit, LayarCekBanyak, LayarBerlangganan,
+  LayarSambung, LayarPantauan, LayarPantauanBaru, LayarKabarOtomatis, LayarCekBanyak, LayarBerlangganan,
 } from './src/layar/Akun';
 import { Ikon, type NamaIkon } from './src/komponen/Ikon';
 import { Kaca } from './src/komponen/Kaca';
@@ -80,7 +80,6 @@ export type DaftarTumpukan = {
   Pantauan: undefined;
   PantauanBaru: undefined;
   KabarOtomatis: undefined;
-  Kredit: undefined;
   CekBanyak: undefined;
   Berlangganan: undefined;
 };
@@ -160,9 +159,6 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
       </Tumpukan.Screen>
       <Tumpukan.Screen name="KabarOtomatis" options={{ title: 'Kabar otomatis', headerTitle: () => <JudulKepala judul="Kabar otomatis" sub="AnalisMarket+" /> }}>
         {({ navigation }) => <LayarKabarOtomatis bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
-      </Tumpukan.Screen>
-      <Tumpukan.Screen name="Kredit" options={{ title: 'Kredit & kuota', headerTitle: () => <JudulKepala judul="Kredit & kuota" sub="AnalisMarket+" /> }}>
-        {({ navigation }) => <LayarKredit bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="CekBanyak" options={{ title: 'Cek banyak pasar', headerTitle: () => <JudulKepala judul="Cek banyak pasar" sub="AnalisMarket+" /> }}>
         {({ navigation }) => <LayarCekBanyak tf={setelan.tf} bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}

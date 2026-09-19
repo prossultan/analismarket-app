@@ -22,7 +22,7 @@ import { Blok, Butir, Chip, Kosong, Lbl, Menu, Mikro, Nil, PitaBasi, Rangka, Tom
 import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
-type Props = { setelan: Setelan; bukaSambung: () => void; bukaPengaturan: () => void; bukaPantauan: () => void; buka: (ke: 'PantauanBaru' | 'KabarOtomatis' | 'Kredit' | 'CekBanyak' | 'Berlangganan') => void };
+type Props = { setelan: Setelan; bukaSambung: () => void; bukaPengaturan: () => void; bukaPantauan: () => void; buka: (ke: 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Berlangganan') => void };
 
 export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan, buka }: Props) {
   const tinggiKepala = useHeaderHeight();
@@ -48,13 +48,13 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
       {/* Angka akun tidak terbaca — sebabnya disebut, bukan disamarkan jadi "—". */}
       {sesi !== null && sebab !== null && <PitaBasi kalimat={sebab} />}
       {/* Masuk lewat Google tapi belum ditautkan ke bot: pantauan, kabar, dan
-          kredit hidup di akun Telegram. Ini bukan galat, ini langkah berikutnya. */}
+          kabar hidup di akun Telegram. Ini bukan galat, ini langkah berikutnya. */}
       {sesi !== null && r !== null && !r.telegramTersambung && (
         <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
           <View style={[g.baris, { gap: 8 }]}>
             <View style={{ flex: 1 }}>
               <Text style={g.nama}>Tautkan Telegram</Text>
-              <Lbl polos>Pantauan, kabar, dan kredit ada di akun bot.</Lbl>
+              <Lbl polos>Pantauan dan kabar ada di akun bot.</Lbl>
             </View>
             <Chip teks="Sambungkan" emas onPress={bukaSambung} />
           </View>
@@ -76,7 +76,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
           </View>
         </View>
         <View style={g.statistik}>
-          <View style={g.sel}><Nil besar>{angka(r?.poin)}</Nil><Lbl polos>Poin</Lbl></View>
+          <View style={g.sel}><Nil besar>{setelan.tf.toLowerCase()}</Nil><Lbl polos>Timeframe</Lbl></View>
           <View style={g.sel}>
             <Nil besar>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Nil>
             <Lbl polos>Pantauan</Lbl>
@@ -109,7 +109,6 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
       <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
       <Menu>
         <Butir ikon="plus" nama="Kelola langganan" ket={plus ? "aktif" : "lewat bot"} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
-        <Butir ikon="plus" nama="Kredit & kuota" ket={r === null ? "butuh Telegram" : `${String(r.poin)} poin`} ketMono onPress={() => { buka('Kredit'); }} />
         <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? "butuh Telegram" : plus ? "siap" : "butuh AM+"} onPress={() => { buka('CekBanyak'); }} />
         {sesi !== null && (
           <Butir ikon="lainnya" nama={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
