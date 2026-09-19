@@ -13,15 +13,17 @@
  * seluruh produk.
  */
 import { useHeaderHeight } from '@react-navigation/elements';
+import { useSisaBilah } from '../gaya/jarak';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FITUR_GRATIS, FITUR_PLUS } from '../data/amplus';
 import { Kartu } from '../komponen/dasar';
-import { W, H, J, R, SISA_BILAH } from '../gaya/token';
+import { W, H, J, R } from '../gaya/token';
 
 export function LayarAmPlus() {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
       <View style={g.hero}>
         <Text style={g.merek}>AnalisMarket+</Text>
         <Text style={g.tagline}>Pasar dipantau otomatis, dan kamu dikabari saat kondisinya terpenuhi.</Text>

@@ -9,10 +9,11 @@
  */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
+import { useSisaBilah } from '../gaya/jarak';
 import { Pressable } from 'react-native';
 import { Kartu, Baris, Pisah } from '../komponen/dasar';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
-import { W, H, J, SENTUH, SISA_BILAH } from '../gaya/token';
+import { W, H, J, SENTUH } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 
 type Props = {
@@ -34,8 +35,9 @@ const MENU: ReadonlyArray<Menu> = [
 
 export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi }: Props) {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
       <Kartu judul="Menu">
         {MENU.map((m, i) => (
           <Pressable key={m.kunci} onPress={() => { bukaMenu(m.kunci); }} style={[g.menu, i > 0 && g.menuGaris]}>

@@ -17,7 +17,7 @@ import { Platform, StatusBar, Text } from 'react-native';
 import { NavigationContainer, DarkTheme, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LayarAnalisis } from './src/layar/Analisis';
 import { LayarBelajar } from './src/layar/Belajar';
@@ -123,6 +123,16 @@ function ikonTab(nama: NamaIkon) {
 }
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <StatusBar barStyle="light-content" backgroundColor={W.latar} />
+      <Isi />
+    </SafeAreaProvider>
+  );
+}
+
+function Isi() {
+  const { bottom: bawah } = useSafeAreaInsets();
   const [setelan, setSetelan] = useState<Setelan>(SETELAN_BAWAAN);
   /** Naik tiap kali tab Pasar ditekan — angka, bukan boolean, supaya ketukan kedua tetap membuka. */
   const [tandaPasar, setTandaPasar] = useState(0);
@@ -135,8 +145,6 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle="light-content" backgroundColor={W.latar} />
       <NavigationContainer theme={TEMA}>
         <Tab.Navigator
           screenOptions={{
@@ -152,13 +160,27 @@ export default function App() {
              * `TINGGI_BILAH`; tanpa itu baris terakhirnya tidak pernah
              * bisa dijangkau.
              */
+            /**
+             * TINGGINYA IKUT JARAK AMAN, dan itu bukan kerapian.
+             *
+             * Begitu bilah jadi `position: absolute`, react-navigation
+             * BERHENTI menambahkan sendiri jarak aman bawah — ia menganggap
+             * bilah melayang diurus pemanggilnya. Tinggi tetap 58px membuat
+             * label "Home" dan "Lainnya" terpotong separuh di HP berponi,
+             * dan itu terlihat persis seperti desain yang memang begitu.
+             *
+             * Ketahuan dari HP, bukan dari penjaga: penjaga kaca memeriksa
+             * `position: absolute` ADA di sumber, bukan bahwa bilahnya
+             * tergambar utuh. Menembak bahan, bukan artefak akhir.
+             */
             tabBarStyle: {
               position: 'absolute',
               backgroundColor: 'transparent',
               borderTopWidth: 0,
               elevation: 0,
-              height: TINGGI_BILAH,
+              height: TINGGI_BILAH + bawah,
               paddingTop: 4,
+              paddingBottom: bawah,
             },
             tabBarBackground: () => <Kaca tepi="atas" gaya={{ flex: 1 }} />,
             tabBarActiveTintColor: W.teksKuat,
@@ -234,6 +256,5 @@ export default function App() {
           </Tab.Screen>
         </Tab.Navigator>
       </NavigationContainer>
-    </SafeAreaProvider>
   );
 }

@@ -1,14 +1,16 @@
 /** Syarat & Ketentuan / Kebijakan Privasi — teks penuh, tanpa ringkasan. */
 import { useHeaderHeight } from '@react-navigation/elements';
+import { useSisaBilah } from '../gaya/jarak';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { ambilDokumen } from '../data/dokumen';
-import { W, H, J, SISA_BILAH } from '../gaya/token';
+import { W, H, J } from '../gaya/token';
 
 export function LayarDokumen({ kunci }: { kunci: 'syarat' | 'privasi' }) {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   const d = ambilDokumen(kunci);
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH, paddingHorizontal: J.x3 }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah, paddingHorizontal: J.x3 }}>
       <Text style={g.judul}>{d.judul}</Text>
       <Text style={g.berlaku}>{d.berlaku}</Text>
       {d.bagian.map((b) => (

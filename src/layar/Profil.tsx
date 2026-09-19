@@ -11,17 +11,19 @@
  * data sungguhan pada hari identitas itu lepas — tidak sebelum itu.
  */
 import { useHeaderHeight } from '@react-navigation/elements';
+import { useSisaBilah } from '../gaya/jarak';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ikon } from '../komponen/Ikon';
 import { Kartu, Pisah } from '../komponen/dasar';
-import { W, H, J, R, TALANG, SISA_BILAH } from '../gaya/token';
+import { W, H, J, R, TALANG } from '../gaya/token';
 
 function Terkunci({ ikon, judul, kalimat, isi }: {
   ikon: 'profil' | 'kabar'; judul: string; kalimat: string; isi: ReadonlyArray<string>;
 }) {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
       <View style={g.kepala}>
         <View style={g.lingkaran}>
           <Ikon nama={ikon} warna={W.teksRedup} ukuran={22} />

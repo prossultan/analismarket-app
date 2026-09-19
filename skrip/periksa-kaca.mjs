@@ -38,6 +38,26 @@ cek(berkas.length >= 15,
 
 const app = readFileSync('App.tsx', 'utf8');
 
+/* 0 · BILAH MELAYANG WAJIB MEMBAWA JARAK AMANNYA SENDIRI.
+ *
+ * Ini yang lolos di putaran sebelumnya, dan akibatnya terlihat di HP: label
+ * "Home" dan "Lainnya" terpotong separuh. Sebabnya `position: absolute`
+ * membuat react-navigation BERHENTI menambahkan jarak aman bawah — ia
+ * menganggap bilah melayang diurus pemanggilnya — sementara tingginya tetap
+ * 58px.
+ *
+ * Penjaga lama memeriksa bahwa `position: absolute` ADA. Itu menembak BAHAN,
+ * bukan artefak akhir: ia tidak pernah bisa merah untuk bilah yang melayang
+ * TAPI terpotong. Yang di bawah ini menuntut keduanya sekaligus. */
+cek(/useSafeAreaInsets\(\)/.test(app),
+  'App.tsx: bilah melayang tanpa useSafeAreaInsets — labelnya terpotong di HP berponi');
+cek(/height:\s*TINGGI_BILAH\s*\+\s*bawah/.test(app),
+  'App.tsx: tinggi bilah tidak menambahkan jarak aman bawah');
+cek(/paddingBottom:\s*bawah/.test(app),
+  'App.tsx: bilah tanpa paddingBottom jarak aman — isinya melimpah keluar layar');
+cek(/useSisaBilah/.test(readFileSync('src/gaya/jarak.ts', 'utf8')),
+  'src/gaya/jarak.ts: kait jarak bawah tidak ada');
+
 /* 1 · Bilah tab WAJIB melayang. */
 const blokBilah = app.match(/tabBarStyle:\s*\{[^}]*\}/s)?.[0] ?? '';
 cek(blokBilah !== '', 'App.tsx: tabBarStyle tidak ketemu');
@@ -59,8 +79,9 @@ cek(/headerBackground:\s*\(\)\s*=>\s*<Kaca/.test(app),
 const LAYAR_BERTAB = ['Home', 'AmPlus', 'Belajar', 'Profil', 'Kalender', 'Lainnya', 'Dokumen'];
 for (const nama of LAYAR_BERTAB) {
   const isi = readFileSync(`src/layar/${nama}.tsx`, 'utf8');
-  cek(isi.includes('SISA_BILAH'),
-    `src/layar/${nama}.tsx: tanpa SISA_BILAH — baris terakhirnya tertutup bilah melayang`);
+  cek(isi.includes('useSisaBilah'),
+    `src/layar/${nama}.tsx: tanpa useSisaBilah — baris terakhirnya tertutup bilah melayang. ` +
+    'Konstanta tetap TIDAK cukup: tinggi poni berbeda tiap perangkat');
 }
 
 /* 4 · BlurView lewat SATU pintu. */

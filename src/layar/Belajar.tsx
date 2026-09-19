@@ -9,10 +9,11 @@
  * INI maksud, bukan definisi buku teks.
  */
 import { useHeaderHeight } from '@react-navigation/elements';
+import { useSisaBilah } from '../gaya/jarak';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ISTILAH } from '../data/istilah';
 import { Kartu, Pisah } from '../komponen/dasar';
-import { W, H, J, SISA_BILAH } from '../gaya/token';
+import { W, H, J } from '../gaya/token';
 
 const KEADAAN: ReadonlyArray<{ nama: string; arti: string }> = [
   { nama: 'Setup', arti: 'Semua syarat wajib lolos, angka rencana dicetak.' },
@@ -22,8 +23,9 @@ const KEADAAN: ReadonlyArray<{ nama: string; arti: string }> = [
 
 export function LayarBelajar() {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: SISA_BILAH }}>
+    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + J.x3, paddingBottom: sisaBilah }}>
       <Kartu judul="Tiga keadaan kartu">
         {KEADAAN.map((k, i) => (
           <View key={k.nama}>

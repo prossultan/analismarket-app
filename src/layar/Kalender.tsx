@@ -9,17 +9,19 @@
  * ke halaman ini adalah "hari ini ada apa", bukan "rilis ke-empat puluh apa".
  */
 import { useHeaderHeight } from '@react-navigation/elements';
+import { useSisaBilah } from '../gaya/jarak';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { ambilJadwal, type Rilis } from '../data/api';
 import { jamWib, kunciHariWib, tanggalWib } from '../data/tampil';
 import { Kosong, Memuat } from '../komponen/dasar';
-import { W, H, J, R, ANGKA, SISA_BILAH } from '../gaya/token';
+import { W, H, J, R, ANGKA } from '../gaya/token';
 
 const HARI = 14;
 
 export function LayarKalender() {
   const tinggiKepala = useHeaderHeight();
+  const sisaBilah = useSisaBilah();
   const [rilis, setRilis] = useState<Rilis[]>([]);
   const [keadaan, setKeadaan] = useState<'memuat' | 'ada' | 'gagal'>('memuat');
   const [sebab, setSebab] = useState('');
@@ -52,7 +54,7 @@ export function LayarKalender() {
   return (
     <SectionList
       style={g.akar}
-      contentContainerStyle={{ paddingTop: tinggiKepala, paddingBottom: SISA_BILAH }}
+      contentContainerStyle={{ paddingTop: tinggiKepala, paddingBottom: sisaBilah }}
       sections={bagian}
       keyExtractor={(r, i) => `${String(r.waktu)}${r.kode}${String(i)}`}
       stickySectionHeadersEnabled
