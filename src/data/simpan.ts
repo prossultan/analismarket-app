@@ -13,9 +13,11 @@ export type Setelan = {
   /** Layar ditahan tetap menyala selama chart terbuka. Mati secara bawaan:
       menahan layar menghabiskan baterai, dan itu bukan keputusan app. */
   layarMenyala: boolean;
+  /** Saklar notifikasi di HP INI. Izin sistem diminta saat dinyalakan. */
+  pushNyala: boolean;
 };
 
-export const SETELAN_BAWAAN: Setelan = { pasar: 'SOLUSDT', tf: 'h1', mesin: '', layarMenyala: false };
+export const SETELAN_BAWAAN: Setelan = { pasar: 'SOLUSDT', tf: 'h1', mesin: '', layarMenyala: false, pushNyala: false };
 
 const KUNCI = 'am:setelan:v1';
 
@@ -31,6 +33,7 @@ export async function bacaSetelan(): Promise<Setelan> {
       tf: typeof j.tf === 'string' && j.tf !== '' ? j.tf : SETELAN_BAWAAN.tf,
       mesin: typeof j.mesin === 'string' ? j.mesin : SETELAN_BAWAAN.mesin,
       layarMenyala: typeof j.layarMenyala === 'boolean' ? j.layarMenyala : SETELAN_BAWAAN.layarMenyala,
+      pushNyala: typeof j.pushNyala === 'boolean' ? j.pushNyala : SETELAN_BAWAAN.pushNyala,
     };
   } catch {
     return SETELAN_BAWAAN;

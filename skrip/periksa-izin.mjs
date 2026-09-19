@@ -33,6 +33,9 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 /** Cuma ini yang boleh. Menambah baris di sini harus disertai alasannya. */
 const BOLEH = new Set([
   'android.permission.INTERNET', // seluruh isi app datang dari jaringan
+  // Kabar pantauan ke HP. Diminta dari SAKLAR di Pengaturan, bukan saat app
+  // pertama dibuka — dialog izin Android cuma muncul sekali seumur pemasangan.
+  'android.permission.POST_NOTIFICATIONS',
 ]);
 
 const adaSebelumnya = existsSync('android');

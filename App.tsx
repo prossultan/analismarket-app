@@ -58,6 +58,8 @@ import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH, TEPI_BILAH, ANGKAT_BILAH } from './src/gaya/token';
 import { TombolTab } from './src/komponen/TombolTab';
 import konfigApp from './app.json';
+import { segarkanPendaftaran } from './src/data/push';
+import { daftarkanPerangkat } from './src/data/saya';
 import * as SplashScreen from 'expo-splash-screen';
 
 /**
@@ -334,6 +336,14 @@ function Isi() {
   useEffect(() => {
     void bacaSetelan().then(setSetelan);
   }, []);
+
+  /* Token push bisa berubah tanpa pemberitahuan; didaftarkan ulang tiap app
+     dibuka, tapi hanya sesudah ADA sesi — server menggantung perangkat pada
+     akun, jadi mendaftar sebelum masuk cuma menghasilkan 401. */
+  useEffect(() => {
+    if (setelan === null || sesi === null) return;
+    void segarkanPendaftaran(setelan.pushNyala, daftarkanPerangkat);
+  }, [setelan, sesi]);
 
   const simpan = useCallback((s: Setelan): void => { setSetelan(s); void simpanSetelan(s); }, []);
 

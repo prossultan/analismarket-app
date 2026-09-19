@@ -38,6 +38,10 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"
+      ],
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -60,6 +64,13 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#0C0B09"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C9A961",
+          "defaultChannel": "kabar"
         }
       ]
     ]

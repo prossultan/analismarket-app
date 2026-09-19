@@ -6,12 +6,15 @@
  * Telegram. Layar ini mengatakannya — bukan membiarkan orang menemukannya
  * sendiri saat ganti HP.
  */
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSisaBilah } from '../gaya/jarak';
 import { Blok, Butir, Lbl, Menu, Mikro, PilTf, Saklar } from '../komponen/mockup';
 import { W, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
+import { mintaIzinPush, siapkanSaluran, tokenPerangkat } from '../data/push';
+import { cabutPerangkat, daftarkanPerangkat } from '../data/saya';
 
 type Props = { setelan: Setelan; simpan: (s: Setelan) => void };
 
@@ -21,6 +24,39 @@ const TF = ['m15', 'm30', 'h1', 'h4', 'd1'];
 export function LayarPengaturan({ setelan, simpan }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
+  /**
+   * SEBAB DISIMPAN, BUKAN DIBUANG. Saklar yang kembali mati tanpa sepatah kata
+   * adalah bentuk kegagalan paling membingungkan yang bisa dibuat layar ini:
+   * orang menyalakannya, ia mati sendiri, dan tidak ada apa pun yang bisa
+   * dibaca. Tiga sebabnya berbeda dan tindakannya berbeda — izin ditolak
+   * (harus lewat Setelan sistem), belum tertaut Telegram, atau jaringan.
+   */
+  const [sebabPush, setSebabPush] = useState<string | null>(null);
+  const [sibukPush, setSibukPush] = useState(false);
+
+  async function gantiPush(mau: boolean): Promise<void> {
+    setSibukPush(true);
+    setSebabPush(null);
+    try {
+      if (!mau) {
+        const t = await tokenPerangkat();
+        if (t !== null) await cabutPerangkat(t);
+        simpan({ ...setelan, pushNyala: false });
+        return;
+      }
+      const izin = await mintaIzinPush();
+      if (izin === 'bukan-perangkat') { setSebabPush('Notifikasi cuma jalan di HP, bukan di emulator.'); return; }
+      if (izin === 'ditolak') { setSebabPush('Izin notifikasi ditolak. Nyalakan dari Setelan HP → Aplikasi → AnalisMarket → Notifikasi.'); return; }
+      await siapkanSaluran();
+      const t = await tokenPerangkat();
+      if (t === null) { setSebabPush('Perangkat ini tidak bisa menerima notifikasi.'); return; }
+      const j = await daftarkanPerangkat(t, 'android');
+      if (!j.ok) { setSebabPush(j.kalimat); return; }
+      simpan({ ...setelan, pushNyala: true });
+    } finally {
+      setSibukPush(false);
+    }
+  }
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
       <Lbl>Bawaan saat app dibuka</Lbl>
@@ -49,6 +85,15 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
           ket={setelan.layarMenyala ? 'nyala' : 'mati'}
           kanan={<Saklar on={setelan.layarMenyala} ganti={(v) => { simpan({ ...setelan, layarMenyala: v }); }} />} />
       </Menu>
+
+      <Lbl gaya={{ marginTop: 2 }}>Notifikasi</Lbl>
+      <Menu>
+        <Butir ikon="kabar" nama="Kabar di HP ini"
+          ket={sibukPush ? 'menyiapkan…' : setelan.pushNyala ? 'nyala' : 'mati'} pertama
+          kanan={<Saklar on={setelan.pushNyala} ganti={sibukPush ? undefined : (v) => { void gantiPush(v); }} />} />
+      </Menu>
+      {sebabPush !== null && <Mikro>{sebabPush}</Mikro>}
+      <Mikro>Kabar tetap dikirim ke Telegram seperti biasa. Saklar ini menambahkan salinannya ke HP ini — dan cuma berlaku di HP ini.</Mikro>
 
       <Lbl gaya={{ marginTop: 2 }}>Tampilan</Lbl>
       <Menu>

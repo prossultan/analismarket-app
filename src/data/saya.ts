@@ -143,3 +143,16 @@ export const MAKS_SLOT_CEK_BANYAK = 12;
  */
 export const cekBanyak = (pair: string[], tf: string[], mesin: string[]): Promise<JawabanSaya<HasilCekBanyak>> =>
   panggil('/api/saya/cek-banyak', 'POST', { pair, tf: tf.map((t) => t.toUpperCase()), mesin });
+
+/* ── PERANGKAT PENERIMA PUSH ───────────────────────────────────────────── */
+
+/**
+ * Mendaftarkan HP ini sebagai penerima kabar. Server menggantungnya pada akun
+ * Telegram, jadi akun Google murni dijawab `jenis: 'telegram'` — ditangani
+ * `panggil()` seperti fitur kabar lainnya, bukan galat baru.
+ */
+export const daftarkanPerangkat = (token: string, platform: 'android' | 'ios'): Promise<JawabanSaya<unknown>> =>
+  panggil('/api/saya/perangkat', 'POST', { token, platform });
+
+export const cabutPerangkat = (token: string): Promise<JawabanSaya<unknown>> =>
+  panggil('/api/saya/perangkat/cabut', 'POST', { token });

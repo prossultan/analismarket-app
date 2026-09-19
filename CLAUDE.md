@@ -440,3 +440,32 @@ untuk permintaan hapus. Yang ada sekarang: kalimat di Kebijakan Privasi
 "minta lewat bot". Itu belum memenuhi formulir Data safety. Menghapus akun
 berarti menulis (menghapus) data produksi — keputusan pemilik, bukan sesi
 otonom. Belum dikerjakan; jangan dianggap selesai karena tidak ada uji merah.
+
+## Notifikasi push ke app (19 Sep) — dan kenapa ia belum menyala
+
+Saluran kedua di samping Telegram, BUKAN pengganti: ~300 pengguna bot tidak
+memasang app, dan mencabut Telegram mematikan kabar untuk mereka semua.
+Keputusan per orang ada di satu pintu, `pilihSaluran` di `src/lib/push.ts`
+repo bot — dipanggil kedua jalur kabar supaya jalur ketiga yang ditambahkan
+besok ikut tunduk tanpa disuruh.
+
+Izin notifikasi TIDAK diminta saat app pertama dibuka. Dialog izin Android
+cuma muncul SEKALI seumur pemasangan; sesudah ditolak, satu-satunya jalan
+adalah Setelan sistem. Meminta sebelum orang tahu kabar itu apa membuang
+satu-satunya kesempatan itu. Izin diminta dari saklar di Pengaturan.
+
+`POST_NOTIFICATIONS` sekarang ikut ke APK, dan itu disengaja — dua penjaga
+(`periksa-izin`, `periksa-apk`) memuatnya di daftar putih beserta alasannya.
+Penjaga izin memeriksa DUA ARAH: izin yang hilang dari manifes juga merah,
+jadi plugin yang berhenti menambahkannya akan ketahuan.
+
+Push tidak memuat entry/SL/TP maupun arah. Notifikasi dibaca di layar kunci,
+sering berjam-jam sesudah tiba, tanpa caption dan tanpa layar penjelas di
+sebelahnya — angka rencana yang dibaca terlambat adalah angka yang salah.
+Dijaga `src/lib/keputusan-push.test.ts` di repo bot, empat mutasi merah.
+
+BELUM MENYALA, dan tiga hal menahannya, semuanya keputusan pemilik:
+migrasi `0050_perangkat_push` belum dijalankan (migrasi produksi bukan
+wewenang sesi mana pun), `pilihSaluran` masih menjawab `['telegram']`, dan
+kunci FCM V1 baru diunggah ke EAS hari ini sehingga belum pernah diuji
+mengirim ke perangkat sungguhan.

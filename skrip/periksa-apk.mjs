@@ -19,6 +19,9 @@ import { inflateRawSync } from 'node:zlib';
 
 const BOLEH_IZIN = new Set([
   'android.permission.INTERNET',              // seluruh isi app dari jaringan
+  // Kabar pantauan ke HP. Diminta dari SAKLAR di Pengaturan, bukan saat app
+  // pertama dibuka — dialog izin Android cuma muncul sekali seumur pemasangan.
+  'android.permission.POST_NOTIFICATIONS',
   'android.permission.ACCESS_NETWORK_STATE',  // pustaka memeriksa sambungan; tingkat normal, tidak ditampilkan ke pengguna
 ]);
 /** Izin privat milik app sendiri dari AndroidX — sah. */
