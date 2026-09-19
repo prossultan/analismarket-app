@@ -31,11 +31,15 @@ let diperiksa = 0;
 for (const nama of layar) {
   const teks = readFileSync(`src/layar/${nama}`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   /* Satu elemen bisa memanjang beberapa baris; ambil dari tag sampai penutupnya. */
-  for (const m of teks.matchAll(/<(Saklar|Chip)\b([\s\S]*?)\/>/g)) {
+  for (const m of teks.matchAll(/<(Saklar|Chip|Tombol)\b([\s\S]*?)\/>/g)) {
     const [, tag, isi] = m;
     diperiksa += 1;
     if (/\bganti=|\bonPress=/.test(isi)) continue;
     if (/\blencana\b/.test(isi)) continue;
+    /* `<Tombol mati>` SAH: ia digambar redup, mengumumkan dirinya nonaktif ke
+       pembaca layar, dan labelnya menjelaskan kenapa ("belum tersedia").
+       Yang dilarang tombol yang terlihat HIDUP tapi tidak menjawab. */
+    if (tag === 'Tombol' && /\bmati\b/.test(isi)) continue;
     const baris = teks.slice(0, m.index).split('\n').length;
     masalah.push(`${nama}:${baris} — <${tag}> tanpa penangan dan tanpa tanda \`lencana\`: ia terlihat bisa ditekan tapi diam\n      ${isi.trim().replace(/\s+/g, ' ').slice(0, 84)}`);
   }

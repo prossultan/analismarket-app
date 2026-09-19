@@ -44,7 +44,7 @@ const UNTUNG = [
   { ikon: 'kalender' as const, judul: 'Kalender berita', ket: '30 hari, dampak tinggi dan sedang' },
 ];
 
-export function LayarSambutan({ selesai }: { selesai: () => void }) {
+export function LayarSambutan({ selesai, sambungkan }: { selesai: () => void; sambungkan: () => void }) {
   const { top, bottom } = useSafeAreaInsets();
   const [tahap, setTahap] = useState<'luncur' | 'masuk'>('luncur');
 
@@ -107,8 +107,14 @@ export function LayarSambutan({ selesai }: { selesai: () => void }) {
           {/* Bukan tautan: app ini tidak memasang tautan keluar. Nama botnya
               ditampilkan, dan langkahnya dijelaskan di layar Sambungkan. */}
           <View style={{ height: 12 }} />
-          <Tombol teks="Sambungkan Telegram · @analismarketbot" mati
-            ikon={<Ikon nama="kabar" warna="rgba(232,231,229,0.45)" ukuran={14} />} />
+          {/* DULU MATI. Tombol terbesar di layar pertama yang tidak melakukan
+              apa-apa adalah jalan buntu di layar yang justru harus membuka
+              jalan — dan satu-satunya jalan keluar tersisa cuma tautan kecil
+              di bawah. Ia tidak bisa menautkan ke luar (aturan produk), tapi
+              ia BISA membuka layar Sambungkan, tempat langkahnya dijelaskan
+              dan tempelannya diterima. */}
+          <Tombol teks="Sambungkan Telegram · @analismarketbot" onPress={sambungkan}
+            ikon={<Ikon nama="kabar" warna={W.teksKuat} ukuran={14} />} />
           <View style={{ marginTop: 7 }}>
             <Tombol teks="Masuk dengan Google — belum tersedia" jenis="kedua" mati />
           </View>

@@ -178,3 +178,36 @@ menyalin pola web tanpa menyalin normalisasinya.
 Satuannya sekarang dikunci di `src/data/tampil.ts` (`biayaPersen`,
 `biayaLebar`, `BIAYA_WAJAR_PERSEN`) dan `skrip/periksa-satuan.mjs` melarang
 `biayaPorsi` disentuh aritmetika di luar sana. Uji-mutasi 2/2 merah.
+
+## Tombol utama layar pertama tidak boleh mati
+
+`LayarSambutan` berdiri DI LUAR navigator, jadi tombolnya tidak bisa
+menavigasi sendiri — dan karena itu ia dibiarkan `mati`. Akibatnya tombol
+TERBESAR di layar yang pertama dilihat semua orang tidak melakukan apa-apa,
+dan satu-satunya jalan ke depan tersisa tautan kecil "Lanjut tanpa masuk ›"
+di bawah.
+
+Ia memang tidak boleh menautkan ke luar (aturan produk), tapi ia bisa
+membuka layar Sambungkan — tempat langkahnya dijelaskan dan tempelannya
+diterima. Caranya bukan menavigasi melainkan MEMBERI TAHU tumpukan harus
+dibuka di mana: `mulaiDiSambung` menyetel `initialRouteName` tab `lainnya`
+dan tumpukannya sekaligus.
+
+`periksa-kontrol.mjs` sekarang ikut menembak `<Tombol>`. `mati` tetap sah —
+ia digambar redup, mengumumkan dirinya nonaktif ke pembaca layar, dan
+labelnya menjelaskan kenapa ("belum tersedia"). Yang dilarang tombol yang
+terlihat HIDUP tapi diam.
+
+## Periksa izin dari APK, bukan dari pemindaian string
+
+Pemindaian string mentah atas `AndroidManifest.xml` biner MELAPORKAN
+`android.permission.DUMP` yang sebenarnya tidak pernah dideklarasikan — ia
+cuma nama yang tersimpan di kolam string sebuah pustaka. Yang benar mengurai
+struktur AXML-nya dan membaca tag `<uses-permission>`.
+
+Hasil sah dari APK build 19 Sep (`id.analismarket.app`):
+
+```
+android.permission.INTERNET
+id.analismarket.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION   <- privat, dari AndroidX
+```

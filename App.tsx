@@ -98,7 +98,7 @@ const OPSI_KEPALA = {
 };
 const OPSI_TUMPUKAN = { ...OPSI_KEPALA, contentStyle: { backgroundColor: W.latar } };
 
-type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void };
+type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void; mulaiDiSambung?: boolean };
 
 /** Layar-layar bersama yang bisa dibuka dari tumpukan mana pun. */
 function LayarBersama({ setelan, simpan }: IsiTumpukan) {
@@ -153,9 +153,15 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
   );
 }
 
-function AlurLain({ setelan, simpan }: IsiTumpukan) {
+function AlurLain({ setelan, simpan, mulaiDiSambung = false }: IsiTumpukan) {
   return (
-    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
+    /* Layar sambutan berdiri DI LUAR navigator, jadi tombolnya tidak bisa
+       menavigasi sendiri. Yang bisa: memberi tahu tumpukan ini harus dibuka
+       di mana. Tanpa itu tombol utama layar pertama terpaksa mati, dan
+       tombol terbesar yang tidak melakukan apa-apa adalah jalan buntu di
+       layar yang justru harus membuka jalan. */
+    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}
+      initialRouteName={mulaiDiSambung ? 'Sambung' : 'Lainnya'}>
       <Tumpukan.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
         {({ navigation }) => (
           <LayarLainnya
@@ -227,6 +233,8 @@ function Isi() {
    */
   const [setelan, setSetelan] = useState<Setelan | null>(null);
   const [tandaPasar, setTandaPasar] = useState(0);
+  /** Sambutan meminta app dibuka langsung di layar Sambungkan. */
+  const [mulaiDiSambung, setMulaiDiSambung] = useState(false);
   /** null = belum tahu (jangan berkedip), true = tampilkan sambutan. */
   const [sambutan, setSambutan] = useState<boolean | null>(null);
 
@@ -240,11 +248,19 @@ function Isi() {
   /* Menunggu KEDUANYA. Menahan satu layar kosong sepersekian detik jauh
      lebih murah daripada satu putaran permintaan yang dibuang. */
   if (sambutan === null || setelan === null) return null;
-  if (sambutan) return <LayarSambutan selesai={() => { setSambutan(false); }} />;
+  if (sambutan) {
+    return (
+      <LayarSambutan
+        selesai={() => { setSambutan(false); }}
+        sambungkan={() => { setMulaiDiSambung(true); setSambutan(false); }}
+      />
+    );
+  }
 
   return (
     <NavigationContainer theme={TEMA}>
       <Tab.Navigator
+        initialRouteName={mulaiDiSambung ? "lainnya" : "home"}
         screenOptions={{
           headerShown: false,
           /**
@@ -322,7 +338,7 @@ function Isi() {
         </Tab.Screen>
 
         <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('lainnya') }}>
-          {() => <AlurLain setelan={setelan} simpan={simpan} />}
+          {() => <AlurLain setelan={setelan} simpan={simpan} mulaiDiSambung={mulaiDiSambung} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
