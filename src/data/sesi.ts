@@ -65,6 +65,7 @@ type PenyediaClerk = {
   akun: Akun | null;
 };
 let clerk: PenyediaClerk | null = null;
+let clerkDipasang = false;
 
 function sesiClerk(): Sesi | null {
   if (clerk === null || clerk.akun === null) return null;
@@ -78,9 +79,19 @@ function sesiClerk(): Sesi | null {
  */
 export function pasangClerk(p: PenyediaClerk | null): void {
   clerk = p;
+  clerkDipasang = true;
   if (hidup === undefined) return;            // belum dibaca; bacaSesi() yang menggabungkan
-  if (hidup !== null && hidup.jenis !== 'clerk') return;   // sesi mini menang
-  umumkan(sesiClerk());
+  umumkan(hidup !== null && hidup.jenis !== 'clerk' ? hidup : sesiClerk());
+}
+
+/**
+ * App TIDAK BOLEH memutuskan "belum masuk" sebelum dua-duanya dibaca:
+ * simpanan sesi mini DAN keadaan Clerk. Memutuskan lebih awal berarti
+ * pelanggan yang sudah masuk melihat layar masuk sekejap tiap kali membuka
+ * app — dan "sekejap" itu yang membuat app terasa tidak percaya diri.
+ */
+export function sudahSiapSesi(): boolean {
+  return hidup !== undefined && clerkDipasang;
 }
 
 /**
@@ -112,18 +123,23 @@ function umumkan(s: Sesi | null): void {
  */
 export async function bacaSesi(): Promise<Sesi | null> {
   if (hidup !== undefined) return hidup;
+  let hasil: Sesi | null;
   try {
     const mentah = await AsyncStorage.getItem(KUNCI);
-    if (mentah === null) { hidup = sesiClerk(); return hidup; }
-    const s = JSON.parse(mentah) as Sesi;
-    if (typeof s.sesi !== 'string' || s.sesi === '') { hidup = sesiClerk(); return hidup; }
-    if (Date.now() - s.pada > UMUR_SESI_MS) { await hapusSesi(); return hidup ?? null; }
-    hidup = { ...s, jenis: 'mini' };
-    return hidup;
+    if (mentah === null) hasil = sesiClerk();
+    else {
+      const s = JSON.parse(mentah) as Sesi;
+      if (typeof s.sesi !== 'string' || s.sesi === '') hasil = sesiClerk();
+      else if (Date.now() - s.pada > UMUR_SESI_MS) { try { await AsyncStorage.removeItem(KUNCI); } catch { /* abaikan */ } hasil = sesiClerk(); }
+      else hasil = { ...s, jenis: 'mini' };
+    }
   } catch {
-    hidup = sesiClerk();
-    return hidup;
+    hasil = sesiClerk();
   }
+  /* Diumumkan, bukan cuma disimpan: pendengar (gerbang di App.tsx) menunggu
+     justru momen ini untuk memutuskan layar mana yang tampil. */
+  umumkan(hasil);
+  return hasil;
 }
 
 /** Sesi yang sedang dipegang TANPA menunggu — dipakai layar saat render. */

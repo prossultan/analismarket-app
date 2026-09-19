@@ -316,3 +316,27 @@ prebuild. Jadi:
   `react-native.config.js`); izin biometrik & referrer diblokir di app.json.
   `ACCESS_NETWORK_STATE` dibiarkan: tingkat normal, tidak ditampilkan ke
   pengguna, dipakai pustaka memeriksa sambungan.
+
+## Tanpa tamu — keputusan pemilik 19 Sep
+
+App tampil HANYA kalau ada sesi (Telegram lewat token bot, atau Google lewat
+Clerk). Gerbangnya satu tempat: `Isi()` di App.tsx membaca `useSesi()`; sesi
+`null` → `LayarSambutan`; sesi datang → app; sesi hilang (keluar, 401,
+kedaluwarsa) → kembali ke layar masuk dengan sendirinya.
+
+Dua akibat yang disengaja:
+
+- Gerbang menunggu `sudahSiapSesi()` — simpanan sesi DAN Clerk sama-sama
+  terbaca — sebelum memutuskan. Memutuskan lebih awal membuat pelanggan
+  melihat layar masuk sekejap tiap kali membuka app.
+- Formulir Sambungkan Telegram pindah ke komponen `FormulirSambung` dan
+  dipakai di DUA rumah: layar Sambungkan (dalam app, untuk pengguna Google
+  yang mau menautkan Telegram) dan layar masuk (di luar navigator). Orang
+  tanpa sesi tidak bisa mencapai layar dalam app, jadi formulirnya yang
+  datang.
+
+Harness: tidak ada lagi "Lanjut tanpa masuk" yang bisa diketuk. Tiap harness
+memakai `skrip/_sesi-tiruan.mts` (web) — sesi mini tiruan di localStorage +
+`/api/saya**` dijawab ringkasan tetap. Tanpa itu, `/api/saya` sungguhan
+menjawab 401, sesi dihapus, dan harness terlempar ke layar masuk di tengah
+jalan.

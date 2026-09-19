@@ -24,6 +24,7 @@ import { Kaca } from '../komponen/Kaca';
 import { Ikon } from '../komponen/Ikon';
 import { BarisPasar, PilTf, PitaMesin, Tombol } from '../komponen/mockup';
 import { TombolGoogle } from '../komponen/TombolGoogle';
+import { FormulirSambung } from '../komponen/FormulirSambung';
 import { ChartTertanam } from '../komponen/ChartTertanam';
 import { ASAL } from '../data/antrian';
 import { W, H, R, TALANG } from '../gaya/token';
@@ -45,18 +46,27 @@ const UNTUNG = [
   { ikon: 'kalender' as const, judul: 'Kalender berita', ket: '30 hari, dampak tinggi dan sedang' },
 ];
 
-export function LayarSambutan({ selesai, sambungkan }: { selesai: () => void; sambungkan: () => void }) {
+/**
+ * TANPA TAMU. Layar ini tampil selama belum ada sesi, dan hilang sendiri
+ * begitu sesi datang (Telegram lewat formulir di bawah, atau Google lewat
+ * Clerk) — gerbangnya di App.tsx membaca `useSesi()`, bukan tombol di sini.
+ * Tidak ada "lanjut tanpa masuk": keputusan pemilik 19 Sep.
+ */
+export function LayarSambutan() {
   const { top, bottom } = useSafeAreaInsets();
-  const [tahap, setTahap] = useState<'luncur' | 'masuk'>('luncur');
+  const [tahap, setTahap] = useState<'luncur' | 'masuk' | 'telegram'>('luncur');
 
   /* Peluncuran: 1,4 detik, lalu ke layar masuk. Bukan menunggu ketukan —
      layar peluncuran yang menuntut ketukan cuma menunda. */
   useEffect(() => {
-    const t = setTimeout(() => { setTahap('masuk'); }, 1400);
-    return () => { clearTimeout(t); };
+    /* Peluncuran cuma sekali seumur pemasangan; sesudahnya langsung layar masuk. */
+    let t: ReturnType<typeof setTimeout> | null = null;
+    void sudahDisambut().then((sudah) => {
+      if (sudah) { setTahap('masuk'); return; }
+      t = setTimeout(() => { void tandaiDisambut(); setTahap('masuk'); }, 1400);
+    });
+    return () => { if (t !== null) clearTimeout(t); };
   }, []);
-
-  const lanjut = (): void => { void tandaiDisambut(); selesai(); };
 
   if (tahap === 'luncur') {
     return (
@@ -96,7 +106,7 @@ export function LayarSambutan({ selesai, sambungkan }: { selesai: () => void; sa
           </View>
           <Text style={g.judul}>Masuk untuk membaca{'\n'}analisa lengkapnya</Text>
           <Text style={g.ajak}>131 pasar · 5 mesin dibaca sekaligus · 7 timeframe. Semuanya angka mentah, dan kamu yang memutuskan.</Text>
-          <View style={g.untung}>
+          {tahap !== 'telegram' && <View style={g.untung}>
             {UNTUNG.map((u) => (
               <View key={u.judul} style={g.untungSel}>
                 <Ikon nama={u.ikon} warna={W.plus} ukuran={14} />
@@ -104,25 +114,27 @@ export function LayarSambutan({ selesai, sambungkan }: { selesai: () => void; sa
                 <Text style={g.untungKet}>{u.ket}</Text>
               </View>
             ))}
-          </View>
+          </View>}
           {/* Bukan tautan: app ini tidak memasang tautan keluar. Nama botnya
               ditampilkan, dan langkahnya dijelaskan di layar Sambungkan. */}
           <View style={{ height: 12 }} />
-          {/* DULU MATI. Tombol terbesar di layar pertama yang tidak melakukan
-              apa-apa adalah jalan buntu di layar yang justru harus membuka
-              jalan — dan satu-satunya jalan keluar tersisa cuma tautan kecil
-              di bawah. Ia tidak bisa menautkan ke luar (aturan produk), tapi
-              ia BISA membuka layar Sambungkan, tempat langkahnya dijelaskan
-              dan tempelannya diterima. */}
-          <Tombol teks="Sambungkan Telegram · @analismarketbot" onPress={sambungkan}
-            ikon={<Ikon nama="kabar" warna={W.teksKuat} ukuran={14} />} />
-          <View style={{ marginTop: 7 }}>
-            <TombolGoogle sesudah={lanjut} />
-          </View>
-          <Text style={g.syarat}>Gratis, tanpa formulir. Dengan masuk kamu menyetujui Syarat & Ketentuan dan Kebijakan Privasi.</Text>
-          <Pressable onPress={lanjut} hitSlop={10} style={g.lewati} accessibilityRole="button">
-            <Text style={g.lewatiTeks}>Lanjut tanpa masuk ›</Text>
-          </Pressable>
+          {tahap === 'telegram' ? (
+            <View style={{ marginTop: 2, gap: 7 }}>
+              <FormulirSambung ringkas />
+              <Pressable onPress={() => { setTahap('masuk'); }} hitSlop={10} style={g.lewati} accessibilityRole="button">
+                <Text style={g.lewatiTeks}>‹ Kembali</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <Tombol teks="Sambungkan Telegram" onPress={() => { setTahap('telegram'); }}
+                ikon={<Ikon nama="kabar" warna="#1A1508" ukuran={14} />} />
+              <View style={{ marginTop: 7 }}>
+                <TombolGoogle />
+              </View>
+              <Text style={g.syarat}>Gratis, tanpa formulir. Dengan masuk kamu menyetujui Syarat & Ketentuan dan Kebijakan Privasi.</Text>
+            </>
+          )}
         </Kaca>
       </View>
     </View>

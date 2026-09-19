@@ -29,14 +29,12 @@ import { PAKET_PLUS, rupiah } from '../data/amplus';
 import { useSisaBilah } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
-import { TombolGoogle } from '../komponen/TombolGoogle';
+import { FormulirSambung, BOT } from '../komponen/FormulirSambung';
 import {
   BarIsi, BarisPakai, Blok, Butir, Chip, Langkah, Lbl, Menu, Mikro, Nil, PitaBasi, Radio, Rangka, Saklar, Tombol,
 } from '../komponen/mockup';
 import { W, H, R, SENTUH, TALANG } from '../gaya/token';
 
-/** Nama bot — sama dengan `HANDLE` di renderer kartu. Teks, bukan tautan. */
-const BOT = 'analismarketbot';
 
 function Wadah({ children }: { children: React.ReactNode }) {
   const tinggiKepala = useHeaderHeight();
@@ -116,27 +114,6 @@ const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: numb
 /* ══ 21 · SAMBUNGKAN TELEGRAM ═══════════════════════════════════════════ */
 export function LayarSambung() {
   const sesi = useSesi();
-  const [teks, setTeks] = useState('');
-  const [sibuk, setSibuk] = useState(false);
-  const [galat, setGalat] = useState('');
-
-  const jalankan = useCallback(async (isi: string): Promise<void> => {
-    setSibuk(true); setGalat('');
-    const h = await sambungkan(isi);
-    setSibuk(false);
-    if (h.ok) { setTeks(''); return; }
-    setGalat(h.kalimat);
-  }, []);
-
-  /* Tempel LANGSUNG menyambung: menempel lalu menekan tombol kedua adalah dua
-     ketukan untuk satu maksud, dan maksudnya tidak pernah ambigu di sini. */
-  const tempel = useCallback((): void => {
-    void Clipboard.getStringAsync().then((isi) => {
-      setTeks(isi);
-      if (isi.trim() !== '') void jalankan(isi);
-    });
-  }, [jalankan]);
-
   if (sesi !== null) {
     return (
       <Wadah>
@@ -178,55 +155,7 @@ export function LayarSambung() {
         <Text style={g.judulTengah}>Tiga langkah, sekali saja</Text>
         <Text style={g.ketTengah}>Identitasmu datang dari bot Telegram. Tidak ada formulir, tidak ada kata sandi.</Text>
       </Blok>
-
-      {/* Penomoran SAH di sini: urutannya menentukan. Tanpa langkah 2 tautannya tidak pernah ada. */}
-      <Blok rapat gaya={{ paddingHorizontal: 10 }}>
-        <Langkah no={1} judul={`Buka @${BOT} di Telegram`} ket="Namanya bisa disalin dari blok di bawah." pertama />
-        <Langkah no={2} judul="Tekan “🌐 Buka akses web”" ket="Bot membalas dengan satu tombol tautan." />
-        <Langkah no={3} judul="Tekan LAMA tombolnya → Salin tautan" ket="Jangan ditekan biasa: sekali terbuka di peramban, tautannya habis." />
-      </Blok>
-
-      <Blok>
-        <Lbl>Tempel tautan dari bot</Lbl>
-        <View style={g.tempelKotak}>
-          <TextInput
-            value={teks}
-            onChangeText={setTeks}
-            placeholder="https://analismarket.com/?masuk=…"
-            placeholderTextColor={W.teksSamar}
-            style={g.tempelIsi}
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!sibuk}
-            accessibilityLabel="Tautan dari bot"
-          />
-        </View>
-        <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
-          <View style={{ flex: 1 }}>
-            <Tombol teks={sibuk ? 'Menyambungkan…' : 'Tempel & sambungkan'} mati={sibuk} onPress={tempel} />
-          </View>
-          {teks.trim() !== '' && !sibuk && (
-            <Tombol teks="Sambungkan" jenis="kedua" onPress={() => { void jalankan(teks); }} />
-          )}
-        </View>
-        {galat !== '' && <Text style={g.galat}>{galat}</Text>}
-        <Mikro>Tautannya berlaku 10 menit dan sekali pakai. Kalau lewat, minta lagi ke bot.</Mikro>
-      </Blok>
-
-      <Blok>
-        <Lbl>Atau masuk dengan akun web</Lbl>
-        <View style={{ marginTop: 8 }}>
-          <TombolGoogle />
-        </View>
-        <Mikro>Akun yang sama dengan analismarket.com. Pantauan dan kabar tetap butuh Telegram yang ditautkan — bisa dilakukan sesudah masuk.</Mikro>
-      </Blok>
-
-      <Blok emas gaya={{ alignItems: 'center', paddingVertical: 14 }}>
-        <Lbl warna={W.plus}>Nama bot di Telegram</Lbl>
-        <Text selectable style={g.handle}>@{BOT}</Text>
-        <Chip teks="Salin nama" emas onPress={() => { void Clipboard.setStringAsync(`@${BOT}`); }} />
-      </Blok>
-
+      <FormulirSambung />
       <View style={{ flex: 1 }} />
       <Mikro>App ini tidak memasang tautan keluar, jadi bot dibuka sendiri dari Telegram.</Mikro>
     </Wadah>

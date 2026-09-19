@@ -26,7 +26,7 @@ import { enableFreeze } from 'react-native-screens';
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import { KUNCI_CLERK } from './src/data/clerk-kunci';
-import { pasangClerk } from './src/data/sesi';
+import { bacaSesi, dengarSesi, pasangClerk, sudahSiapSesi } from './src/data/sesi';
 
 /* Layar yang tidak terlihat dibekukan — tab lain tidak ikut merender saat
    harga berganti di tab yang terbuka. Salah satu sebab "kurang smooth" di HP. */
@@ -42,8 +42,9 @@ import { LayarAmPlus } from './src/layar/AmPlus';
 import { LayarLainnya, type KunciMenu } from './src/layar/Lainnya';
 import { LayarDokumen } from './src/layar/Dokumen';
 import { LayarTentang } from './src/layar/Tentang';
-import { LayarSambutan, sudahDisambut } from './src/layar/Sambutan';
+import { LayarSambutan } from './src/layar/Sambutan';
 import {
+  useSesi,
   LayarSambung, LayarPantauan, LayarPantauanBaru, LayarKabarOtomatis, LayarKredit, LayarCekBanyak, LayarBerlangganan,
 } from './src/layar/Akun';
 import { Ikon, type NamaIkon } from './src/komponen/Ikon';
@@ -108,7 +109,7 @@ const OPSI_KEPALA = {
 };
 const OPSI_TUMPUKAN = { ...OPSI_KEPALA, contentStyle: { backgroundColor: W.latar } };
 
-type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void; mulaiDiSambung?: boolean };
+type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void };
 
 /** Layar-layar bersama yang bisa dibuka dari tumpukan mana pun. */
 function LayarBersama({ setelan, simpan }: IsiTumpukan) {
@@ -163,15 +164,9 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
   );
 }
 
-function AlurLain({ setelan, simpan, mulaiDiSambung = false }: IsiTumpukan) {
+function AlurLain({ setelan, simpan }: IsiTumpukan) {
   return (
-    /* Layar sambutan berdiri DI LUAR navigator, jadi tombolnya tidak bisa
-       menavigasi sendiri. Yang bisa: memberi tahu tumpukan ini harus dibuka
-       di mana. Tanpa itu tombol utama layar pertama terpaksa mati, dan
-       tombol terbesar yang tidak melakukan apa-apa adalah jalan buntu di
-       layar yang justru harus membuka jalan. */
-    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}
-      initialRouteName={mulaiDiSambung ? 'Sambung' : 'Lainnya'}>
+    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
       <Tumpukan.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
         {({ navigation }) => (
           <LayarLainnya
@@ -247,6 +242,16 @@ const simpananToken = Platform.OS === 'web' ? undefined : {
 function JembatanClerk() {
   const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
   const { user } = useUser();
+  /* GAGAL-TERBUKA UNTUK GERBANG. Kalau Clerk tidak kunjung siap — offline,
+     skrip diblokir, origin ditolak — app TIDAK boleh menggantung di layar
+     kosong menunggunya. Sesudah 2,5 detik gerbang diberi tahu "Clerk: tidak
+     ada", dan pelanggan Telegram tetap masuk seperti biasa. Begitu Clerk
+     akhirnya siap, keadaannya menyusul lewat efek di bawah. */
+  useEffect(() => {
+    if (isLoaded) return undefined;
+    const t = setTimeout(() => { pasangClerk(null); }, 2500);
+    return () => { clearTimeout(t); };
+  }, [isLoaded]);
   useEffect(() => {
     if (!isLoaded) return;
     pasangClerk({
@@ -293,34 +298,33 @@ function Isi() {
    */
   const [setelan, setSetelan] = useState<Setelan | null>(null);
   const [tandaPasar, setTandaPasar] = useState(0);
-  /** Sambutan meminta app dibuka langsung di layar Sambungkan. */
-  const [mulaiDiSambung, setMulaiDiSambung] = useState(false);
-  /** null = belum tahu (jangan berkedip), true = tampilkan sambutan. */
-  const [sambutan, setSambutan] = useState<boolean | null>(null);
+  /**
+   * GERBANG TANPA TAMU. App tampil hanya kalau ada sesi; selebihnya layar
+   * masuk. Dan ia baru MEMUTUSKAN sesudah simpanan sesi dan Clerk sama-sama
+   * terbaca — memutuskan lebih awal membuat pelanggan melihat layar masuk
+   * sekejap tiap kali membuka app.
+   */
+  const sesi = useSesi();
+  const [siapSesi, setSiapSesi] = useState(sudahSiapSesi());
+  useEffect(() => {
+    void bacaSesi();
+    return dengarSesi(() => { setSiapSesi(sudahSiapSesi()); });
+  }, []);
 
   useEffect(() => {
     void bacaSetelan().then(setSetelan);
-    void sudahDisambut().then((sudah) => { setSambutan(!sudah); });
   }, []);
 
   const simpan = useCallback((s: Setelan): void => { setSetelan(s); void simpanSetelan(s); }, []);
 
   /* Menunggu KEDUANYA. Menahan satu layar kosong sepersekian detik jauh
      lebih murah daripada satu putaran permintaan yang dibuang. */
-  if (sambutan === null || setelan === null) return null;
-  if (sambutan) {
-    return (
-      <LayarSambutan
-        selesai={() => { setSambutan(false); }}
-        sambungkan={() => { setMulaiDiSambung(true); setSambutan(false); }}
-      />
-    );
-  }
+  if (setelan === null || !siapSesi) return null;
+  if (sesi === null) return <LayarSambutan />;
 
   return (
     <NavigationContainer theme={TEMA}>
       <Tab.Navigator
-        initialRouteName={mulaiDiSambung ? "lainnya" : "home"}
         screenOptions={{
           headerShown: false,
           /**
@@ -406,7 +410,7 @@ function Isi() {
         </Tab.Screen>
 
         <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarIcon: ikonTab('lainnya') }}>
-          {() => <AlurLain setelan={setelan} simpan={simpan} mulaiDiSambung={mulaiDiSambung} />}
+          {() => <AlurLain setelan={setelan} simpan={simpan} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
