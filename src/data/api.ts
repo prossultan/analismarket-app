@@ -49,6 +49,8 @@ export type Mesin = {
   atr: number;
 };
 
+export type Lilin = { waktu: number; buka: number; tinggi: number; rendah: number; tutup: number; volume: number };
+
 export type Bacaan = {
   pasar: string;
   tf: string;
@@ -57,6 +59,8 @@ export type Bacaan = {
   lilinTerakhir: number;
   pasarTutupAlasan: string | null;
   pasarBukaLagi: number | null;
+  /** 300 lilin tertutup, tertua dulu. Sparkline Home memakai 48 terakhir. */
+  lilin: Lilin[];
   mesin: Mesin[];
 };
 

@@ -21,12 +21,11 @@ import { Ikon, type NamaIkon } from '../komponen/Ikon';
 import { Kosong, Lbl, Mikro, PitaBasi, Tombol } from '../komponen/mockup';
 import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
-import { ISTILAH } from '../data/istilah';
-import { ChartTertanam } from '../komponen/ChartTertanam';
-import { ASAL } from '../data/antrian';
+import { KartuPasarMini } from '../komponen/KartuPasarMini';
+import { KartuPlus } from '../komponen/KartuPlus';
 
 export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'Kredit' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
-type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya') => void; bukaPemanis: () => void };
+type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya') => void; bukaPasarDi: (simbol: string) => void };
 
 /** Satu sel kisi: lencana di atas, ikon, label — mengikuti referensi pemilik. */
 function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
@@ -44,7 +43,7 @@ function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
   );
 }
 
-export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPemanis }: Props) {
+export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Props) {
   const tinggiKepala = useHeaderHeight();
   const sisaBilah = useSisaBilah();
   const sesi = useSesi();
@@ -69,9 +68,6 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPemanis }: Pr
   const google = sesi?.jenis === 'clerk';
   const perluTelegram = r !== null && !r.telegramTersambung;
   const angka = (n: number | undefined): string => (n === undefined ? '—' : n.toLocaleString('id-ID'));
-  /* Hari ke-n dalam tahun → satu istilah; sama untuk semua orang di hari yang sama. */
-  const hariKe = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86_400_000);
-  const istilah = ISTILAH[hariKe % ISTILAH.length] ?? ISTILAH[0] as (typeof ISTILAH)[number];
 
   return (
     <ScrollView
@@ -111,35 +107,20 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPemanis }: Pr
         <Sel ikon="turunkan" label="Lainnya" onPress={() => { bukaTab('lainnya'); }} />
       </View>
 
-      {/* PEMANIS — satu chart hidup, BTCUSDT m15. Binance, jadi tanpa jatah
-          kredit; m15 supaya terlihat bergerak sepanjang hari. Ketukan membuka
-          tab Pasar di pasar itu. Ini satu-satunya "pasar" di Home, dan ia
-          hiasan yang hidup — bukan daftar harga. */}
-      <Lbl gaya={{ marginTop: 2 }}>Pemanis · BTCUSDT m15</Lbl>
-      <Pressable onPress={bukaPemanis} accessibilityRole="button" accessibilityLabel="Buka chart BTCUSDT m15"
-        style={({ pressed }) => [g.pemanis, pressed && { opacity: 0.85 }]}>
-        <View style={g.pemanisChart} pointerEvents="none">
-          <ChartTertanam url={`${ASAL}/chart-embed?pair=BTCUSDT&tf=m15&alat=volume`} asal={ASAL}
-            suntik="true;" latar={W.chart} onMuat={() => undefined} onPesan={() => undefined} />
+      {/* PEMANIS — bento sparkline (referensi pemilik): satu besar, tiga kecil.
+          BTC besar; XAU/USD, ETH, SOL kecil. Hiasan yang hidup, bukan daftar. */}
+      <View style={g.bento}>
+        <KartuPasarMini simbol="BTCUSDT" nama="Bitcoin" besar onPress={() => { bukaPasarDi('BTCUSDT'); }} />
+        <View style={g.bentoKanan}>
+          <KartuPasarMini simbol="XAU/USD" nama="Emas" onPress={() => { bukaPasarDi('XAU/USD'); }} />
+          <View style={g.bentoBawah}>
+            <KartuPasarMini simbol="ETHUSDT" nama="ETH" onPress={() => { bukaPasarDi('ETHUSDT'); }} />
+            <KartuPasarMini simbol="SOLUSDT" nama="SOL" onPress={() => { bukaPasarDi('SOLUSDT'); }} />
+          </View>
         </View>
-        <View style={g.pemanisKaki}>
-          <Text style={g.pemanisTeks}>Bitcoin · 15 menit · Binance</Text>
-          <Text style={g.pemanisTaut}>Buka di Pasar ›</Text>
-        </View>
-      </Pressable>
+      </View>
 
-      {/* ISI, BUKAN RUANG KOSONG. Pemilik: "di home jangan sampai ada ruang
-          kosong". Yang mengisi harus isi sungguhan — satu istilah dari Belajar,
-          berganti tiap hari, bukan bilah kosong yang didorong ke bawah. */}
-      <Lbl gaya={{ marginTop: 2 }}>Istilah hari ini</Lbl>
-      <Pressable onPress={() => { buka('Belajar'); }} accessibilityRole="button" style={({ pressed }) => [g.istilah, pressed && { opacity: 0.8 }]}>
-        <View style={g.istilahKepala}>
-          <Text style={g.istilahNama}>{istilah.nama}</Text>
-          <Text style={g.istilahMesin}>{istilah.mesin} · {istilah.kode}</Text>
-        </View>
-        <Text style={g.istilahArti} numberOfLines={4}>{istilah.arti}</Text>
-        <Text style={g.istilahTaut}>Buka Belajar ›</Text>
-      </Pressable>
+      <KartuPlus plus={plus} sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />
 
       <Mikro>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Mikro>
     </ScrollView>
@@ -162,15 +143,7 @@ const g = StyleSheet.create({
   lencana: { position: 'absolute', top: -2, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
   lencanaEmas: { backgroundColor: W.plus }, lencanaPutih: { backgroundColor: 'rgba(255,255,255,0.12)' }, lencanaMerah: { backgroundColor: W.turun },
   lencanaTeks: { fontSize: 9, fontWeight: '700' },
-  pemanis: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, overflow: 'hidden' },
-  pemanisChart: { height: 210, backgroundColor: W.chart },
-  pemanisKaki: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
-  pemanisTeks: { fontSize: H.alat, color: W.teksRedup },
-  pemanisTaut: { fontSize: H.alat, color: W.plus, fontWeight: '600' },
-  istilah: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, padding: 13 },
-  istilahKepala: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
-  istilahNama: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.2 },
-  istilahMesin: { fontSize: H.label, color: W.plus, fontVariant: ['tabular-nums'] },
-  istilahArti: { fontSize: H.nilai, color: W.teks, lineHeight: 17, marginTop: 6 },
-  istilahTaut: { fontSize: H.alat, color: W.teksRedup, marginTop: 8 },
+  bento: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
+  bentoKanan: { flex: 1.2, gap: 8 },
+  bentoBawah: { flexDirection: 'row', gap: 8 },
 });

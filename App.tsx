@@ -372,7 +372,7 @@ function Isi() {
               bukaPasar={() => { navigation.navigate('pasar'); }}
               buka={(ke) => { navigation.navigate('lainnya', { screen: ke }); }}
               bukaTab={(t) => { navigation.navigate(t); }}
-              bukaPemanis={() => { simpan({ ...setelan, pasar: 'BTCUSDT', tf: 'm15' }); navigation.navigate('pasar'); }}
+              bukaPasarDi={(simbol) => { simpan({ ...setelan, pasar: simbol }); navigation.navigate('pasar'); }}
             />
           )}
         </Tab.Screen>

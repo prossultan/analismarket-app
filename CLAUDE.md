@@ -360,3 +360,19 @@ Ikon app: `assets/icon.png` dkk. sempat IKON BAWAAN TEMPLATE EXPO (chevron
 biru) sampai 19 Sep. Sekarang semua diturunkan dari `logo-512.png` web —
 satu mark di ikon, adaptive, monochrome, splash, kepala, dan Tentang.
 Mockup: `opendesign/mockups/kepala-2026`, `home-2026`.
+
+## Home akhir (19 Sep, tiga putaran umpan balik pemilik)
+
+Urutan: kartu akun → kisi 12 ikon → BENTO sparkline (BTC besar; XAU/USD,
+ETH, SOL kecil — mengikuti referensi Pintu yang dikirim pemilik) → kartu AM+
+("jualan": harga dari `PAKET_PLUS`, tombol ke tab PLUS+; pelanggan melihat
+status, bukan dijual ulang). Tanpa Pintasan, Bantuan, dan Istilah.
+
+Sparkline dari `/api/bacaan` h1, 48 lilin terakhir (`lilin[].tutup`), lewat
+antrean yang sama dengan tab Pasar — cache 20 detik, jadi kalau tab Pasar
+sudah memuatnya, kartunya gratis. Empat kartu = ±300 KB; diterima.
+
+Dua jebakan tata letak yang ketahuan dari potret, bukan dari kode: kartu
+kecil tanpa `flex: 1, minWidth: 0` meluap keluar layar; baris yang dipaksa
+sama tinggi (`flex: 1` di baris bawah) membuat sparkline menimpa harga.
+Sekarang kartu kecil ditentukan isinya; kartu besar yang meregang mengikuti.
