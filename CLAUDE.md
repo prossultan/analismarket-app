@@ -520,3 +520,10 @@ Cara memeriksanya dari APK tanpa memasang: `google_app_id` di
 `resources.arsc` harus TERISI (berbentuk `1:<angka>:android:<hex>`). Nama
 kolomnya selalu ada — dibawa SDK Firebase — jadi keberadaan NAMA bukan bukti;
 yang dibaca harus NILAINYA.
+
+JANGAN menjangkar regexnya di awal baris. `resources.arsc` biner, dan
+`strings` menyambung nilainya di tengah baris, jadi `grep -E "^1:[0-9]+:"`
+menjawab NOL untuk APK yang sebenarnya benar. Pemeriksaan pertama gue persis
+begitu dan melaporkan build yang sehat sebagai rusak — penjaga yang tidak
+pernah bisa HIJAU sama merusaknya dengan penjaga yang tidak pernah bisa
+merah. Pakai `grep -oE "1:[0-9]{6,}:android:[0-9a-f]+"`.
