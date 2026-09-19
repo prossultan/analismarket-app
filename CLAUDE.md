@@ -409,3 +409,14 @@ muncul di produk ini (Mini App 13 Sep, app 19 Sep dua kali) — tiap permukaan
 baru yang memanggil `/api/bacaan` wajib diuji dengan sesi AM+ sungguhan.
 Cara mencetak sesi uji tanpa Telegram dan tanpa menulis: `terbitkanSesiMini`
 fungsi murni; lihat riwayat commit ini.
+
+## Kontrak galat akun adalah field `galat`, bukan kode status (19 Sep)
+
+Server menjawab `perlu-telegram` sebagai **409** dan `perlu-plus` sebagai
+**402** (`PERLU_TELEGRAM` / `PERLU_PLUS` di `src/lib/api-saya.ts` bot). Versi
+pertama `panggil()` cuma memeriksa `perlu-telegram` di dalam cabang 402, jadi
+cabang `jenis: 'telegram'` mati sejak lahir dan akun Google jatuh ke `'lain'`.
+Tidak ketahuan karena server ikut mengirim `pesan` yang benar — kalimat yang
+tampil tidak salah, cuma jenisnya. Sekarang `galat` diperiksa lebih dulu, apa
+pun kode statusnya. Kalau menambah jenis galat baru, baca kodenya DARI berkas
+bot itu, jangan menebak dari nama galatnya.
