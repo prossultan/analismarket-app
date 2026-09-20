@@ -1,0 +1,65 @@
+# BUILD APK DI GITHUB ACTIONS — gratis, memakai keystore EAS yang sama.
+#
+# Kenapa jalur ini: kuota build cloud EAS gratis habis tiap bulan, dan VPS
+# produksi (3 GB RAM, berbagi dengan bot) bukan tempat menjalankan Gradle.
+# Runner GitHub punya JDK + Android SDK terpasang dan RAM 7 GB. `eas build
+# --local` TIDAK memakai kuota cloud, tapi tetap mengambil kredensial
+# (keystore, google-services) dari EAS lewat EXPO_TOKEN — jadi APK-nya
+# ditandatangani kunci yang sama dengan build cloud dan bisa menimpa app
+# yang sudah terpasang.
+#
+# Rahasia yang dibutuhkan (repo → Settings → Secrets → Actions):
+#   EXPO_TOKEN  — expo.dev → Account settings → Access tokens
+name: build-android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Pasang dependensi
+        run: npm ci
+
+      # Penjaga sumber jalan DULUAN: build 20 menit untuk kode yang penjaganya
+      # merah adalah 20 menit yang dibuang.
+      - name: Penjaga sumber
+        run: npm run periksa
+
+      - name: Build APK (eas --local, kredensial dari EAS)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_SKIP_AUTO_FINGERPRINT: '1'
+        run: |
+          npx --yes eas-cli@latest build --platform android --profile pratinjau \
+            --local --non-interactive --output "$GITHUB_WORKSPACE/AnalisMarket.apk"
+
+      # Penjaga APK memeriksa artefak SUNGGUHAN: izin, skema, harga.
+      - name: Penjaga APK
+        run: node skrip/periksa-apk.mjs "$GITHUB_WORKSPACE/AnalisMarket.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AnalisMarket-${{ github.sha }}
+          path: AnalisMarket.apk
+          retention-days: 14

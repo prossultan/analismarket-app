@@ -44,3 +44,8 @@ yarn-error.*
 # `opendesign/design-systems/` DILACAK — itu sistem desainnya.
 opendesign/index.html
 opendesign/manifest.json
+
+# rahasia lokal — jangan pernah ikut ke remote
+.env
+.env.*
+!.env.example
