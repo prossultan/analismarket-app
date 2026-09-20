@@ -49,6 +49,18 @@ jobs:
       - name: Penjaga sumber
         run: npm run periksa
 
+      # Gagal DENGAN NAMA, bukan 23 detik galat samar dari eas-cli. Rahasia yang
+      # kosong adalah sebab paling umum run pertama merah.
+      - name: Pastikan EXPO_TOKEN terpasang
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::EXPO_TOKEN belum dipasang. Repo → Settings → Secrets and variables → Actions → New repository secret, nama EXPO_TOKEN, isi token dari expo.dev/settings/access-tokens"
+            exit 1
+          fi
+          npx --yes eas-cli@latest whoami
+
       - name: Build APK (eas --local, kredensial dari EAS)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
