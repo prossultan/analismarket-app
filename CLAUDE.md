@@ -550,3 +550,40 @@ Cadangan nama juga diperbaiki di putaran yang sama: akun Telegram boleh tidak
 punya nama tampilan, dan itu SAH. Avatar tidak lagi mencetak '?' dan sapaan
 tidak lagi berbunyi "Halo" menggantung — keduanya terbaca seperti app yang
 kehilangan data, padahal tidak ada yang hilang.
+
+## Gerak (20 Sep) — aturan yang dipakai, dan yang sengaja TIDAK dianimasikan
+
+Fondasi: Reanimated 4 + react-native-worklets + gesture-handler, semua lewat
+`npx expo install`. Token gerak satu sumber di `src/gaya/gerak.ts` — kurva,
+durasi, pegas — nilainya SAMA dengan web (`--ease-out`, `--ease-lembar`).
+
+Yang dianimasikan, dan tingkatnya menurut skill `animate-expo`:
+- **Tekan** (puluhan kali sehari → nyaris tak terasa): skala 0,97 / 120 ms
+  lewat transisi CSS Reanimated di `Tekan.tsx`. Tanpa worklet. Satu pintu.
+- **Lembar** (sesekali → animasi penuh): nilai bersama di UI thread, menutup
+  dari KECEPATAN bukan cuma jarak, kecepatan jari diteruskan ke pegas,
+  hambatan karet ke atas. Gestur cuma di KEPALA lembar — isinya berisi daftar
+  yang digulir, dan dua gestur vertikal di tempat yang sama saling berebut.
+- **Saklar**: transform, bukan margin (margin memicu layout tiap frame).
+- **Isi menggantikan rangka**: memudar 180 ms, opacity saja.
+
+Yang SENGAJA tidak dianimasikan:
+- **Pindah tab.** Tab itu setara, bukan bertingkat; menggeser antar-tab
+  menyiratkan kedalaman yang tidak ada, dan orang membayarnya puluhan kali
+  sehari. Yang menyilang cuma latar pil, 120 ms.
+- **Transisi antar-layar.** Ikut bawaan native stack; dibangun ulang di JS
+  selalu lebih buruk.
+- **Haptics.** `VIBRATE` sengaja diblokir di manifes; umpan balik visual
+  harus berdiri sendiri karena haptics mati di banyak HP Android.
+
+Tiga jebakan tipe yang memakan waktu:
+1. `StyleSheet.create` MENOLAK properti transisi Reanimated. Gaya bertransisi
+   ditulis sebagai objek `satisfies GayaGerak` (tipe dari `Animated.View`).
+2. `transitionTimingFunction` bukan string CSS — pakai `cubicBezier()`.
+3. `maxHeight: '88%'` di dalam `Animated.View` tanpa batas = tanpa batas.
+   Persentase butuh induk berbatas; batasnya dipasang di pembungkus yang
+   dianimasikan, bukan di Kaca. Terlihat di potret sebagai lembar yang
+   melebar ke atas layar — bukan dari kode.
+
+Nuansa gerak TIDAK bisa dinilai dari potret web: pegas, momentum, dan
+interupsi cuma terasa di build rilis di HP paling lambat yang didukung.
