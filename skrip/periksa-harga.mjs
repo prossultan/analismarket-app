@@ -18,20 +18,20 @@
  * tidak ketemu berarti penjaga ini lulus dengan tidak memeriksa apa pun — dan
  * itu kelas kegagalan yang sudah lima kali terjadi di repo sebelah.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 const BOT = process.env['REPO_BOT'] ?? `${process.env['HOME'] ?? ''}/apps/analisa`;
 const SUMBER = `${BOT}/src/lib/langganan.ts`;
 const masalah = [];
 
-if (!existsSync(SUMBER)) {
-  process.stdout.write(
-    `GAGAL — sumber harga tidak ketemu: ${SUMBER}\n`
-    + '  Harga di app disalin dari PAKET_PLUS di repo bot dan TIDAK bisa\n'
-    + '  diperiksa tanpa repo itu. Setel REPO_BOT ke lokasinya, atau cocokkan\n'
-    + '  src/data/amplus.ts dengan langganan.ts secara manual dan catat di sini.\n');
-  process.exit(1);
-}
+/**
+ * POTRET harga bot ikut di repo (`skrip/paket-bot.json`) supaya penjaga ini
+ * tetap MENEMBAK di CI, tempat repo bot tidak ada. Di mesin yang punya repo
+ * bot, potretnya diperbarui dari sumbernya dan perubahannya terlihat di diff
+ * seperti perubahan kode. Melewati pemeriksaan saat bot tidak ada berarti CI
+ * meloloskan harga yang salah — mengecualikan tanpa menggantikan.
+ */
+const POTRET = 'skrip/paket-bot.json';
 
 /** `{ kode: '1B', bulan: 1, hari: ..., hargaRp: 50_000 }` -> [kode, bulan, harga]. */
 function paketDari(teks, nama) {
@@ -41,7 +41,20 @@ function paketDari(teks, nama) {
     .map((m) => [m[1], Number(m[2]), Number(m[3].replace(/_/g, ''))]);
 }
 
-const bot = paketDari(readFileSync(SUMBER, 'utf8'), 'PAKET_PLUS');
+let bot;
+if (existsSync(SUMBER)) {
+  bot = paketDari(readFileSync(SUMBER, 'utf8'), 'PAKET_PLUS');
+  const lama = existsSync(POTRET) ? readFileSync(POTRET, 'utf8') : '';
+  const segar = JSON.stringify(bot, null, 2) + '\n';
+  if (lama !== segar) { writeFileSync(POTRET, segar); process.stdout.write(`  potret harga bot diperbarui: ${POTRET}\n`); }
+} else if (existsSync(POTRET)) {
+  bot = JSON.parse(readFileSync(POTRET, 'utf8'));
+  process.stdout.write(`  repo bot tidak ada di mesin ini — dibandingkan dengan potret ${POTRET}\n`);
+} else {
+  process.stdout.write(`GAGAL — tidak ada sumber harga: ${SUMBER} maupun ${POTRET}\n`);
+  process.exit(1);
+}
+
 const app = paketDari(readFileSync('src/data/amplus.ts', 'utf8'), 'PAKET_PLUS');
 
 /* Sapuan wajib menyatakan daftarnya cukup besar: daftar kosong LULUS diam-diam. */
