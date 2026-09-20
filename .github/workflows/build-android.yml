@@ -59,7 +59,9 @@ jobs:
             echo "::error::EXPO_TOKEN belum dipasang. Repo → Settings → Secrets and variables → Actions → New repository secret, nama EXPO_TOKEN, isi token dari expo.dev/settings/access-tokens"
             exit 1
           fi
-          npx --yes eas-cli@latest whoami
+          echo "akun token:"; npx --yes eas-cli@latest whoami
+          echo "project yang dituju (pemilik harus polosan):"
+          npx --yes eas-cli@latest project:info
 
       - name: Build APK (eas --local, kredensial dari EAS)
         env:
