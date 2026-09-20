@@ -40,7 +40,10 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
 
   return (
     <Tekan onPress={onPress} accessibilityLabel={`Buka chart ${simbol}`}
-      gaya={[g.kartu, besar && g.besar]} skala={0.96}>
+      /* Flex kartu harus di PRESSABLE LUAR: dialah anak baris bento. Saat
+          gaya kartu pindah ke kotak dalam, BTC menyusut jadi sepertiga — luarnya
+          tidak lagi ikut membagi lebar. */
+      gayaLuar={[{ flex: 1, minWidth: 0 }, besar && g.besar]} gaya={[g.kartu, { flex: 1 }]} skala={0.96}>
       <View style={g.kepala}>
         <LambangPasar simbol={simbol} ukuran={20} />
         <Text style={g.nama} numberOfLines={1}>{nama}</Text>
