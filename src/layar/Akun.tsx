@@ -25,7 +25,7 @@ import { useMuat, type Hasil, type Jenis } from '../data/muat';
 import { volumeRingkas } from '../data/tampil';
 /* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
-import { PAKET_PLUS, rupiah } from '../data/amplus';
+import { PAKET_PLUS, hargaPlus, rupiah, TOKO_PLAY } from '../data/amplus';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -143,9 +143,9 @@ function KartuButuhPlus({ apa, manfaat, bukaPlus }: { apa: string; manfaat: stri
           </View>
         ))}
       </View>
-      <Text style={[g.harga, { marginTop: 10 }]}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.dari}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
+      {hargaPlus() !== null && <Text style={[g.harga, { marginTop: 10 }]}>{hargaPlus()?.harga} <Text style={g.dari}>/ {hargaPlus()?.hari} hari</Text></Text>}
       <View style={{ marginTop: 10 }}><Tombol teks="Lihat AnalisMarket+" jenis="emas" onPress={bukaPlus} /></View>
-      <Mikro>Langganan dibeli lewat bot Telegram. App ini tidak memproses pembayaran.</Mikro>
+      {!TOKO_PLAY && <Mikro>Langganan dibeli lewat bot Telegram. App ini tidak memproses pembayaran.</Mikro>}
     </Blok>
   );
 }
@@ -723,11 +723,17 @@ export function LayarBerlangganan() {
   return (
     <Wadah>
       {sebab !== null && <PitaBasi kalimat={sebab} />}
-      <View style={g.kartuEmas}>
-        <Text style={g.cap}>AnalisMarket+</Text>
-        <Text style={g.harga}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.dari}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
-        <Lbl polos gaya={{ marginTop: 3 }}>Ditagih tiap 30 hari · berhenti kapan saja</Lbl>
-      </View>
+      {/* BUILD PLAY: halaman ini menyusut jadi LAYAR STATUS. Harga, cara
+          bayar, rincian, dan tombol menuju bot semuanya bentuk mengarahkan
+          pembelian ke luar app — dilarang kebijakan pembayaran Play. Yang
+          tersisa: apakah langganannya aktif, dan sampai kapan. */}
+      {!TOKO_PLAY && (
+        <View style={g.kartuEmas}>
+          <Text style={g.cap}>AnalisMarket+</Text>
+          <Text style={g.harga}>{hargaPlus()?.harga} <Text style={g.dari}>/ {hargaPlus()?.hari} hari</Text></Text>
+          <Lbl polos gaya={{ marginTop: 3 }}>Ditagih tiap 30 hari · berhenti kapan saja</Lbl>
+        </View>
+      )}
 
       <Blok>
         <Lbl>Keadaan akunmu</Lbl>
@@ -741,27 +747,40 @@ export function LayarBerlangganan() {
         )}
       </Blok>
 
-      <Lbl>Cara bayar</Lbl>
-      <Menu>
-        <View style={g.pilih}><Radio on /><View style={{ flex: 1 }}>
-          <Text style={g.pilihJudul}>Lewat bot Telegram</Text><Lbl polos>Satu-satunya jalur yang aktif</Lbl></View></View>
-        <View style={[g.pilih, g.garis, { opacity: 0.45 }]}><Radio on={false} /><View style={{ flex: 1 }}>
-          <Text style={g.pilihJudul}>Pembelian dalam app</Text><Lbl polos>Belum tersedia</Lbl></View></View>
-      </Menu>
+      {!TOKO_PLAY && (
+        <>
+          <Lbl>Cara bayar</Lbl>
+          <Menu>
+            <View style={g.pilih}><Radio on /><View style={{ flex: 1 }}>
+              <Text style={g.pilihJudul}>Lewat bot Telegram</Text><Lbl polos>Satu-satunya jalur yang aktif</Lbl></View></View>
+            <View style={[g.pilih, g.garis, { opacity: 0.45 }]}><Radio on={false} /><View style={{ flex: 1 }}>
+              <Text style={g.pilihJudul}>Pembelian dalam app</Text><Lbl polos>Belum tersedia</Lbl></View></View>
+          </Menu>
+        </>
+      )}
 
-      <Blok gaya={{ flex: 1 }}>
-        <Lbl>Rincian</Lbl>
-        <View style={{ marginTop: 4 }}>
-          <BarisPakai kiri={`AnalisMarket+ · ${String(SATU_BULAN.bulan)} bulan`} kanan={rupiah(SATU_BULAN.hargaRp)} pertama />
-          <BarisPakai kiri="PPN" kanan="Termasuk" />
-          <BarisPakai kiri="Total" kanan={rupiah(SATU_BULAN.hargaRp)} tebal />
-        </View>
-        <Mikro>Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis, tanpa tagihan berikutnya.</Mikro>
-      </Blok>
-
-      {/* Emas terisi — dan ini memang halaman AM+. Mati: pembayaran di bot. */}
-      <Tombol teks="Berlangganan lewat bot Telegram" jenis="emas" mati />
-      <Mikro tengah>Kirim /plus ke @{BOT}. App ini tidak memproses pembayaran.</Mikro>
+      {TOKO_PLAY ? (
+        <>
+          <View style={{ flex: 1 }} />
+          <Mikro tengah>Status langganan mengikuti akunmu, di app maupun di web.</Mikro>
+        </>
+      ) : (
+        <>
+        <Blok gaya={{ flex: 1 }}>
+          <Lbl>Rincian</Lbl>
+          <View style={{ marginTop: 4 }}>
+            <BarisPakai kiri={`AnalisMarket+ · ${String(SATU_BULAN.bulan)} bulan`} kanan={rupiah(SATU_BULAN.hargaRp)} pertama />
+            <BarisPakai kiri="PPN" kanan="Termasuk" />
+            <BarisPakai kiri="Total" kanan={rupiah(SATU_BULAN.hargaRp)} tebal />
+          </View>
+          <Mikro>Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis, tanpa tagihan berikutnya.</Mikro>
+        </Blok>
+  
+        {/* Emas terisi — dan ini memang halaman AM+. Mati: pembayaran di bot. */}
+        <Tombol teks="Berlangganan lewat bot Telegram" jenis="emas" mati />
+        <Mikro tengah>Kirim /plus ke @{BOT}. App ini tidak memproses pembayaran.</Mikro>
+        </>
+      )}
     </Wadah>
   );
 }

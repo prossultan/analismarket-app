@@ -58,3 +58,33 @@ export const PAKET_PLUS: readonly PaketPlus[] = [
 export function rupiah(n: number): string {
   return `Rp ${n.toLocaleString('id-ID')}`;
 }
+
+/**
+ * APP INI DIPASANG LEWAT TOKO YANG MELARANG MENGARAHKAN PEMBELIAN KE LUAR.
+ *
+ * Kebijakan pembayaran Google Play: app yang membuka fitur berbayar di dalam
+ * dirinya wajib memakai penagihan Play, dan DILARANG menyebut harga atau
+ * mengarahkan orang ke jalur pembelian di luar app. AnalisMarket+ ditagih
+ * lewat bot Telegram, jadi build untuk Play tidak boleh menyebut angkanya
+ * maupun caranya. Build yang dibagikan lewat tautan unduhan sendiri tidak
+ * tunduk pada aturan itu dan tetap menyebut keduanya.
+ *
+ * Satu saklar, dipasang profil build `produksi` di `eas.json`. Bukan dua
+ * cabang yang disebar: `hargaPlus()` di bawah adalah SATU-SATUNYA tempat
+ * angka harga boleh lahir, dan `skrip/periksa-toko.mjs` menuntutnya begitu.
+ */
+export const TOKO_PLAY = process.env.EXPO_PUBLIC_TOKO === 'play';
+
+const SATU_PAKET = PAKET_PLUS[0] as PaketPlus;
+
+/**
+ * Harga siap cetak, atau `null` kalau app ini build untuk Play.
+ *
+ * `null` berarti JANGAN cetak barisnya sama sekali — bukan cetak "—", dan
+ * bukan cetak kalimat pengganti yang menjelaskan ke mana harus membeli.
+ * Kalimat seperti itu persis yang dilarang.
+ */
+export function hargaPlus(): { harga: string; hari: string } | null {
+  if (TOKO_PLAY) return null;
+  return { harga: rupiah(SATU_PAKET.hargaRp), hari: String(SATU_PAKET.bulan * 30) };
+}

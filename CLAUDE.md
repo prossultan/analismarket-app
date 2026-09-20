@@ -666,3 +666,30 @@ Keduanya sekarang ada. Yang tidak terbaca dari kode:
 - **AAB untuk Play** dari tombol Run workflow dengan profil `produksi`;
   push ke `main` tetap membuat APK pratinjau. Daftar syarat toko dan isi
   formulir privasi: `docs/toko.md`.
+
+## Build Play diam soal harga — satu saklar, bukan dua cabang (20 Sep)
+
+Kebijakan pembayaran Google Play: app yang membuka fitur berbayar di dalam
+dirinya wajib memakai penagihan Play, dan DILARANG menyebut harga atau
+mengarahkan orang ke jalur beli di luar app. AnalisMarket+ ditagih lewat bot
+Telegram, jadi build Play tidak boleh menyebut Rp 50.000 maupun "/plus ke
+@analismarketbot". Build tautan unduhan tidak tunduk aturan itu dan tetap
+menyebut keduanya.
+
+- Saklarnya `TOKO_PLAY` di `src/data/amplus.ts`, dari `EXPO_PUBLIC_TOKO=play`
+  yang dipasang profil `produksi` di `eas.json`. Profil `pratinjau` sengaja
+  TIDAK memasangnya.
+- `hargaPlus()` adalah SATU-SATUNYA tempat angka harga boleh lahir; ia
+  mengembalikan `null` di build Play, dan `null` berarti barisnya tidak
+  dicetak sama sekali. Bukan "—", dan bukan kalimat pengganti yang
+  menjelaskan ke mana harus membeli — kalimat begitu persis yang dilarang.
+- Layar Berlangganan menyusut jadi layar STATUS di build Play: harga, cara
+  bayar, rincian, dan tombol ke bot semuanya hilang.
+- Dijaga `skrip/periksa-toko.mjs`: `rupiah(` cuma boleh dipanggil di dua
+  berkas, kalimat pengarah cuma boleh hidup di berkas yang menyebut
+  `TOKO_PLAY`, dan `eas.json` produksi wajib memasang envnya. Dua mutasi
+  merah: env dicabut, dan harga dicetak dari layar lain.
+- Bukti env benar-benar sampai ke bundel: di keluaran build Play,
+  `hargaPlus` terkompilasi jadi `function(){return null}`. Kalimat lamanya
+  masih ADA sebagai string di bundel — cabangnya tidak dibuang penyusun —
+  tapi tidak pernah dirender. Yang ditinjau Play app yang berjalan.

@@ -45,7 +45,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "periksa": "tsc --noEmit && tsc --noEmit -p skrip && node skrip/periksa-teks.mjs && node skrip/periksa-kaca.mjs && node skrip/periksa-lambang.mjs && node skrip/periksa-jawaban.mjs && node skrip/periksa-harga.mjs && node skrip/periksa-kontrol.mjs && node skrip/periksa-satuan.mjs",
+    "periksa": "tsc --noEmit && tsc --noEmit -p skrip && node skrip/periksa-teks.mjs && node skrip/periksa-kaca.mjs && node skrip/periksa-lambang.mjs && node skrip/periksa-jawaban.mjs && node skrip/periksa-harga.mjs && node skrip/periksa-kontrol.mjs && node skrip/periksa-satuan.mjs && node skrip/periksa-toko.mjs",
     "ukur-laju": "tsx skrip/ukur-laju.mts",
     "uji-e2e": "npx --yes tsx skrip/uji-e2e.mts",
     "periksa-izin": "node skrip/periksa-izin.mjs",

@@ -7,14 +7,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { gayaTema } from '../gaya/tema';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PAKET_PLUS, rupiah } from '../data/amplus';
+import { hargaPlus, TOKO_PLAY } from '../data/amplus';
 import { Ikon } from './Ikon';
 import { Tombol } from './mockup';
 import { W, H, R } from '../gaya/token';
 
-const SATU = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: number };
 
 export function KartuPlus({ plus, sisaHari, onPress }: { plus: boolean; sisaHari?: number; onPress: () => void }) {
+  const h = hargaPlus();
   return (
     <View style={g.kartu}>
       <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.22)', 'rgba(201,169,97,0.05)', 'rgba(201,169,97,0.12)']} locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -31,13 +31,13 @@ export function KartuPlus({ plus, sisaHari, onPress }: { plus: boolean; sisaHari
       ) : (
         <>
           <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
-          <Text style={g.harga}>{rupiah(SATU.hargaRp)} <Text style={g.per}>/ {String(SATU.bulan * 30)} hari</Text></Text>
+          {h !== null && <Text style={g.harga}>{h.harga} <Text style={g.per}>/ {h.hari} hari</Text></Text>}
           <View style={g.manfaat}>
             {['Kabar ke HP saat syarat setup lolos', 'Cek 12 pasar sekaligus', 'm5 untuk emas & forex'].map((m) => (
               <View key={m} style={g.baris}><Text style={g.centang}>✓</Text><Text style={g.manfaatTeks}>{m}</Text></View>
             ))}
           </View>
-          <View style={{ marginTop: 10 }}><Tombol teks="Upgrade ke AnalisMarket+" jenis="emas" onPress={onPress} /></View>
+          <View style={{ marginTop: 10 }}><Tombol teks={TOKO_PLAY ? 'Lihat isi AnalisMarket+' : 'Upgrade ke AnalisMarket+'} jenis="emas" onPress={onPress} /></View>
         </>
       )}
     </View>

@@ -13,6 +13,7 @@ import { gayaTema } from '../gaya/tema';
 import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilBacaan, ambilJadwal, syaratWajib, type Mesin, type Rilis } from '../data/api';
 import { ambilRingkas, hapusAkun, type Ringkas } from '../data/saya';
+import { TOKO_PLAY } from '../data/amplus';
 import { useMuat, type Hasil } from '../data/muat';
 import { hapusSesi } from '../data/sesi';
 import { useSesi } from './Akun';
@@ -136,7 +137,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
 
       <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
       <Menu>
-        <Butir ikon="plus" nama="Kelola langganan" ket={plus ? "aktif" : "lewat bot"} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
+        <Butir ikon="plus" nama="Kelola langganan" ket={plus ? 'aktif' : TOKO_PLAY ? 'belum aktif' : 'lewat bot'} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
         <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? 'masuk dulu' : plus ? 'siap' : 'butuh AM+'} onPress={() => { buka('CekBanyak'); }} />
         {sesi !== null && (
           <Butir ikon="lainnya" nama={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}

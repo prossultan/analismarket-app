@@ -14,7 +14,7 @@ import { gayaTema } from '../gaya/tema';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
-import { FITUR_GRATIS, FITUR_PLUS, PAKET_PLUS, rupiah } from '../data/amplus';
+import { FITUR_GRATIS, FITUR_PLUS, hargaPlus, TOKO_PLAY } from '../data/amplus';
 import { Blok, Istilah, Lbl, Mikro, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
 import { ambilRingkas, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
@@ -31,9 +31,9 @@ const TANYA: ReadonlyArray<{ t: string; j: string }> = [
 
 /* Paket bawaan = yang dipakai saat harga disebut tanpa konteks paket,
    sama seperti `PAKET_BAWAAN` di bot. */
-const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: number };
 
 export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
+  const h = hargaPlus();
   const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   /* SUMBER YANG SAMA DENGAN HOME. Dulu layar ini statis — selalu mengajak
@@ -82,7 +82,7 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
         ) : (
           <>
             <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
-            <Text style={g.harga}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.perBulan}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
+            {h !== null && <Text style={g.harga}>{h.harga} <Text style={g.perBulan}>/ {h.hari} hari</Text></Text>}
           </>
         )}
         <View style={g.daftar}>
@@ -93,10 +93,15 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
             </View>
           ))}
         </View>
-        <Tombol
-          teks={bukaLangganan === undefined ? 'Berlangganan lewat web' : plus ? 'Kelola langganan' : 'Lihat cara berlangganan'}
-          jenis={plus ? 'kedua' : 'emas'} mati={bukaLangganan === undefined || menunggu} onPress={bukaLangganan} />
-        <Mikro tengah>{plus ? 'Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
+        {/* BUILD PLAY: yang belum berlangganan tidak diberi tombol menuju cara
+            membeli — mengarahkan ke jalur bayar di luar app dilarang kebijakan
+            pembayaran Play. Pelanggan tetap punya tombol status. */}
+        {(plus || !TOKO_PLAY) && (
+          <Tombol
+            teks={bukaLangganan === undefined ? 'Berlangganan lewat web' : plus ? 'Kelola langganan' : 'Lihat cara berlangganan'}
+            jenis={plus ? 'kedua' : 'emas'} mati={bukaLangganan === undefined || menunggu} onPress={bukaLangganan} />
+        )}
+        <Mikro tengah>{plus ? 'Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis.' : TOKO_PLAY ? 'AnalisMarket+ belum aktif di akun ini.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
       </View>
 
       <Blok>
