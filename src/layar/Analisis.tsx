@@ -22,7 +22,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View,
+  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import type { WebViewMessageEvent } from 'react-native-webview';
 import { ChartTertanam } from '../komponen/ChartTertanam';
@@ -30,6 +30,7 @@ import { ASAL } from '../data/antrian';
 import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
 import { angka, ubah, biayaPersen } from '../data/tampil';
 import { LembarPasar } from '../komponen/LembarPasar';
+import { Lembar } from '../komponen/Lembar';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Kosong, Memuat } from '../komponen/dasar';
 import { useSesi } from './Akun';
@@ -304,10 +305,12 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
       </Pressable>
 
       {/* ── LAPISAN BACAAN LENGKAP ────────────────────────────────────────── */}
-      <Modal visible={lapisBacaan && m !== null} animationType="slide" transparent onRequestClose={() => { setLapisBacaan(false); }}>
-        <View style={[g.lapisLuar, { paddingBottom: sisaBilah - 8 }]}>
-          <Pressable style={g.lapisTirai} onPress={() => { setLapisBacaan(false); }} />
-          <Kaca tebal tepi="atas" gaya={g.lapis}>
+      {/* "Tarik turun untuk menutup" sekarang BENAR: lembarnya mengikuti jari,
+          dan kecepatan jari diteruskan ke pegasnya. Lihat Lembar.tsx. */}
+      <Lembar terbuka={lapisBacaan && m !== null} onTutup={() => { setLapisBacaan(false); }}
+        gaya={g.lapis} gayaLuar={{ paddingBottom: sisaBilah - 8 }} labelTutup="Tutup bacaan"
+        kepala={(
+          <>
             <Tarik kata="tarik turun untuk menutup" turun />
             <View style={g.lapisKepala}>
               <Lbl>bacaan · {pasar.simbol} {tf} · {aktif}</Lbl>
@@ -316,16 +319,16 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
                 <Text style={g.tutupTeks}>tutup</Text>
               </Pressable>
             </View>
-            {m !== null && bacaan !== null && <IsiBacaan m={m} desimal={pasar.desimal} />}
-          </Kaca>
-        </View>
-      </Modal>
+          </>
+        )}>
+        {m !== null && bacaan !== null && <IsiBacaan m={m} desimal={pasar.desimal} />}
+      </Lembar>
 
       {/* ── BANDING MESIN ─────────────────────────────────────────────────── */}
-      <Modal visible={lapisBanding} animationType="slide" transparent onRequestClose={() => { setLapisBanding(false); }}>
-        <View style={[g.lapisLuar, { paddingBottom: sisaBilah - 8 }]}>
-          <Pressable style={g.lapisTirai} onPress={() => { setLapisBanding(false); }} />
-          <Kaca tebal tepi="atas" gaya={g.lapis}>
+      <Lembar terbuka={lapisBanding} onTutup={() => { setLapisBanding(false); }}
+        gaya={g.lapis} gayaLuar={{ paddingBottom: sisaBilah - 8 }} labelTutup="Tutup banding mesin"
+        kepala={(
+          <>
             <Tarik kata="tarik turun untuk menutup" turun />
             <View style={g.lapisKepala}>
               <Lbl>banding mesin · {pasar.simbol} {tf}</Lbl>
@@ -334,16 +337,16 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
                 <Text style={g.tutupTeks}>tutup</Text>
               </Pressable>
             </View>
-            {bacaan !== null && (
-              <BandingMesin daftar={bacaan.mesin} aktif={aktif}
-                pilih={(k) => { setMesin(k); setMemuatChart(true); setLapisBanding(false); }} />
-            )}
-          </Kaca>
-        </View>
-      </Modal>
+          </>
+        )}>
+        {bacaan !== null && (
+          <BandingMesin daftar={bacaan.mesin} aktif={aktif}
+            pilih={(k) => { setMesin(k); setMemuatChart(true); setLapisBanding(false); }} />
+        )}
+      </Lembar>
 
-      {lembarPasar && (
-        <LembarPasar
+      <LembarPasar
+          terbuka={lembarPasar}
           daftar={daftarPasar}
           terpilih={pasar.simbol}
           pilih={(p) => {
@@ -356,7 +359,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
           }}
           tutup={() => { setLembarPasar(false); }}
         />
-      )}
+
     </View>
   );
 }

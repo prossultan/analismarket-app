@@ -19,6 +19,9 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type ViewStyle, type TextStyle } from 'react-native';
 import { W, H, J, R, ANGKA, SENTUH, TALANG } from '../gaya/token';
+import Animated from 'react-native-reanimated';
+import { Tekan } from './Tekan';
+import { KURVA_KELUAR, MS, type GayaGerak } from '../gaya/gerak';
 import { Ikon, type NamaIkon } from './Ikon';
 import { LambangPasar } from './LambangPasar';
 
@@ -67,7 +70,7 @@ export function Chip({ teks, on = false, emas = false, mono = false, onPress, ga
     </View>
   );
   if (onPress === undefined) return isi;
-  return <Pressable onPress={onPress} hitSlop={6} accessibilityRole="button" accessibilityState={{ selected: on }}>{isi}</Pressable>;
+  return <Tekan onPress={onPress} hitSlop={6} accessibilityState={{ selected: on }}>{isi}</Tekan>;
 }
 
 /* ── .pil-tf ───────────────────────────────────────────────────────────── */
@@ -140,7 +143,8 @@ export function BarisPasar({ simbol, label, harga, ubah, ubahWarna, onPress, red
     </View>
   );
   if (onPress === undefined) return isi;
-  return <Pressable onPress={onPress}>{isi}</Pressable>;
+  /* Baris lebar: skala 0,985 — 0,97 pada benda selebar layar terlihat melompat. */
+  return <Tekan onPress={onPress} skala={0.985}>{isi}</Tekan>;
 }
 
 /* ── .tarik — tiga isyarat, bukan satu ─────────────────────────────────── */
@@ -179,9 +183,9 @@ export function Butir({ ikon, simbol, nama, ket, ketMono = false, ketEmas = fals
    */
   const bisaDitekan = onPress !== undefined;
   return (
-    <Pressable onPress={onPress} disabled={!bisaDitekan}
-      accessibilityRole={bisaDitekan ? 'button' : undefined}
-      style={[g.butir, !pertama && g.garisAtas]}>
+    <Tekan onPress={onPress} disabled={!bisaDitekan} skala={0.985}
+      accessibilityRole={bisaDitekan ? 'button' : 'none'}
+      gaya={[g.butir, !pertama && g.garisAtas]}>
       {simbol !== undefined
         ? <LambangPasar simbol={simbol} ukuran={18} />
         : ikon !== undefined && <Ikon nama={ikon} warna={W.teksSamar} ukuran={15} />}
@@ -192,17 +196,28 @@ export function Butir({ ikon, simbol, nama, ket, ketMono = false, ketEmas = fals
           {`${ket ?? ''}${bisaDitekan ? (ket === undefined ? '›' : ' ›') : ''}`}
         </Text>
       ))}
-    </Pressable>
+    </Tekan>
   );
 }
 
 /* ── .saklar ───────────────────────────────────────────────────────────── */
+/* Di luar StyleSheet: properti transisi CSS Reanimated bukan tipe RN. */
+const SAKLAR_TRANSISI = {
+  transform: [{ translateX: 0 }],
+  transitionProperty: ['transform', 'backgroundColor'],
+  transitionDuration: MS.kecil,
+  transitionTimingFunction: KURVA_KELUAR,
+} satisfies GayaGerak;
+
 export function Saklar({ on, ganti }: { on: boolean; ganti?: (v: boolean) => void }) {
   return (
     <Pressable onPress={() => { ganti?.(!on); }} disabled={ganti === undefined} hitSlop={8}
       accessibilityRole="switch" accessibilityState={{ checked: on }}
       style={[g.saklar, on && g.saklarOn]}>
-      <View style={[g.saklarBulat, on && g.saklarBulatOn]} />
+      {/* Bulatannya MELUNCUR 160 ms (transform, bukan margin — margin memicu
+          layout tiap frame). Warnanya ikut dalam transisi yang sama supaya
+          tidak ada frame di mana bulatan sudah pindah tapi masih abu. */}
+      <Animated.View style={[g.saklarBulat, SAKLAR_TRANSISI, on && g.saklarBulatOn]} />
     </Pressable>
   );
 }
@@ -235,20 +250,19 @@ export function Tombol({ teks, jenis = 'utama', mati = false, onPress, ikon }: {
   teks: string; jenis?: 'utama' | 'emas' | 'kedua'; mati?: boolean; onPress?: () => void; ikon?: ReactNode;
 }) {
   return (
-    <Pressable onPress={onPress} disabled={mati || onPress === undefined}
-      accessibilityRole="button" accessibilityState={{ disabled: mati }}
-      style={({ pressed }) => [
+    <Tekan onPress={onPress} disabled={mati || onPress === undefined}
+      accessibilityState={{ disabled: mati }}
+      gaya={[
         g.tombol,
         jenis === 'emas' && g.tombolEmas,
         jenis === 'kedua' && g.tombolKedua,
         mati && (jenis === 'emas' ? g.tombolEmasMati : g.tombolMati),
-        pressed && !mati && { transform: [{ scale: 0.98 }] },
       ]}>
       {ikon}
       <Text style={[g.tombolTeks, jenis === 'emas' && g.tombolEmasTeks, jenis === 'kedua' && g.tombolKeduaTeks, mati && g.tombolTeksMati]}>
         {teks}
       </Text>
-    </Pressable>
+    </Tekan>
   );
 }
 
@@ -419,7 +433,7 @@ const g = StyleSheet.create({
   saklar: { width: 28, height: 16, borderRadius: R.bulat, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: W.garis, justifyContent: 'center' },
   saklarOn: { backgroundColor: W.plusRedup, borderColor: 'rgba(201,169,97,0.38)' },
   saklarBulat: { width: 12, height: 12, borderRadius: 6, backgroundColor: W.teksRedup, marginLeft: 1 },
-  saklarBulatOn: { backgroundColor: W.plus, marginLeft: 13 },
+  saklarBulatOn: { backgroundColor: W.plus, transform: [{ translateX: 12 }] },
 
   radio: { width: 13, height: 13, borderRadius: 7, borderWidth: 1.4, borderColor: W.garis, marginTop: 1 },
   radioOn: { borderColor: W.plus, borderWidth: 4 },

@@ -58,6 +58,7 @@ import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH, TEPI_BILAH, ANGKAT_BILAH } from './src/gaya/token';
 import { TombolTab } from './src/komponen/TombolTab';
 import konfigApp from './app.json';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { dengarKetukanKabar, segarkanPendaftaran } from './src/data/push';
 import { daftarkanPerangkat } from './src/data/saya';
 import * as SplashScreen from 'expo-splash-screen';
@@ -302,6 +303,7 @@ function JembatanClerk() {
 
 export default function App() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <ClerkProvider publishableKey={KUNCI_CLERK} tokenCache={simpananToken}>
       <SafeAreaProvider>
         <StatusBar barStyle="light-content" backgroundColor={W.latar} />
@@ -309,6 +311,7 @@ export default function App() {
         <Isi />
       </SafeAreaProvider>
     </ClerkProvider>
+    </GestureHandlerRootView>
   );
 }
 

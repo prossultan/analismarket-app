@@ -44,8 +44,13 @@ export function FormulirSambung({ ringkas = false }: { ringkas?: boolean }) {
       {/* Penomoran SAH di sini: urutannya menentukan. Tanpa langkah 2 tautannya tidak pernah ada. */}
       <Blok rapat gaya={{ paddingHorizontal: 10 }}>
         <Langkah no={1} judul={`Buka @${BOT} di Telegram`} ket="Namanya bisa disalin dari blok di bawah." pertama />
-        <Langkah no={2} judul="Tekan “🌐 Buka akses web”" ket="Bot membalas dengan satu tombol tautan." />
-        <Langkah no={3} judul="Tekan LAMA tombolnya → Salin tautan" ket="Jangan ditekan biasa: sekali terbuka di peramban, tautannya habis." />
+        <Langkah no={2} judul="Tekan “🌐 Buka Akses Web”" ket="Bot membalas dengan tautannya, tercetak sebagai teks." />
+        {/* Dulu langkah ini berbunyi "Tekan LAMA tombolnya → Salin tautan":
+            satu-satunya cara mengambil tautan saat bot cuma mengirim tombol.
+            Gerakan yang harus DIAJARKAN adalah gerakan yang sebagian orang
+            tidak akan lakukan. Sejak bot mencetak tautannya di dalam blok
+            kode, satu ketukan sudah menyalinnya. */}
+        <Langkah no={3} judul="Ketuk tautannya sekali → tersalin" ket="Lalu tempel di kotak bawah. Jangan dibuka di peramban: sekali terbuka, tautannya habis." />
       </Blok>
 
       <Blok>

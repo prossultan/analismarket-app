@@ -23,6 +23,7 @@ import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 import { KartuPasarMini } from '../komponen/KartuPasarMini';
 import { KartuPlus } from '../komponen/KartuPlus';
+import { Tekan } from '../komponen/Tekan';
 
 export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
 type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya' | 'kabar') => void; bukaPasarDi: (simbol: string) => void };
@@ -34,12 +35,11 @@ function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
   const lb = warnaLencana === 'merah' ? g.lencanaMerah : warnaLencana === 'putih' ? g.lencanaPutih : g.lencanaEmas;
   const lbTeks = warnaLencana === 'putih' ? W.teksKuat : warnaLencana === 'merah' ? '#fff' : '#1A1508';
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
-      style={({ pressed }) => [g.sel, pressed && { opacity: 0.6 }]}>
+    <Tekan onPress={onPress} accessibilityLabel={label} gayaLuar={{ width: '25%' }} gaya={g.sel}>
       {lencana !== undefined && <View style={[g.lencana, lb]}><Text style={[g.lencanaTeks, { color: lbTeks }]}>{lencana}</Text></View>}
       <Ikon nama={ikon} warna={emas ? W.plus : W.teksKuat} ukuran={26} />
       <Text style={g.selLabel} numberOfLines={1}>{label}</Text>
-    </Pressable>
+    </Tekan>
   );
 }
 
@@ -138,7 +138,7 @@ const g = StyleSheet.create({
   angkaBesar: { fontSize: 16, fontWeight: '600', color: W.teksKuat, fontVariant: ['tabular-nums'] },
   angkaLabel: { fontSize: H.label, color: W.teksSamar },
   kisi: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: 20, paddingTop: 14, paddingBottom: 8, paddingHorizontal: 4, flexDirection: 'row', flexWrap: 'wrap' },
-  sel: { width: '25%', alignItems: 'center', paddingTop: 12, paddingBottom: 10, gap: 7 },
+  sel: { alignItems: 'center', paddingTop: 12, paddingBottom: 10, gap: 7 },
   selLabel: { fontSize: 11, color: W.teks },
   lencana: { position: 'absolute', top: -2, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
   lencanaEmas: { backgroundColor: W.plus }, lencanaPutih: { backgroundColor: 'rgba(255,255,255,0.12)' }, lencanaMerah: { backgroundColor: W.turun },

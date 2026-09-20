@@ -10,12 +10,12 @@
  * lalu volume 24 jam menurun. Aturan `DaftarPasar.tsx` di web.
  */
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Lembar } from './Lembar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSisaBilah } from '../gaya/jarak';
 import type { Pasar } from '../data/api';
 import { angka, kategoriTersedia, labelJenis, labelKategori, ubah, volumeRingkas } from '../data/tampil';
-import { Kaca } from './Kaca';
 import { BarisPasar, Chip, Lbl, Tarik } from './mockup';
 import { W, H, J, R, SENTUH, TALANG } from '../gaya/token';
 
@@ -27,9 +27,12 @@ type Props = {
   terpilih: string;
   pilih: (p: Pasar) => void;
   tutup: () => void;
+  /** Dipasang selalu; ini yang membuka/menutup — supaya animasi keluarnya sempat jalan. */
+  terbuka: boolean;
 };
 
-export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
+export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) {
+  const { height: tinggiLayar } = useWindowDimensions();
   const { top } = useSafeAreaInsets();
   const sisaBilah = useSisaBilah();
   const [cari, setCari] = useState('');
@@ -53,12 +56,12 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
   }, [daftar, cari, jenis, kategori, terpilih]);
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={tutup} statusBarTranslucent>
-      <View style={g.luar}>
-        {/* Tirai tipis: chart di baliknya masih terlihat — itu tujuannya. */}
-        <Pressable style={g.tirai} onPress={tutup} accessibilityLabel="Tutup daftar pasar" />
-        <Kaca tebal tepi="atas" gaya={[g.lembar, { top: top + 96, bottom: sisaBilah - 8 }]}>
-          <Pressable onPress={tutup}><Tarik kata="tarik turun untuk menutup" turun /></Pressable>
+    /* Tirai tipis: chart di baliknya masih terlihat — itu tujuannya. Tinggi
+       lembar dihitung dari layar supaya daftarnya tetap punya batas gulir. */
+    <Lembar terbuka={terbuka} onTutup={tutup} tirai="tipis" labelTutup="Tutup daftar pasar"
+      gaya={{ height: tinggiLayar - (top + 96) - (sisaBilah - 8) }}
+      gayaLuar={{ paddingBottom: sisaBilah - 8 }}
+      kepala={<Pressable onPress={tutup}><Tarik kata="tarik turun untuk menutup" turun /></Pressable>}>
 
           {/* Cari — mockup 28. */}
           <View style={g.cari}>
@@ -135,19 +138,11 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup }: Props) {
               </View>
             }
           />
-        </Kaca>
-      </View>
-    </Modal>
+    </Lembar>
   );
 }
 
 const g = StyleSheet.create({
-  luar: { flex: 1 },
-  tirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.30)' },
-  lembar: {
-    position: 'absolute', left: 0, right: 0,
-    borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden', paddingTop: 6,
-  },
   cari: {
     flexDirection: 'row', alignItems: 'center', gap: 7, marginHorizontal: TALANG,
     minHeight: SENTUH - 6, paddingHorizontal: 10, borderRadius: R.besar,

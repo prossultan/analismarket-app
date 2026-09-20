@@ -8,13 +8,16 @@
  * dengan tab Pasar — jadi kalau tab Pasar sudah memuatnya, kartu ini gratis.
  */
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { ambilBacaan } from '../data/api';
 import { useMuat, type Hasil } from '../data/muat';
 import { angka } from '../data/tampil';
 import { LambangPasar } from './LambangPasar';
 import { Sparkline } from './Sparkline';
 import { Rangka } from './mockup';
+import { Tekan } from './Tekan';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { MS } from '../gaya/gerak';
 import { W, H, R } from '../gaya/token';
 
 type Isi = { harga: number; deret: number[]; ubahPersen: number; desimal: number };
@@ -36,8 +39,8 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
   const tinggiGaris = 40;
 
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Buka chart ${simbol}`}
-      style={({ pressed }) => [g.kartu, besar && g.besar, pressed && { opacity: 0.85 }]}>
+    <Tekan onPress={onPress} accessibilityLabel={`Buka chart ${simbol}`}
+      gaya={[g.kartu, besar && g.besar]} skala={0.985}>
       <View style={g.kepala}>
         <LambangPasar simbol={simbol} ukuran={20} />
         <Text style={g.nama} numberOfLines={1}>{nama}</Text>
@@ -45,18 +48,20 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
       <Text style={g.ticker}>{simbol}</Text>
       {isi === null
         ? <Rangka lebar="60%" tinggi={besar ? 20 : 14} gaya={{ marginTop: 4 }} />
-        : <Text style={[g.harga, besar && g.hargaBesar]} numberOfLines={1}>{angka(isi.harga, isi.desimal)}</Text>}
+        /* Isi MEMUDAR MASUK menggantikan rangka — tanpa ini harga muncul
+           menyentak di frame yang sama rangkanya hilang. 180 ms, cuma opacity. */
+        : <Animated.View entering={FadeIn.duration(MS.muncul)}><Text style={[g.harga, besar && g.hargaBesar]} numberOfLines={1}>{angka(isi.harga, isi.desimal)}</Text></Animated.View>}
       {/* Besar: garis mengisi sisa tinggi kolom di sebelahnya. Kecil: tinggi tetap,
           jadi kartu ditentukan isinya — bukan dipaksa sama tinggi lalu saling menimpa. */}
       <View style={[g.garis, besar ? { flex: 1, minHeight: 90 } : { height: tinggiGaris }]}>
-        {isi !== null && <SparklineIsi deret={isi.deret} warna={warna} />}
+        {isi !== null && <Animated.View entering={FadeIn.duration(MS.muncul)} style={StyleSheet.absoluteFill}><SparklineIsi deret={isi.deret} warna={warna} /></Animated.View>}
       </View>
       <View style={g.kaki}>
         {keadaan.fase === 'gagal'
           ? <Text style={[g.ubah, { color: W.teksSamar }]} numberOfLines={1}>tidak terbaca</Text>
           : <Text style={[g.ubah, { color: warna }]}>{isi === null ? '' : `${naik ? '▲' : '▼'} ${Math.abs(isi.ubahPersen).toFixed(2).replace('.', ',')}%`}</Text>}
       </View>
-    </Pressable>
+    </Tekan>
   );
 }
 
