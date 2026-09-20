@@ -24,7 +24,7 @@ const TANYA: ReadonlyArray<{ t: string; j: string }> = [
   { t: 'Bisa berhenti kapan saja?', j: 'Bisa. Langganan ditagih bulanan dan berhenti di akhir periode berjalan.' },
   { t: 'Apa bedanya dengan bot Telegram?', j: 'Sama mesinnya, sama angkanya. AM+ menambah pantauan otomatis dan cek banyak pasar.' },
   { t: 'Apakah ini memprediksi harga?', j: 'Tidak. Ini alat baca chart. Ia menilai kondisi sekarang, bukan meramal yang berikutnya.' },
-  { t: 'Lewat mana kabarnya dikirim?', j: 'Lewat Telegram, ke akun yang tersambung. App ini menampilkan salinannya di tab Kabar.' },
+  { t: 'Lewat mana kabarnya dikirim?', j: 'Ke HP ini lewat notifikasi. Kalau HP tidak terdaftar dan Telegram tersambung, lewat Telegram.' },
   { t: 'Pantauan gratis tetap ada?', j: 'Ada. Tiga pantauan pertama gratis; AM+ membuka sisanya dan kabar otomatisnya.' },
 ];
 

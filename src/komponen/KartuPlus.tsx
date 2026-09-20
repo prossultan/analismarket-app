@@ -32,7 +32,7 @@ export function KartuPlus({ plus, sisaHari, onPress }: { plus: boolean; sisaHari
           <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
           <Text style={g.harga}>{rupiah(SATU.hargaRp)} <Text style={g.per}>/ {String(SATU.bulan * 30)} hari</Text></Text>
           <View style={g.manfaat}>
-            {['Kabar ke Telegram saat syarat setup lolos', 'Cek 12 pasar sekaligus', 'm5 untuk emas & forex'].map((m) => (
+            {['Kabar ke HP saat syarat setup lolos', 'Cek 12 pasar sekaligus', 'm5 untuk emas & forex'].map((m) => (
               <View key={m} style={g.baris}><Text style={g.centang}>✓</Text><Text style={g.manfaatTeks}>{m}</Text></View>
             ))}
           </View>

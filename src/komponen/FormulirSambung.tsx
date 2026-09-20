@@ -85,7 +85,7 @@ export function FormulirSambung({ ringkas = false }: { ringkas?: boolean }) {
         <View style={{ marginTop: 8 }}>
           <TombolGoogle />
         </View>
-        <Mikro>Akun yang sama dengan analismarket.com. Pantauan dan kabar tetap butuh Telegram yang ditautkan — bisa dilakukan sesudah masuk.</Mikro>
+        <Mikro>Akun yang sama dengan analismarket.com. Pantauan dan kabar jalan di app lewat notifikasi HP; Telegram opsional, bisa ditautkan kapan saja.</Mikro>
       </Blok>
 
       {!ringkas && (

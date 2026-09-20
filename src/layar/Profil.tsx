@@ -52,8 +52,8 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
         <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
           <View style={[g.baris, { gap: 8 }]}>
             <View style={{ flex: 1 }}>
-              <Text style={g.nama}>Tautkan Telegram</Text>
-              <Lbl polos>Pantauan dan kabar ada di akun bot.</Lbl>
+              <Text style={g.nama}>Tautkan Telegram (opsional)</Text>
+              <Lbl polos>Kabar tetap jalan lewat HP ini. Telegram jadi cadangan saat HP tidak terdaftar.</Lbl>
             </View>
             <Chip teks="Sambungkan" emas onPress={bukaSambung} />
           </View>
@@ -104,15 +104,15 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
 
       <Lbl gaya={{ marginTop: 2 }}>Pantauan</Lbl>
       <Menu>
-        <Butir ikon="kabar" nama="Pantauan aktif" ket={r === null ? "butuh Telegram" : `${String(r.pantauanAktif)} aktif`} onPress={bukaPantauan} pertama />
+        <Butir ikon="kabar" nama="Pantauan aktif" ket={r === null ? '—' : `${String(r.pantauanAktif)} aktif`} onPress={bukaPantauan} pertama />
         <Butir ikon="kabar" nama="Pantauan baru" ket="formulir" onPress={() => { buka('PantauanBaru'); }} />
-        <Butir ikon="kalender" nama="Kabar otomatis & jam sunyi" ket={sesi === null ? "butuh Telegram" : plus ? "aktif" : "butuh AM+"} onPress={() => { buka('KabarOtomatis'); }} />
+        <Butir ikon="kalender" nama="Kabar otomatis & jam sunyi" ket={sesi === null ? 'masuk dulu' : plus ? 'aktif' : 'butuh AM+'} onPress={() => { buka('KabarOtomatis'); }} />
       </Menu>
 
       <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
       <Menu>
         <Butir ikon="plus" nama="Kelola langganan" ket={plus ? "aktif" : "lewat bot"} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
-        <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? "butuh Telegram" : plus ? "siap" : "butuh AM+"} onPress={() => { buka('CekBanyak'); }} />
+        <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? 'masuk dulu' : plus ? 'siap' : 'butuh AM+'} onPress={() => { buka('CekBanyak'); }} />
         {sesi !== null && (
           <Butir ikon="lainnya" nama={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
             onPress={() => { void hapusSesi(); }} />
@@ -121,8 +121,8 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
 
       <View style={{ flex: 1 }} />
       <Mikro>{sesi === null
-        ? 'Setelan bawaan tersimpan di perangkat ini. Yang lain menunggu sambungan Telegram.'
-        : 'Setelan bawaan tersimpan di perangkat ini; pantauan dan langganan ikut akun Telegram.'}</Mikro>
+        ? 'Setelan bawaan tersimpan di perangkat ini. Yang lain menunggu kamu masuk.'
+        : 'Setelan bawaan tersimpan di perangkat ini; pantauan dan langganan ikut akunmu.'}</Mikro>
     </ScrollView>
   );
 }
@@ -194,10 +194,10 @@ export function LayarKabar({ bukaSambung, bukaPantauan, setelan, bukaChart }: { 
         <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
           <View style={[g.baris, { gap: 8 }]}>
             <View style={{ flex: 1 }}>
-              <Text style={g.nama}>Setup & pantauan menunggu Telegram</Text>
-              <Lbl polos>Tiga pantauan pertama gratis. Sambungkan, dan kabarnya masuk ke sini.</Lbl>
+              <Text style={g.nama}>Setup & pantauan menunggu kamu masuk</Text>
+              <Lbl polos>Tiga pantauan pertama gratis. Masuk, dan kabarnya datang ke HP ini.</Lbl>
             </View>
-            <Chip teks="Sambungkan" emas onPress={bukaSambung} />
+            <Chip teks="Masuk" emas onPress={bukaSambung} />
           </View>
         </Blok>
       )}
@@ -205,8 +205,10 @@ export function LayarKabar({ bukaSambung, bukaPantauan, setelan, bukaChart }: { 
         <Blok rapat gaya={{ paddingHorizontal: 10 }}>
           <View style={[g.baris, { gap: 8 }]}>
             <View style={{ flex: 1 }}>
-              <Text style={g.nama}>Kabar pantauanmu dikirim ke Telegram</Text>
-              <Lbl polos>Salinannya tampil di sini. Atur pantauan dan kabar otomatis dari Pantauan.</Lbl>
+              {/* Sejak 20 Sep kabar DIKIRIM KE HP lewat push; Telegram cuma cadangan
+                  saat HP tidak terdaftar. Kalimatnya mengikuti saklar notifikasi. */}
+              <Text style={g.nama}>{setelan.pushNyala ? 'Kabar pantauanmu dikirim ke HP ini' : 'Notifikasi HP belum nyala'}</Text>
+              <Lbl polos>{setelan.pushNyala ? 'Salinannya tampil di sini. Atur pantauan dan kabar otomatis dari Pantauan.' : 'Nyalakan di Pengaturan → Notifikasi supaya kabar pantauan datang ke HP ini.'}</Lbl>
             </View>
             <Chip teks="Pantauan" onPress={bukaPantauan} />
           </View>

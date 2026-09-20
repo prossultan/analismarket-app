@@ -67,7 +67,7 @@ function PerluSesi({ apa, buka }: { apa: string; buka: () => void }) {
     <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
       <View style={[g.rata, { gap: 8 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={g.pilihJudul}>{apa} ada di akun Telegram-mu</Text>
+          <Text style={g.pilihJudul}>{apa} ada di akunmu</Text>
           <Lbl polos>Sambungkan sekali, dan datanya muncul di sini.</Lbl>
         </View>
         <Chip teks="Sambungkan" emas onPress={buka} />
@@ -370,7 +370,7 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
       <View style={{ flex: 1 }} />
       {galat !== '' && <Text style={g.galat}>{galat}</Text>}
       <Tombol
-        teks={sesi === null ? 'Sambungkan Telegram untuk menyimpan' : sibuk ? 'Menyimpan…' : 'Simpan pantauan'}
+        teks={sesi === null ? 'Masuk untuk menyimpan' : sibuk ? 'Menyimpan…' : 'Simpan pantauan'}
         mati={sibuk}
         onPress={sesi === null ? bukaSambung : simpan}
       />
@@ -462,7 +462,7 @@ export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void })
       )}
 
       <View style={{ flex: 1 }} />
-      {sesi === null && <Tombol teks="Sambungkan Telegram untuk mengaktifkan" onPress={bukaSambung} />}
+      {sesi === null && <Tombol teks="Masuk untuk mengaktifkan" onPress={bukaSambung} />}
     </Wadah>
   );
 }
@@ -598,7 +598,7 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
       </Blok>
 
       <Tombol
-        teks={sesi === null ? 'Sambungkan Telegram' : plus === false ? 'Butuh AnalisMarket+' : sibuk ? 'Memeriksa…' : hasil === null ? 'Jalankan' : 'Jalankan lagi'}
+        teks={sesi === null ? 'Masuk dulu' : plus === false ? 'Butuh AnalisMarket+' : sibuk ? 'Memeriksa…' : hasil === null ? 'Jalankan' : 'Jalankan lagi'}
         mati={plus === false || sibuk || lewat || (sesi !== null && slot === 0)}
         onPress={sesi === null ? bukaSambung : () => { void jalankan(); }}
       />

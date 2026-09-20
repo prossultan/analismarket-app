@@ -76,7 +76,6 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
   const plus = r?.langganan === 'plus';
   const nama = sesi?.akun.nama ?? null;
   const google = sesi?.jenis === 'clerk';
-  const perluTelegram = r !== null && !r.telegramTersambung;
   const angka = (n: number | undefined): string => (n === undefined ? '—' : n.toLocaleString('id-ID'));
 
   return (
@@ -99,7 +98,8 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
         <View style={g.angka}><Text style={g.angkaBesar}>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Text><Text style={g.angkaLabel}>pantauan</Text></View>
         <View style={g.angka}><Text style={g.angkaBesar}>{plus ? angka(r?.sisaHariPlus) : '—'}</Text><Text style={g.angkaLabel}>hari AM+</Text></View>
       </View></Masuk>
-      {perluTelegram && <Tombol teks="Tautkan Telegram — pantauan & kabar ada di bot" jenis="kedua" onPress={() => { buka('Sambung'); }} />}
+      {/* Kabar ke HP lewat push; ajakannya ke saklar notifikasi, bukan ke Telegram. */}
+      {!setelan.pushNyala && <Tombol teks="Nyalakan notifikasi — kabar pantauan datang ke HP ini" jenis="kedua" onPress={() => { buka('Pengaturan'); }} />}
 
       {/* Kisi menu — SEMUA pintu di satu tempat, ikon di atas label. */}
       <Masuk i={1}><View style={g.kisi}>

@@ -92,7 +92,7 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
           kanan={<Saklar on={setelan.pushNyala} ganti={sibukPush ? undefined : (v) => { void gantiPush(v); }} />} />
       </Menu>
       {sebabPush !== null && <Mikro>{sebabPush}</Mikro>}
-      <Mikro>Kabar tetap dikirim ke Telegram seperti biasa. Saklar ini menambahkan salinannya ke HP ini — dan cuma berlaku di HP ini.</Mikro>
+      <Mikro>Saat nyala, kabar pantauan datang ke HP ini. Telegram (kalau tersambung) jadi cadangan saat HP tidak terdaftar. Saklar ini cuma berlaku di HP ini.</Mikro>
 
       <Lbl gaya={{ marginTop: 2 }}>Tampilan</Lbl>
       <Menu>

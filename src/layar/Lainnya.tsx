@@ -45,7 +45,7 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
         <Butir ikon="profil" nama="Profil"
           ket={sesi === null ? 'belum tersambung' : sesi.akun.langganan === 'plus' ? 'AM+' : sesi.akun.nama ?? 'tersambung'}
           ketEmas={sesi?.akun.langganan === 'plus'} onPress={() => { bukaMenu('profil'); }} pertama />
-        <Butir ikon="kabar" nama="Pantauan" ket={sesi === null ? 'butuh Telegram' : sesi.jenis === 'clerk' ? 'tautkan Telegram' : 'aktif'} onPress={() => { bukaMenu('pantauan'); }} />
+        <Butir ikon="kabar" nama="Pantauan" ket={sesi === null ? 'masuk dulu' : 'aktif'} onPress={() => { bukaMenu('pantauan'); }} />
         <Butir ikon="gir" nama="Pengaturan" ket={`${setelan.tf.toLowerCase()} · ${setelan.pasar}`} ketMono onPress={() => { bukaMenu('pengaturan'); }} />
       </Menu>
 
