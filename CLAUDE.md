@@ -693,3 +693,33 @@ menyebut keduanya.
   `hargaPlus` terkompilasi jadi `function(){return null}`. Kalimat lamanya
   masih ADA sebagai string di bundel — cabangnya tidak dibuang penyusun —
   tapi tidak pernah dirender. Yang ditinjau Play app yang berjalan.
+
+## Kait di bawah early return menjatuhkan app (20 Sep)
+
+Layar Chart crash di HP begitu tab Pasar dibuka. Sebabnya satu baris:
+`const temaChart = useTema()` ditaruh di bawah `if (pasar === null) return`.
+Render pertama daftar pasar belum ada, kaitnya dilewati; render kedua daftar
+pasar masuk, kaitnya ikut, dan React menjatuhkan app.
+
+Yang membuatnya lolos sampai ke HP layak diingat:
+
+- **Typecheck dan tujuh penjaga sumber hijau.** Tidak ada satu pun yang
+  bertanya soal urutan kait.
+- **Di web gejalanya cuma layar kosong**, dan harness melaporkannya sebagai
+  `tab Pasar tidak ada` — terbaca seperti masalah harness, dan memang saya
+  baca begitu lalu saya lewati. Pesan harness yang ambigu antara "app mati"
+  dan "harness salah jalan" adalah pesan yang akan disalahartikan lagi.
+
+Penjaganya `skrip/periksa-kait.mjs`, dan penjaga itu sendiri GAGAL DUA KALI
+sebelum benar — dua-duanya bentuk "lulus tanpa memeriksa apa pun":
+
+1. Kedalaman dihitung dari semua kurung, jadi `return` di dalam
+   `if (...) { ... }` terbaca kedalaman 1 dan tidak pernah dianggap early
+   return. Nol temuan.
+2. Badan fungsi diambil dari `{` pertama sesudah nama — padahal hampir tiap
+   komponen di sini menerima props yang didestrukturisasi, jadi yang terambil
+   kurawal PARAMETER. Nol temuan lagi.
+
+Sesudah benar ia menemukan tiga: satu di Chart, dua di Home yang sudah ada
+sebelumnya (`useBelumDibaca` dan `useEffect` di bawah early return `gagal`) —
+artinya Home meledak tiap kali `/api/saya` gagal, dan tidak ada yang tahu.

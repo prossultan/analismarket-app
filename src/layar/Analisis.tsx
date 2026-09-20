@@ -142,6 +142,14 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
     void muatBacaan(pasar.simbol, tf);
   }, [pasar, tf, muatBacaan]);
 
+  /* Chart IKUT TEMA: `?tema=terang` memilih palet terang di chart-embed.
+
+     DI ATAS early return, bukan di dekat pemakaiannya. Kait yang dipanggil
+     sesudah `if (pasar === null) return` dilewati di render pertama dan ikut
+     di render kedua — React menjatuhkan app persis saat tab Pasar dibuka.
+     Dijaga `skrip/periksa-kait.mjs`. */
+  const temaChart = useTema();
+
   if (pasar === null) {
     return gagal === ''
       ? <Memuat teks="Menyiapkan…" />
@@ -152,9 +160,6 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
   const m = bacaan?.mesin.find((x) => x.mesin === aktif) ?? null;
   const u = pasar.ubah24hPersen;
   const warnaUbah = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
-  /* Chart IKUT TEMA: `?tema=terang` memilih palet terang di chart-embed.
-     Sebelumnya kanvas selalu gelap — kotak hitam di halaman krem (audit 20 Sep). */
-  const temaChart = useTema();
   const url = `${ASAL}/chart-embed?pair=${encodeURIComponent(pasar.simbol)}&tf=${encodeURIComponent(tf)}`
     + (aktif === '' ? '' : `&mesin=${encodeURIComponent(aktif)}`)
     + `&alat=${encodeURIComponent([...alat].join(','))}`

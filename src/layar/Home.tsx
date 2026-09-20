@@ -95,6 +95,16 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
   }, [sesi]);
   const { keadaan, segarkan, menyegarkan, ulangi } = useMuat(muat, sesi === null ? 'kosong' : `ada:${sesi.jenis ?? 'mini'}`);
 
+  /* SEMUA KAIT DI ATAS early return. `useBelumDibaca` dan `useEffect` dulu
+     duduk di bawahnya: saat `/api/saya` gagal, layar gagal dirender tanpa
+     kedua kait itu, dan render berikutnya yang berhasil menambahkannya —
+     React menjatuhkan app. Dijaga `skrip/periksa-kait.mjs`. */
+  const r = keadaan.fase === 'ada' ? keadaan.isi : null;
+  const basi = keadaan.fase === 'ada' ? keadaan.basi : null;
+  const plus = r?.langganan === 'plus';
+  const belum = useBelumDibaca();
+  useEffect(() => { if (r !== null && r.kabarBelumDibaca !== undefined) setBelumDibaca(r.kabarBelumDibaca); }, [r]);
+
   if (keadaan.fase === 'gagal') {
     return (
       <View style={[g.akar, { paddingTop: tinggiKepala, paddingBottom: sisaBilah, paddingHorizontal: TALANG, justifyContent: 'center' }]}>
@@ -102,11 +112,6 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
       </View>
     );
   }
-  const r = keadaan.fase === 'ada' ? keadaan.isi : null;
-  const basi = keadaan.fase === 'ada' ? keadaan.basi : null;
-  const plus = r?.langganan === 'plus';
-  const belum = useBelumDibaca();
-  useEffect(() => { if (r !== null && r.kabarBelumDibaca !== undefined) setBelumDibaca(r.kabarBelumDibaca); }, [r]);
   const nama = sesi?.akun.nama ?? null;
   const google = sesi?.jenis === 'clerk';
   const angka = (n: number | undefined): string => (n === undefined ? '—' : n.toLocaleString('id-ID'));
