@@ -79,8 +79,9 @@ export const PALET_GELAP: Palet = {
 /**
  * TEMA TERANG — palet sendiri, bukan pembalikan. Hangat seperti latar mockup
  * Play (krem gading), bukan putih klinis; teks hampir-hitam hangat #14120F.
- * Chart TETAP gelap: kanvas web chart-embed belum bertema, dan kandil di
- * atas kanvas gelap adalah bahasa visual yang sudah dikenal pengguna.
+ * Chart IKUT TERANG sejak 20 Sep: chart-embed menerima `?tema=terang` dan
+ * `chart` di palet ini adalah latar kanvasnya, dipakai WebView sebelum
+ * halaman selesai dimuat supaya tidak ada kilatan hitam.
  */
 export const PALET_TERANG: Palet = {
   latar: '#F6F3EC',
@@ -100,7 +101,7 @@ export const PALET_TERANG: Palet = {
   plusTeks: '#8A6B26',
   plusTerang: '#7A5C1E',
   plusRedup: 'rgba(201,169,97,0.18)',
-  chart: '#0B0B0D',
+  chart: '#F6F3EC',
   turunTepi: 'rgba(214,58,82,0.30)',
   turunLatar: 'rgba(214,58,82,0.08)',
   tirai: 'rgba(20,18,15,0.35)',

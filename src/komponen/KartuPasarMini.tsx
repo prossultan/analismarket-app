@@ -7,10 +7,10 @@
  * Data dari `/api/bacaan` (h1, 48 lilin terakhir) lewat antrean yang sama
  * dengan tab Pasar — jadi kalau tab Pasar sudah memuatnya, kartu ini gratis.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { gayaTema } from '../gaya/tema';
 import { StyleSheet, Text, View } from 'react-native';
-import { ambilBacaan } from '../data/api';
+import { ambilBacaan, ambilPasar } from '../data/api';
 import { useMuat, type Hasil } from '../data/muat';
 import { angka } from '../data/tampil';
 import { LambangPasar } from './LambangPasar';
@@ -34,8 +34,25 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
     return { ok: true, isi: { harga: b.isi.harga, deret, ubahPersen: awal > 0 ? ((b.isi.harga - awal) / awal) * 100 : 0, desimal } };
   }, [simbol, desimal]);
   const { keadaan } = useMuat(muat, simbol);
+  /* HARGA SEKETIKA dari `/api/pasar` — satu panggilan yang sudah dibuat tab
+     Pasar dan Home, jadi ini gratis. Audit 20 Sep: keempat kartu kerangka
+     lebih dari 5 detik karena tiap kartu antre `/api/bacaan` sendiri (1,1 s
+     per giliran), padahal harga dan perubahan 24 jam sudah ada di daftar
+     pasar. Sparkline tetap menunggu bacaan; angkanya tidak perlu. Emas tetap
+     menunggu, harganya `null` di daftar pasar. */
+  const [awal, setAwal] = useState<{ harga: number; ubahPersen: number; desimal: number } | null>(null);
+  useEffect(() => {
+    let hidup = true;
+    void ambilPasar().then((j) => {
+      if (!hidup || !j.ok) return;
+      const p = j.isi.pasar.find((x) => x.simbol === simbol);
+      if (p !== undefined && p.harga !== null) setAwal({ harga: p.harga, ubahPersen: p.ubah24hPersen ?? 0, desimal: p.desimal });
+    });
+    return () => { hidup = false; };
+  }, [simbol]);
   const isi = keadaan.fase === 'ada' ? keadaan.isi : null;
-  const naik = isi === null ? null : isi.ubahPersen >= 0;
+  const angkaKartu = isi ?? awal;
+  const naik = angkaKartu === null ? null : angkaKartu.ubahPersen >= 0;
   const warna = naik === null ? W.teksSamar : naik ? W.naik : W.turun;
   const tinggiGaris = 40;
 
@@ -50,11 +67,11 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
         <Text style={g.nama} numberOfLines={1}>{nama}</Text>
       </View>
       <Text style={g.ticker}>{simbol}</Text>
-      {isi === null
+      {angkaKartu === null
         ? <Rangka lebar="60%" tinggi={besar ? 20 : 14} gaya={{ marginTop: 4 }} />
         /* Isi MEMUDAR MASUK menggantikan rangka — tanpa ini harga muncul
            menyentak di frame yang sama rangkanya hilang. 180 ms, cuma opacity. */
-        : <Animated.View entering={FadeIn.duration(MS.muncul)}><Text style={[g.harga, besar && g.hargaBesar]} numberOfLines={1}>{angka(isi.harga, isi.desimal)}</Text></Animated.View>}
+        : <Animated.View entering={FadeIn.duration(MS.muncul)}><Text style={[g.harga, besar && g.hargaBesar]} numberOfLines={1}>{angka(angkaKartu.harga, angkaKartu.desimal)}</Text></Animated.View>}
       {/* Besar: garis mengisi sisa tinggi kolom di sebelahnya. Kecil: tinggi tetap,
           jadi kartu ditentukan isinya — bukan dipaksa sama tinggi lalu saling menimpa. */}
       <View style={[g.garis, besar ? { flex: 1, minHeight: 90 } : { height: tinggiGaris }]}>
@@ -63,7 +80,7 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
       <View style={g.kaki}>
         {keadaan.fase === 'gagal'
           ? <Text style={[g.ubah, { color: W.teksSamar }]} numberOfLines={1}>tidak terbaca</Text>
-          : <Text style={[g.ubah, { color: warna }]}>{isi === null ? '' : `${naik ? '▲' : '▼'} ${Math.abs(isi.ubahPersen).toFixed(2).replace('.', ',')}%`}</Text>}
+          : <Text style={[g.ubah, { color: warna }]}>{angkaKartu === null ? '' : `${naik ? '▲' : '▼'} ${Math.abs(angkaKartu.ubahPersen).toFixed(2).replace('.', ',')}%`}</Text>}
       </View>
     </Tekan>
   );

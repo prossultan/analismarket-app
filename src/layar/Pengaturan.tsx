@@ -62,7 +62,7 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
       <Lbl>Bawaan saat app dibuka</Lbl>
       <Menu>
         <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono pertama />
-        <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'pertama' : setelan.mesin} ketMono />
+        <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'otomatis' : setelan.mesin} ketMono />
       </Menu>
       <Mikro>Keduanya ikut berubah sendiri saat kamu membuka pasar atau mesin lain — tidak perlu diatur dari sini.</Mikro>
 

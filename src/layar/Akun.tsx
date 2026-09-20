@@ -21,7 +21,7 @@ import {
   type BarisCekBanyak, type DaftarPantauan, type HasilCekBanyak, type JawabanSaya, type KabarOtomatis, type Ringkas, mintaTautanTelegram,
 } from '../data/saya';
 import { bacaSesi, dengarSesi, hapusSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
-import { useMuat, type Hasil } from '../data/muat';
+import { useMuat, type Hasil, type Jenis } from '../data/muat';
 import { volumeRingkas } from '../data/tampil';
 /* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
@@ -91,7 +91,7 @@ function PerluSesi({ apa, buka }: { apa: string; buka: () => void }) {
  * tersambung", dan `PerluSesi` muncul sendiri di tiap layar ini.
  */
 function useAkun<T>(ambil: () => Promise<JawabanSaya<T>>, sesi: Sesi | null): {
-  isi: T | null; sebab: string | null; gagal: boolean; ulangi: () => void;
+  isi: T | null; sebab: string | null; gagal: boolean; jenis: Jenis | null; ulangi: () => void;
 } {
   const bungkus = useCallback(async (): Promise<Hasil<T | null>> => {
     if (sesi === null) return { ok: true, isi: null };
@@ -111,8 +111,43 @@ function useAkun<T>(ambil: () => Promise<JawabanSaya<T>>, sesi: Sesi | null): {
        409 perlu-telegram, pita sebabnya tampil, dan blok timeframe tetap
        berkedip seolah sedang memuat. */
     gagal: keadaan.fase === 'gagal',
+    /* JENISNYA ikut, bukan cuma kalimatnya: layar berbayar perlu membedakan
+       "butuh AM+" (ajakan) dari "jaringan putus" (galat). Mencocokkan teks
+       kalimatnya adalah cara yang pecah begitu kalimat server diubah. */
+    jenis: keadaan.fase === 'gagal' ? keadaan.jenis : null,
     ulangi,
   };
+}
+
+/**
+ * KARTU BUTUH AM+ — pengganti isi layar berbayar untuk akun gratis.
+ *
+ * Audit 20 Sep: Kabar otomatis untuk akun gratis menampilkan "Tidak
+ * terbaca", jam sunyi "—", dan "Daftarnya tidak bisa dimuat, Coba lagi".
+ * Semuanya benar secara teknis (server menjawab 402), tapi bagi yang
+ * belum berlangganan itu terbaca sebagai app rusak, bukan fitur berbayar.
+ * Yang ditampilkan sekarang: apa yang dibuka fitur ini, harganya dari satu
+ * sumber, dan satu tombol ke tab PLUS+. Tanpa "Coba lagi" — mengulang
+ * permintaan tidak akan mengubah jawabannya.
+ */
+function KartuButuhPlus({ apa, manfaat, bukaPlus }: { apa: string; manfaat: string[]; bukaPlus: () => void }) {
+  return (
+    <Blok emas>
+      <Text style={g.cap}>AnalisMarket+</Text>
+      <Text style={[g.pilihJudul, { marginTop: 4 }]}>{apa} bagian dari AnalisMarket+</Text>
+      <View style={{ marginTop: 8, gap: 5 }}>
+        {manfaat.map((m) => (
+          <View key={m} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
+            <Text style={{ color: W.plusTeks, fontSize: H.nilai, lineHeight: 18 }}>✓</Text>
+            <Text style={[g.ket, { flex: 1 }]}>{m}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={[g.harga, { marginTop: 10 }]}>{rupiah(SATU_BULAN.hargaRp)} <Text style={g.dari}>/ {String(SATU_BULAN.bulan * 30)} hari</Text></Text>
+      <View style={{ marginTop: 10 }}><Tombol teks="Lihat AnalisMarket+" jenis="emas" onPress={bukaPlus} /></View>
+      <Mikro>Langganan dibeli lewat bot Telegram. App ini tidak memproses pembayaran.</Mikro>
+    </Blok>
+  );
 }
 
 const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: number };
@@ -390,7 +425,7 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
       <Menu>
         <Butir simbol={pasar} nama={pasar} ket="dari layar Pasar" pertama />
         <Butir ikon="kalender" nama="Timeframe" ket={tf.toLowerCase()} ketMono />
-        <Butir ikon="analisis" nama="Mesin" ket={mesin === '' ? 'pertama' : mesin} ketMono />
+        <Butir ikon="analisis" nama="Mesin" ket={mesin === '' ? 'otomatis' : mesin} ketMono />
       </Menu>
       <Mikro>Ganti pasar, timeframe, atau mesin di layar Pasar, lalu kembali ke sini.</Mikro>
 
@@ -426,10 +461,25 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
 }
 
 /* ══ 24 · KABAR OTOMATIS ════════════════════════════════════════════════ */
-export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void }) {
+export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () => void; bukaPlus: () => void }) {
   const sesi = useSesi();
-  const { isi: d, sebab, gagal, ulangi: muat } = useAkun(ambilKabarOtomatis, sesi);
+  const { isi: d, sebab, gagal, jenis, ulangi: muat } = useAkun(ambilKabarOtomatis, sesi);
   const [sibuk, setSibuk] = useState('');
+
+  /* Akun gratis: server menjawab 402 `perlu-plus`. Itu bukan galat, itu
+     harga — jadi layarnya ajakan, bukan rangka yang gagal dimuat. */
+  if (sesi !== null && jenis === 'plus') {
+    return (
+      <Wadah>
+        <KartuButuhPlus apa="Kabar otomatis" bukaPlus={bukaPlus} manfaat={[
+          'Pantauan berjalan sendiri di timeframe pilihanmu, tanpa membuka app',
+          'Jam sunyi: kabar dicatat, tidak dibunyikan, dikirim saat jam sunyi selesai',
+          'Kabar ke HP ini lewat notifikasi; Telegram jadi cadangan',
+        ]} />
+        <View style={{ flex: 1 }} />
+      </Wadah>
+    );
+  }
 
   return (
     <Wadah>
@@ -516,7 +566,7 @@ export function LayarKabarOtomatis({ bukaSambung }: { bukaSambung: () => void })
 
 
 /* ══ 26 · CEK BANYAK PASAR ══════════════════════════════════════════════ */
-export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; tf: string }) {
+export function LayarCekBanyak({ bukaSambung, bukaPlus, tf }: { bukaSambung: () => void; bukaPlus: () => void; tf: string }) {
   const sesi = useSesi();
   const [pilih, setPilih] = useState<string[]>([]);
   const [daftar, setDaftar] = useState<Pasar[]>([]);
@@ -585,10 +635,11 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
       {(sebab ?? sebabPasar) !== null && <PitaBasi kalimat={(sebab ?? sebabPasar) ?? ''} />}
       {sesi === null && <PerluSesi apa="Cek banyak pasar" buka={bukaSambung} />}
       {sesi !== null && plus === false && (
-        <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
-          <Text style={g.pilihJudul}>Cek banyak pasar bagian dari AnalisMarket+</Text>
-          <Lbl polos>Akunmu sekarang paket gratis. Langganan dibeli lewat bot.</Lbl>
-        </Blok>
+        <KartuButuhPlus apa="Cek banyak pasar" bukaPlus={bukaPlus} manfaat={[
+          `Sampai ${String(MAKS_SLOT_CEK_BANYAK)} pasar diperiksa sekaligus, kelima mesin, satu timeframe`,
+          'Hasilnya satu tabel: pasar mana yang setup, mana yang masih pantau',
+          'Dijalankan di server, jadi HP tidak perlu menunggu satu-satu',
+        ]} />
       )}
 
       <Blok>
@@ -609,7 +660,10 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
         <View style={{ flex: 1 }}><Lbl>Slot</Lbl><Nil gaya={{ marginTop: 2 }}>{String(slot)} / {String(MAKS_SLOT_CEK_BANYAK)}</Nil></View>
       </View>
 
-      <Blok gaya={{ flex: 1 }}>
+      {/* Kartu HASIL cuma setinggi isinya sebelum dijalankan. Audit 20 Sep:
+          `flex: 1` membuatnya memenuhi layar dalam keadaan kosong, dan
+          kartu kosong setinggi layar terbaca sebagai layar yang gagal. */}
+      <Blok gaya={hasil === null ? undefined : { flex: 1 }}>
         {hasil === null ? (
           <>
             <Lbl>Hasil</Lbl>
@@ -644,6 +698,7 @@ export function LayarCekBanyak({ bukaSambung, tf }: { bukaSambung: () => void; t
         )}
       </Blok>
 
+      {hasil === null && <View style={{ flex: 1 }} />}
       <Tombol
         teks={sesi === null ? 'Masuk dulu' : plus === false ? 'Butuh AnalisMarket+' : sibuk ? 'Memeriksa…' : hasil === null ? 'Jalankan' : 'Jalankan lagi'}
         mati={plus === false || sibuk || lewat || (sesi !== null && slot === 0)}
@@ -660,8 +715,9 @@ export function LayarBerlangganan() {
   const { isi: r, sebab } = useAkun(ambilRingkas, sesi);
 
   const aktif = r?.langganan === 'plus';
-  const sampai = r !== null && aktif
-    ? new Date(Date.now() + r.sisaHariPlus * 86_400_000).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+  /* Dari cap waktu server — lihat catatan di AmPlus.tsx. */
+  const sampai = r !== null && aktif && r.plusBerakhirPada !== null
+    ? new Date(r.plusBerakhirPada * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
 
   return (

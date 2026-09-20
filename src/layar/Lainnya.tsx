@@ -57,16 +57,24 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
         <Butir ikon="lainnya" nama="Tentang AnalisMarket" ket={`v${versi}`} ketMono onPress={() => { bukaMenu('tentang'); }} />
       </Menu>
 
-      <Blok gaya={{ flex: 1, justifyContent: 'center' }}>
+      {/* Kartu merek SETINGGI ISINYA. `flex: 1` membuatnya 460 px dengan isi
+          200 px (audit 20 Sep). Baris umur data cuma tampil kalau ada angkanya;
+          tiga garis "—" terbaca sebagai sesuatu yang rusak. */}
+      <Blok>
         <Merek sub={`v${versi} · Binance & Twelve Data`} />
-        <Lbl gaya={{ marginTop: 10 }}>Data terakhir masuk</Lbl>
-        <View style={g.umur}>
-          <View><Nil>{jam(umur?.harga ?? null)}</Nil><Lbl polos>Harga</Lbl></View>
-          <View><Nil>{jam(umur?.lilin ?? null)}</Nil><Lbl polos>Lilin</Lbl></View>
-          <View><Nil>{jam(umur?.kalender ?? null)}</Nil><Lbl polos>Kalender</Lbl></View>
-        </View>
+        {(umur?.harga ?? umur?.lilin ?? umur?.kalender ?? null) !== null && (
+          <>
+            <Lbl gaya={{ marginTop: 10 }}>Data terakhir masuk</Lbl>
+            <View style={g.umur}>
+              <View><Nil>{jam(umur?.harga ?? null)}</Nil><Lbl polos>Harga</Lbl></View>
+              <View><Nil>{jam(umur?.lilin ?? null)}</Nil><Lbl polos>Lilin</Lbl></View>
+              <View><Nil>{jam(umur?.kalender ?? null)}</Nil><Lbl polos>Kalender</Lbl></View>
+            </View>
+          </>
+        )}
       </Blok>
 
+      <View style={{ flex: 1 }} />
       <Mikro>Analisa teknikal otomatis. Bukan nasihat investasi.</Mikro>
     </ScrollView>
   );

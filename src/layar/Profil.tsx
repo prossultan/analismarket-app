@@ -10,9 +10,9 @@
  */
 import { useCallback, useState } from 'react';
 import { gayaTema } from '../gaya/tema';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilBacaan, ambilJadwal, syaratWajib, type Mesin, type Rilis } from '../data/api';
-import { ambilRingkas, type Ringkas } from '../data/saya';
+import { ambilRingkas, hapusAkun, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
 import { hapusSesi } from '../data/sesi';
 import { useSesi } from './Akun';
@@ -25,6 +25,29 @@ import type { Setelan } from '../data/simpan';
 type Props = { setelan: Setelan; bukaSambung: () => void; bukaPengaturan: () => void; bukaPantauan: () => void; buka: (ke: 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Berlangganan') => void };
 
 export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan, buka }: Props) {
+  /* HAPUS AKUN — syarat toko (Play & App Store) untuk app yang punya akun.
+     Dua langkah: konfirmasi sistem, lalu permintaan ke server. Sesudah
+     berhasil sesi dibuang dan gerbang kembali ke layar masuk. */
+  const [sibukHapus, setSibukHapus] = useState(false);
+  const [galatHapus, setGalatHapus] = useState('');
+  const jalankanHapus = async (): Promise<void> => {
+    setSibukHapus(true); setGalatHapus('');
+    const j = await hapusAkun();
+    if (!j.ok) { setGalatHapus(j.kalimat); setSibukHapus(false); return; }
+    await hapusSesi();
+  };
+  const konfirmasiHapus = (): void => {
+    const pesan = 'Akun, sambungan, pantauan, kabar, perangkat, dan setelan dihapus seketika dan tidak bisa dikembalikan. Catatan pembayaran disimpan tanpa identitas selama diwajibkan hukum.';
+    if (Platform.OS === 'web') {
+      const tanya = (globalThis as { confirm?: (m: string) => boolean }).confirm;
+      if (tanya === undefined || tanya(`Hapus akun?\n\n${pesan}`)) void jalankanHapus();
+      return;
+    }
+    Alert.alert('Hapus akun?', pesan, [
+      { text: 'Batal', style: 'cancel' },
+      { text: 'Hapus akun', style: 'destructive', onPress: () => { void jalankanHapus(); } },
+    ]);
+  };
   const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const sesi = useSesi();
@@ -85,7 +108,8 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
             <Nil besar>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Nil>
             <Lbl polos>Pantauan</Lbl>
           </View>
-          <View style={g.sel}><Nil besar>{plus ? angka(r?.sisaHariPlus) : '—'}</Nil><Lbl polos>Hari AM+</Lbl></View>
+          {/* Akun gratis: kata, bukan garis. "— Hari AM+" terbaca sebagai angka yang gagal dimuat (audit 20 Sep). */}
+          <View style={g.sel}><Nil besar>{plus ? angka(r?.sisaHariPlus) : 'Gratis'}</Nil><Lbl polos>{plus ? 'Hari AM+' : 'Paket'}</Lbl></View>
         </View>
         {/* Mockup: tombol sambung hanya saat BELUM masuk; putus sambungan
             adalah baris di bagian Akun, bukan tombol besar di kartu. */}
@@ -100,7 +124,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
       <Menu>
         <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono onPress={bukaPengaturan} pertama />
         <Butir ikon="kalender" nama="Timeframe" ket={setelan.tf.toLowerCase()} ketMono onPress={bukaPengaturan} />
-        <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'pertama' : setelan.mesin} ketMono onPress={bukaPengaturan} />
+        <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'otomatis' : setelan.mesin} ketMono onPress={bukaPengaturan} />
       </Menu>
 
       <Lbl gaya={{ marginTop: 2 }}>Pantauan</Lbl>
@@ -118,7 +142,12 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
           <Butir ikon="lainnya" nama={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
             onPress={() => { void hapusSesi(); }} />
         )}
+        {sesi !== null && (
+          <Butir ikon="lainnya" nama={sibukHapus ? 'Menghapus akun…' : 'Hapus akun'} ket="permanen"
+            onPress={sibukHapus ? undefined : konfirmasiHapus} />
+        )}
       </Menu>
+      {galatHapus !== '' && <Mikro>{galatHapus}</Mikro>}
 
       <View style={{ flex: 1 }} />
       <Mikro>{sesi === null

@@ -16,6 +16,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      profil:
+        description: "pratinjau = APK untuk tautan unduhan · produksi = AAB untuk Google Play"
+        type: choice
+        default: pratinjau
+        options: [pratinjau, produksi]
 
 concurrency:
   group: build-android-${{ github.ref }}
@@ -63,29 +69,47 @@ jobs:
           echo "project yang dituju (pemilik harus polosan):"
           npx --yes eas-cli@latest project:info
 
-      - name: Build APK (eas --local, kredensial dari EAS)
+      # Dua profil, satu alur. `pratinjau` = APK untuk tautan unduhan (push ke
+      # main dan bawaan tombol Run). `produksi` = AAB untuk Google Play, cuma
+      # lewat tombol Run: Play menolak APK, dan AAB dipecah Play jadi ~30 MB
+      # per HP alih-alih 54 MB dua ABI sekaligus.
+      - name: Tentukan profil
+        id: profil
+        run: |
+          P="${{ github.event.inputs.profil || 'pratinjau' }}"
+          if [ "$P" = "produksi" ]; then
+            echo "profil=produksi" >> "$GITHUB_OUTPUT"; echo "berkas=AnalisMarket.aab" >> "$GITHUB_OUTPUT"
+          else
+            echo "profil=pratinjau" >> "$GITHUB_OUTPUT"; echo "berkas=AnalisMarket.apk" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build (eas --local, kredensial dari EAS)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_SKIP_AUTO_FINGERPRINT: '1'
         run: |
-          npx --yes eas-cli@latest build --platform android --profile pratinjau \
-            --local --non-interactive --output "$GITHUB_WORKSPACE/AnalisMarket.apk"
+          npx --yes eas-cli@latest build --platform android --profile "${{ steps.profil.outputs.profil }}" \
+            --local --non-interactive --output "$GITHUB_WORKSPACE/${{ steps.profil.outputs.berkas }}"
 
-      # Penjaga APK memeriksa artefak SUNGGUHAN: izin, skema, harga.
+      # Penjaga APK memeriksa artefak SUNGGUHAN: izin, skema, harga. AAB
+      # diperiksa lewat APK yang ditarik `bundletool`? Belum — AAB cuma
+      # diunggah sebagai artefak; penjaganya sudah berjalan di APK pratinjau
+      # dari commit yang sama.
       - name: Penjaga APK
+        if: steps.profil.outputs.profil == 'pratinjau'
         run: node skrip/periksa-apk.mjs "$GITHUB_WORKSPACE/AnalisMarket.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AnalisMarket-${{ github.sha }}
-          path: AnalisMarket.apk
+          name: AnalisMarket-${{ steps.profil.outputs.profil }}-${{ github.sha }}
+          path: ${{ steps.profil.outputs.berkas }}
           retention-days: 14
 
       # SATU rilis bergulir 'pratinjau': aset lama diganti, tautannya tetap.
       # Artefak Actions butuh token untuk diunduh; aset Release di repo publik
       # tidak — itu yang membuat VPS bisa menariknya tanpa kredensial GitHub.
       - name: Terbitkan ke Release 'pratinjau'
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && steps.profil.outputs.profil == 'pratinjau'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

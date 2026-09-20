@@ -104,11 +104,13 @@ export function LayarKabar({ bukaPasarDi }: { bukaPasarDi: (pair: string, tf: st
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}
       onScroll={diGulir} scrollEventThrottle={200}>
       {sebab !== null && <PitaBasi kalimat={sebab} />}
+      {/* Saringan dan "Tandai semua dibaca" SATU baris: tombol yang sendirian
+          di baris kedua menyisakan 40 px kosong (audit 20 Sep). */}
       <View style={g.atas}>
-        <View style={g.chips}>
+        <View style={[g.chips, { flex: 1 }]}>
           {SARING.map((s) => <Chip key={s.k} teks={s.t} on={saring === s.k} onPress={() => { setSaring(s.k); }} />)}
         </View>
-        {adaBelum && <View style={{ alignItems: 'flex-end' }}><Chip teks="Tandai semua dibaca" emas onPress={() => { void semuaDibaca(); }} /></View>}
+        {adaBelum && <Chip teks="Tandai dibaca" emas onPress={() => { void semuaDibaca(); }} />}
       </View>
 
       {daftar === null && (
@@ -159,7 +161,7 @@ export function LayarKabar({ bukaPasarDi }: { bukaPasarDi: (pair: string, tf: st
 
 const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  atas: { gap: 8 },
+  atas: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   chips: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   kartu: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, overflow: 'hidden' },
   baris: { flexDirection: 'row', gap: 11, padding: 12, alignItems: 'flex-start', minHeight: SENTUH + 14 },

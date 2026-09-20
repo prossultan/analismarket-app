@@ -14,11 +14,13 @@ import { gayaTema } from '../gaya/tema';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
-import { ambilRingkas, type Ringkas } from '../data/saya';
+import { ambilKabarMasuk, ambilRingkas, type KabarMasuk, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
 import { useSesi } from './Akun';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
 import { Kosong, Lbl, Mikro, PitaBasi, Tombol } from '../komponen/mockup';
+import { Ikon as IkonKabar } from '../komponen/Ikon';
+import { jamWib } from '../data/tampil';
 import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 import { KartuPasarMini } from '../komponen/KartuPasarMini';
@@ -53,6 +55,33 @@ function Masuk({ i, children }: { i: number; children: React.ReactNode }) {
      produk — cuma harness — jadi di sana tanpa animasi masuk. */
   if (Platform.OS === 'web') return <View>{children}</View>;
   return <Animated.View entering={FadeInDown.duration(280).delay(i * JEDA_URUT)}>{children}</Animated.View>;
+}
+
+/**
+ * KABAR TERAKHIR — jawaban untuk "ada apa hari ini". Dimuat ulang tiap
+ * lencana belum-dibaca berubah (`kunci`), jadi kabar yang baru masuk lewat
+ * push langsung tampil di sini tanpa polling tambahan.
+ */
+function KartuKabarTerakhir({ kunci, kosong, onPress }: { kunci: number; kosong: React.ReactElement; onPress: () => void }) {
+  const muat = useCallback(async (): Promise<Hasil<KabarMasuk | null>> => {
+    const j = await ambilKabarMasuk(null);
+    if (!j.ok) return j;
+    return { ok: true, isi: j.isi.kabar[0] ?? null };
+  }, []);
+  const { keadaan } = useMuat(muat, `kabar-terakhir:${String(kunci)}`);
+  if (keadaan.fase !== 'ada' || keadaan.isi === null) return kosong;
+  const k = keadaan.isi;
+  return (
+    <Tekan onPress={onPress} accessibilityLabel="Buka kabar" gaya={g.kabarTerakhir} skala={0.97}>
+      <View style={g.kabarKepala}>
+        <IkonKabar nama={k.jenis === 'sistem' ? 'gir' : k.jenis === 'promo' || k.jenis === 'otomatis' ? 'plus' : 'kabar'} warna={W.plusTeks} ukuran={14} />
+        <Text style={g.kabarCap}>Kabar terakhir · {jamWib(Math.floor(new Date(k.dibuat).getTime() / 1000))}</Text>
+        {!k.dibaca && <View style={g.kabarTitik} />}
+      </View>
+      <Text style={g.kabarJudul} numberOfLines={1}>{k.judul}</Text>
+      <Text style={g.kabarIsi} numberOfLines={2}>{k.isi}</Text>
+    </Tekan>
+  );
 }
 
 export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Props) {
@@ -100,7 +129,8 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
           </Text>
         </View>
         <View style={g.angka}><Text style={g.angkaBesar}>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Text><Text style={g.angkaLabel}>pantauan</Text></View>
-        <View style={g.angka}><Text style={g.angkaBesar}>{plus ? angka(r?.sisaHariPlus) : '—'}</Text><Text style={g.angkaLabel}>hari AM+</Text></View>
+        {/* Akun gratis: "Gratis", bukan "— hari AM+" (garis terbaca sebagai angka yang gagal dimuat). */}
+        <View style={g.angka}><Text style={g.angkaBesar}>{plus ? angka(r?.sisaHariPlus) : 'Gratis'}</Text><Text style={g.angkaLabel}>{plus ? 'hari AM+' : 'paket'}</Text></View>
       </View></Masuk>
       {/* Kabar ke HP lewat push; ajakannya ke saklar notifikasi, bukan ke Telegram. */}
       {!setelan.pushNyala && <Tombol teks="Nyalakan notifikasi — kabar pantauan datang ke HP ini" jenis="kedua" onPress={() => { buka('Pengaturan'); }} />}
@@ -134,7 +164,13 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
         </View>
       </View></Masuk>
 
-      <Masuk i={3}><KartuPlus plus={plus} sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} /></Masuk>
+      {/* PELANGGAN: kabar terakhir, bukan kartu AM+ kedua. Kartu sapaan sudah
+          menyebut "AnalisMarket+ · 23 hari lagi"; mengulangnya di bawah cuma
+          menghabiskan satu layar (audit 20 Sep). Yang belum berlangganan
+          tetap melihat kartu jualan. */}
+      <Masuk i={3}>{plus && sesi !== null
+        ? <KartuKabarTerakhir kunci={belum} kosong={<KartuPlus plus sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />} onPress={() => { bukaTab('kabar'); }} />
+        : <KartuPlus plus={plus} sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />}</Masuk>
 
       <Mikro>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Mikro>
     </ScrollView>
@@ -142,6 +178,12 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
 }
 
 const g = gayaTema((W) => StyleSheet.create({
+  kabarTerakhir: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, padding: 14, gap: 4 },
+  kabarKepala: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  kabarCap: { color: W.plusTeks, fontSize: H.label, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', flex: 1 },
+  kabarTitik: { width: 8, height: 8, borderRadius: 4, backgroundColor: W.plus },
+  kabarJudul: { color: W.teksKuat, fontSize: H.nama, fontWeight: '700', marginTop: 4 },
+  kabarIsi: { color: W.teks, fontSize: H.nilai, lineHeight: 19 },
   akar: { flex: 1, backgroundColor: W.latar },
   akun: { borderRadius: R.kartu + 2, paddingVertical: 12, paddingHorizontal: 13, overflow: 'hidden', borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   akunPlus: { borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.kartu },

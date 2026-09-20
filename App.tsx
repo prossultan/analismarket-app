@@ -119,6 +119,10 @@ export type DaftarTumpukan = {
   Berlangganan: undefined;
 };
 type Nav = NativeStackNavigationProp<DaftarTumpukan>;
+/** Dari layar bertumpuk ke TAB: nama rute yang tidak dikenal tumpukan naik ke navigator induknya. */
+function keTab(navigation: unknown, tab: 'amplus' | 'kabar' | 'lainnya' | 'pasar' | 'home'): void {
+  (navigation as { navigate: (nama: string) => void }).navigate(tab);
+}
 
 /** Kunci menu → nama layar. Kunci tak dikenal TIDAK membuka apa pun. */
 const KE_LAYAR: Record<KunciMenu, keyof DaftarTumpukan> = {
@@ -211,10 +215,10 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
         )}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="KabarOtomatis" options={{ title: 'Kabar otomatis', headerTitle: () => <JudulKepala judul="Kabar otomatis" sub="AnalisMarket+" /> }}>
-        {({ navigation }) => <LayarKabarOtomatis bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+        {({ navigation }) => <LayarKabarOtomatis bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} bukaPlus={() => { keTab(navigation, 'amplus'); }} />}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="CekBanyak" options={{ title: 'Cek banyak pasar', headerTitle: () => <JudulKepala judul="Cek banyak pasar" sub="AnalisMarket+" /> }}>
-        {({ navigation }) => <LayarCekBanyak tf={setelan.tf} bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} />}
+        {({ navigation }) => <LayarCekBanyak tf={setelan.tf} bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }} bukaPlus={() => { keTab(navigation, 'amplus'); }} />}
       </Tumpukan.Screen>
       <Tumpukan.Screen name="Berlangganan" component={LayarBerlangganan} options={{ title: 'Berlangganan', headerTitle: () => <JudulKepala judul="Berlangganan" sub="AnalisMarket+" /> }} />
     </>

@@ -17,8 +17,8 @@
  * jalan keluar demi persis dengan gambar berarti app yang tidak bisa dipakai.
  */
 import { useEffect, useState } from 'react';
-import { gayaTema } from '../gaya/tema';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { gayaTema, useTema } from '../gaya/tema';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Kaca } from '../komponen/Kaca';
@@ -56,6 +56,12 @@ const UNTUNG = [
 export function LayarSambutan() {
   const { top, bottom } = useSafeAreaInsets();
   const [tahap, setTahap] = useState<'luncur' | 'masuk' | 'telegram'>('luncur');
+  const terang = useTema() === 'terang';
+  /* Peluncuran yang bertahan lebih dari 1,5 detik (jaringan pelan, Clerk
+     lambat) dapat indikator — layar diam tanpa tanda terbaca sebagai app
+     yang macet (audit 20 Sep: 4,6 detik tanpa satu pun gerakan). */
+  const [lama, setLama] = useState(false);
+  useEffect(() => { const t = setTimeout(() => { setLama(true); }, 1500); return () => { clearTimeout(t); }; }, []);
 
   /* Peluncuran: 1,4 detik, lalu ke layar masuk. Bukan menunggu ketukan —
      layar peluncuran yang menuntut ketukan cuma menunda. */
@@ -75,6 +81,7 @@ export function LayarSambutan() {
         <Image source={LOGO} style={g.logoBesar} accessibilityIgnoresInvertColors />
         <Text style={g.nama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
         <Text style={g.tagline}>Analisa teknikal otomatis untuk 131 pasar.{'\n'}Angka mentah, dan kamu yang memutuskan.</Text>
+        {lama && <ActivityIndicator color={W.teksSamar} style={{ marginTop: 22 }} />}
         <Text style={[g.kaki, { bottom: bottom + 24 }]}>BUKAN NASIHAT INVESTASI</Text>
       </View>
     );
@@ -91,7 +98,7 @@ export function LayarSambutan() {
           { kode: 'fibo…', kata: '', angka: '4/9', titik: 'polos' },
         ]} />
         <View style={g.chartBalik}>
-          <ChartTertanam url={`${ASAL}/chart-embed?pair=BTCUSDT&tf=h1&alat=volume,zona`} asal={ASAL}
+          <ChartTertanam url={`${ASAL}/chart-embed?pair=BTCUSDT&tf=h1&alat=volume,zona${terang ? '&tema=terang' : ''}`} asal={ASAL}
             suntik="true;" latar={W.chart} onMuat={() => undefined} onPesan={() => undefined} />
         </View>
         <BarisPasar simbol="XAU/USD" label="Emas spot" harga="4.351,04" ubah="+0,62%" ubahWarna={W.naik} pertama />

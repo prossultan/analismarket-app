@@ -159,6 +159,16 @@ export const daftarkanPerangkat = (token: string, platform: 'android' | 'ios'): 
 export const cabutPerangkat = (token: string): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/perangkat/cabut', 'POST', { token });
 
+/**
+ * HAPUS AKUN — syarat Google Play dan App Store untuk app yang punya akun.
+ * Server menghapus akun, sambungan, pantauan, kabar, perangkat, dan setelan
+ * seketika; catatan pembayaran dilepas dari identitasnya, bukan dihapus.
+ * `yakin: true` wajib: permintaan tanpa itu ditolak, jadi satu ketukan
+ * yang meleset tidak pernah cukup.
+ */
+export const hapusAkun = (): Promise<JawabanSaya<{ status: string }>> =>
+  panggil('/api/saya/hapus', 'POST', { yakin: true });
+
 /* ── TAUTKAN TELEGRAM KE AKUN INI (sesi Google) ─────────────────────────── */
 
 /**

@@ -50,8 +50,12 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
   const sebab = keadaan.fase === 'gagal' ? keadaan.kalimat : keadaan.fase === 'ada' ? keadaan.basi : null;
   const menunggu = sesi !== null && keadaan.fase === 'memuat';
   const plus = r?.langganan === 'plus';
-  const sampai = plus && r !== null
-    ? new Date(Date.now() + r.sisaHariPlus * 86_400_000).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+  /* Tanggal dari CAP WAKTU server, bukan `sekarang + sisaHari`: dua layar
+     yang menghitung sendiri sempat menampilkan 12 dan 13 Oktober untuk
+     langganan yang sama (audit 20 Sep). `plusBerakhirPada` sudah dikirim
+     server; `sisaHariPlus` cukup untuk "23 hari lagi". */
+  const sampai = plus && r !== null && r.plusBerakhirPada !== null
+    ? new Date(r.plusBerakhirPada * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
@@ -73,7 +77,7 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
         ) : plus ? (
           <>
             <Text style={g.judul}>Aktif · {String(r?.sisaHariPlus ?? 0)} hari lagi</Text>
-            <Text style={g.harga}>{sampai ?? '—'} <Text style={g.perBulan}>berlaku sampai</Text></Text>
+            <Text style={g.harga}><Text style={g.perBulan}>Berlaku sampai </Text>{sampai ?? '—'}</Text>
           </>
         ) : (
           <>

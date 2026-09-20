@@ -21,7 +21,7 @@
  * mesin lain saat membaca menukar bacaannya di tempat.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { gayaTema } from '../gaya/tema';
+import { gayaTema, useTema } from '../gaya/tema';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
@@ -152,9 +152,13 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
   const m = bacaan?.mesin.find((x) => x.mesin === aktif) ?? null;
   const u = pasar.ubah24hPersen;
   const warnaUbah = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
+  /* Chart IKUT TEMA: `?tema=terang` memilih palet terang di chart-embed.
+     Sebelumnya kanvas selalu gelap — kotak hitam di halaman krem (audit 20 Sep). */
+  const temaChart = useTema();
   const url = `${ASAL}/chart-embed?pair=${encodeURIComponent(pasar.simbol)}&tf=${encodeURIComponent(tf)}`
     + (aktif === '' ? '' : `&mesin=${encodeURIComponent(aktif)}`)
-    + `&alat=${encodeURIComponent([...alat].join(','))}`;
+    + `&alat=${encodeURIComponent([...alat].join(','))}`
+    + (temaChart === 'terang' ? '&tema=terang' : '');
 
   const gantiAlat = (a: string): void => {
     setAlat((s) => { const n = new Set(s); if (n.has(a)) n.delete(a); else n.add(a); return n; });
