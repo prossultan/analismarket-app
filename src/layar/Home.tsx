@@ -10,7 +10,7 @@
  * bacaan tiap dibuka; sekarang kedua permintaan itu milik tab Pasar.
  */
 import { useCallback } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilRingkas, type Ringkas } from '../data/saya';
@@ -24,7 +24,7 @@ import { KartuPasarMini } from '../komponen/KartuPasarMini';
 import { KartuPlus } from '../komponen/KartuPlus';
 import { Tekan } from '../komponen/Tekan';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { EASE_KELUAR, JEDA_URUT } from '../gaya/gerak';
+import { JEDA_URUT } from '../gaya/gerak';
 
 export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
 type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya' | 'kabar') => void; bukaPasarDi: (simbol: string) => void };
@@ -46,7 +46,11 @@ function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
 
 /** Urutan masuk isi Home — hanya saat layar lahir (tab dibekukan sesudahnya), bukan tiap pindah tab. */
 function Masuk({ i, children }: { i: number; children: React.ReactNode }) {
-  return <Animated.View entering={FadeInDown.duration(280).delay(i * JEDA_URUT).easing(EASE_KELUAR)}>{children}</Animated.View>;
+  /* Di web animasi layout Reanimated dengan easing kustom membuat Home
+     merender PUTIH total tanpa galat (harness 20 Sep). Web bukan target
+     produk — cuma harness — jadi di sana tanpa animasi masuk. */
+  if (Platform.OS === 'web') return <View>{children}</View>;
+  return <Animated.View entering={FadeInDown.duration(280).delay(i * JEDA_URUT)}>{children}</Animated.View>;
 }
 
 export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Props) {

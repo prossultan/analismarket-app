@@ -7,6 +7,7 @@
  * harus ditanya ke perangkat.
  */
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { Platform } from 'react-native';
 import { ANGKAT_BILAH, TINGGI_BILAH } from './token';
 
@@ -23,7 +24,7 @@ export function useSisaBilah(): number {
  * — angka yang sama dengan yang digambar kepala native.
  */
 export function useTinggiKepala(): number {
-  const h = useTinggiKepala();
+  const h = useHeaderHeight();
   const { top } = useSafeAreaInsets();
   if (h > 0) return h;
   return top + (Platform.OS === 'ios' ? 44 : 56);
