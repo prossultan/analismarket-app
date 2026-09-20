@@ -113,7 +113,7 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
       <View style={{ flex: 1 }} />
       <Blok>
         <Lbl>Di mana setelan ini disimpan</Lbl>
-        <Mikro>Di perangkat ini saja. Setelan per-akun butuh identitas yang belum lepas dari Telegram, jadi pilihanmu tidak ikut pindah kalau kamu ganti HP.</Mikro>
+        <Mikro>Di perangkat ini saja — termasuk tema dan notifikasi. Pantauan dan langganan ikut akunmu, jadi tetap ada saat ganti HP.</Mikro>
       </Blok>
     </ScrollView>
   );

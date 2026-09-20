@@ -587,3 +587,29 @@ Tiga jebakan tipe yang memakan waktu:
 
 Nuansa gerak TIDAK bisa dinilai dari potret web: pegas, momentum, dan
 interupsi cuma terasa di build rilis di HP paling lambat yang didukung.
+
+## Tema terang (20 Sep) — cara kerjanya, dan jebakan yang menghabiskan waktu
+
+`StyleSheet.create` dievaluasi saat modul dimuat, jadi warna di dalamnya
+beku. Jalan keluarnya BUKAN hook di 27 berkas: `gayaTema((W) => StyleSheet
+.create({...}))` di `src/gaya/tema.ts` — gaya dibangun per tema, malas, di-
+cache, dan dikembalikan lewat Proxy. Komponen tidak tahu apa-apa soal tema;
+yang merender ulang seluruh pohon adalah `key={tema}` di NavigationContainer,
+dengan keadaan navigasi disimpan/dipulihkan supaya layar tidak hilang.
+
+`W` dan `KACA` adalah Proxy HIDUP: aman di JSX (dibaca saat render), TIDAK
+aman di `StyleSheet.create` polos dan di konstanta modul (`OPSI_KEPALA` sempat
+begitu — jadi fungsi `opsiKepala()`).
+
+Palet terang paletnya sendiri, bukan pembalikan (lihat token.ts). Tiga aturan:
+- Emas #C9A961 tetap untuk ISIAN. Sebagai TEKS pakai `plusTeks` (#8A6B26 di
+  terang; 1,9:1 kalau memakai isiannya). Angka besar AM+: `plusTerang`.
+- `rgba(255,255,255,a)` dilarang diketik; pakai `W.tinta(a)` — putih di
+  gelap, hampir-hitam di terang. Regex mengganti 30+ literal sekaligus.
+- Chart TETAP gelap: kanvas web chart-embed belum bertema.
+
+Jebakan skrip yang benar-benar terjadi: (1) memotong blok `W` dengan `};`
+padahal terminatornya `} as const;` — token.ts terpotong sampai ANGKA;
+(2) skrip pengganti `useHeaderHeight()` ikut mengganti definisi cadangannya
+sendiri → rekursi, Home putih. Keduanya ketahuan dari tsc/harness, bukan
+dari skripnya.
