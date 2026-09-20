@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><title>Kotak Masuk — mockup</title>
+<style>
+@font-face{font-family:Inter;src:url('file:///home/analismarket/apps/shared/fonts/Inter-Regular.ttf');font-weight:400}
+@font-face{font-family:Inter;src:url('file:///home/analismarket/apps/shared/fonts/Inter-SemiBold.ttf');font-weight:600}
+@font-face{font-family:Inter;src:url('file:///home/analismarket/apps/shared/fonts/Inter-Bold.ttf');font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#2a2622;font-family:Inter,system-ui,sans-serif;display:flex;gap:40px;padding:40px;width:900px}
+/* ── palet: gelap (bawaan) & terang ─────────────────────────── */
+.hp{--bg:#0C0B09;--kartu:#161512;--garis:#252321;--fg1:#E8E7E5;--fg2:#CFCECB;--fg3:#A7A4A1;--fg4:#84827E;--tinta:255,255,255;
+  --plus:#C9A961;--plusTeks:#C9A961;--plusRedup:rgba(201,169,97,.14);--naik:#10B981;--turun:#F43F5E;--tanda:#FD9829;
+  --kaca:rgba(18,17,15,.90)}
+.hp.terang{--bg:#F6F3EC;--kartu:#FFFFFF;--garis:#E4DED3;--fg1:#14120F;--fg2:#3B3630;--fg3:#5F5850;--fg4:#7C7468;--tinta:20,18,15;
+  --plusTeks:#8A6B26;--plusRedup:rgba(201,169,97,.18);--naik:#0C8F6B;--turun:#D63A52;--tanda:#B8650A;--kaca:rgba(246,243,236,.94)}
+.hp{width:390px;height:844px;border-radius:44px;background:var(--bg);color:var(--fg1);position:relative;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);font-size:13px}
+/* kepala kaca */
+.kepala{position:absolute;top:0;left:0;right:0;height:92px;background:var(--kaca);border-bottom:1px solid rgba(var(--tinta),.10);
+  padding:44px 16px 0;display:flex;align-items:center;justify-content:space-between}
+.kepala h1{font-size:19px;font-weight:700;letter-spacing:-.2px}
+.kepala .kanan{display:flex;gap:6px;align-items:center}
+.ikon-bulat{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--fg3)}
+.tanda-baca{font-size:12px;color:var(--plusTeks);font-weight:600;padding:6px 10px;border-radius:999px;background:var(--plusRedup)}
+/* isi */
+.isi{position:absolute;top:92px;bottom:0;left:0;right:0;overflow:hidden;padding:10px 16px 0}
+.chips{display:flex;gap:6px;margin-bottom:12px}
+.chip{padding:7px 12px;border-radius:999px;border:1px solid var(--garis);color:var(--fg3);font-size:12px;font-weight:500;background:rgba(var(--tinta),.04)}
+.chip.on{background:var(--fg1);color:var(--bg);border-color:transparent;font-weight:600}
+.hari{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--fg4);margin:10px 0 6px}
+.kartu{background:var(--kartu);border:1px solid var(--garis);border-radius:14px;overflow:hidden}
+.baris{display:flex;gap:11px;padding:12px 12px;border-top:1px solid rgba(var(--tinta),.06);align-items:flex-start}
+.baris:first-child{border-top:0}
+.baris .ik{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;font-size:15px}
+.ik.pantauan{background:rgba(var(--tinta),.06);color:var(--fg1)}
+.ik.otomatis{background:var(--plusRedup);color:var(--plusTeks)}
+.ik.sistem{background:rgba(var(--tinta),.06);color:var(--fg3)}
+.ik.promo{background:var(--plusRedup);color:var(--plusTeks)}
+.baris .t{flex:1;min-width:0}
+.baris .judul{font-size:14px;font-weight:600;color:var(--fg1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.baris .judul .lencana{margin-left:6px;vertical-align:1px}
+.baris .judul .tf{font-weight:400;color:var(--fg3)}
+.baris .ket{font-size:12.5px;color:var(--fg3);margin-top:2px;line-height:1.35}
+.baris .waktu{font-size:11px;color:var(--fg4);margin-top:5px;font-variant-numeric:tabular-nums}
+.baris .kanan{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.titik{width:8px;height:8px;border-radius:50%;background:var(--plus)}
+.aksi{font-size:16px;color:var(--fg4);line-height:1;margin-top:8px}
+.baris.dibaca .judul{color:var(--fg2);font-weight:500}
+.lencana{font-size:10px;font-weight:700;color:#1A1508;background:var(--plus);padding:2px 6px;border-radius:999px;letter-spacing:.3px}
+.lencana.sistem{background:rgba(var(--tinta),.10);color:var(--fg2)}
+/* bilah tab */
+.bilah{position:absolute;left:12px;right:12px;bottom:18px;height:64px;border-radius:32px;background:var(--kaca);border:1px solid rgba(var(--tinta),.10);
+  display:flex;align-items:center;justify-content:space-around;padding:0 6px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--fg4);width:64px;height:52px;justify-content:center;border-radius:26px;position:relative}
+.tab.aktif{background:rgba(var(--tinta),.10);color:var(--fg1);font-weight:600}
+.tab.plus{color:var(--plusTeks)}
+.tab .b{position:absolute;top:6px;right:12px;min-width:16px;height:16px;border-radius:8px;background:var(--turun);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.judulMock{position:absolute;left:0;right:0;top:-30px;text-align:center;color:#a39e95;font-size:12px;letter-spacing:1px}
+.wrap{position:relative}
+</style></head><body>
+<script>
+const KAB='<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>';
+const LAYAR=(tema)=>`
+<div class="wrap"><div class="judulMock">${tema==='terang'?'TEMA TERANG':'TEMA GELAP'}</div>
+<div class="hp ${tema}">
+  <div class="kepala"><h1>Kabar</h1><div class="kanan"><span class="tanda-baca">Tandai semua dibaca</span><span class="ikon-bulat">${tema==='terang'?'☾':'☀'}</span></div></div>
+  <div class="isi">
+    <div class="chips"><span class="chip on">Semua</span><span class="chip">Pantauan</span><span class="chip">Sistem</span><span class="chip">Promo</span></div>
+
+    <div class="hari">Hari ini</div>
+    <div class="kartu">
+      <div class="baris"><div class="ik pantauan">${KAB}</div><div class="t"><div class="judul">XAUUSD <span class="tf">h1</span> · kondisi terpenuhi</div><div class="ket">snr · berlaku sampai 21.00 WIB. Buka untuk membaca levelnya.</div><div class="waktu">09.14</div></div><div class="kanan"><span class="titik"></span><span class="aksi">›</span></div></div>
+      <div class="baris"><div class="ik otomatis">★</div><div class="t"><div class="judul">16 kondisi terpenuhi <span class="tf">m15</span> <span class="lencana">AM+</span></div><div class="ket">BTCUSDT dan 15 pasar lain. Ringkasan kabar otomatis.</div><div class="waktu">08.45</div></div><div class="kanan"><span class="titik"></span></div></div>
+      <div class="baris"><div class="ik promo">%</div><div class="t"><div class="judul">Diskon 12 bulan sampai Minggu <span class="lencana">PROMO</span></div><div class="ket">Rp 480.000 → Rp 399.000 untuk setahun. Dari admin.</div><div class="waktu">07.30</div></div><div class="kanan"><span class="titik"></span><span class="aksi">›</span></div></div>
+    </div>
+
+    <div class="hari">Kemarin</div>
+    <div class="kartu">
+      <div class="baris dibaca"><div class="ik sistem">✓</div><div class="t"><div class="judul">HP ini terdaftar untuk kabar <span class="lencana sistem">SISTEM</span></div><div class="ket">Kabar pantauan datang ke sini. Telegram jadi cadangan.</div><div class="waktu">Kemarin 20.02</div></div></div>
+      <div class="baris dibaca"><div class="ik pantauan">${KAB}</div><div class="t"><div class="judul">SOLUSDT <span class="tf">h1</span> · kondisi terpenuhi</div><div class="ket">smc · berlaku sampai 23.00 WIB.</div><div class="waktu">Kemarin 15.10</div></div><div class="kanan"><span class="aksi">›</span></div></div>
+      <div class="baris dibaca"><div class="ik sistem">!</div><div class="t"><div class="judul">AnalisMarket+ berakhir 23 hari lagi <span class="lencana sistem">SISTEM</span></div><div class="ket">Perpanjang dari layar PLUS+ kapan saja; tidak ada tagihan otomatis.</div><div class="waktu">Kemarin 06.00</div></div></div>
+    </div>
+
+    <div class="hari">Rabu, 17 Sep</div>
+    <div class="kartu">
+      <div class="baris dibaca"><div class="ik pantauan">${KAB}</div><div class="t"><div class="judul">ETHUSDT <span class="tf">h4</span> · kondisi terpenuhi</div><div class="ket">ema200 · berlaku sampai 04.00 WIB.</div><div class="waktu">Rab 21.40</div></div><div class="kanan"><span class="aksi">›</span></div></div>
+    </div>
+  </div>
+  <div class="bilah">
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5M5.5 9.5V21h13V9.5"/></svg>Home</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 16l4-4 4 4 5-6"/></svg>Pasar</div>
+    <div class="tab aktif">${KAB}<span class="b">3</span>Kabar</div>
+    <div class="tab plus"><svg viewBox="0 0 24 24" style="fill:currentColor"><path d="M12 3l2.4 5.3 5.6.6-4.2 3.9 1.2 5.7L12 15.6 6.999 18.5l1.2-5.7L4 8.9l5.6-.6L12 3z"/></svg>PLUS+</div>
+    <div class="tab"><svg viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>Lainnya</div>
+  </div>
+</div></div>`;
+document.body.innerHTML = LAYAR('gelap') + LAYAR('terang');
+</script>
+</body></html>
