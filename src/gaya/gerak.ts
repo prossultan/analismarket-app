@@ -32,6 +32,8 @@ export const KURVA_LEMBAR = cubicBezier(0.32, 0.72, 0, 1);
 export const EASE_KELUAR = Easing.bezier(0.23, 1, 0.32, 1);
 export const EASE_LEMBAR = Easing.bezier(0.32, 0.72, 0, 1);
 
+/** Urutan masuk isi Home: jeda antar-kartu. 5 kartu × 45 ms = 225 ms, di bawah batas 500. */
+export const JEDA_URUT = 45;
 export const MS = {
   /** Umpan balik tekan. Di atas 150 ms terasa lambat untuk yang sesering ini. */
   tekan: 120,
@@ -48,13 +50,13 @@ export const MS = {
  * sedikit melewati 1. "Empuk" lahir dari pantulan baliknya, bukan dari
  * seberapa dalam ia turun.
  */
-export const SKALA_TEKAN = 0.95;
+export const SKALA_TEKAN = 0.92;
 /** Turun cepat saat disentuh — 90 ms, supaya jawabannya seketika. */
 export const MS_TURUN = 90;
 /** Balik dengan pantulan kecil: dampingRatio 0,55 melewati 1 sedikit lalu diam. */
-export const PEGAS_EMPUK: WithSpringConfig = { duration: 420, dampingRatio: 0.55 };
+export const PEGAS_EMPUK: WithSpringConfig = { duration: 460, dampingRatio: 0.48 };
 /** Pil tab yang baru aktif "mekar" dari 0,86 — pindah tab tidak menggeser layar, tapi terasa. */
-export const PEGAS_PIL: WithSpringConfig = { duration: 380, dampingRatio: 0.6 };
+export const PEGAS_PIL: WithSpringConfig = { duration: 420, dampingRatio: 0.5 };
 
 /**
  * Pegas lembar — dua parameter perancang Apple, bukan mass/stiffness/damping.
@@ -64,7 +66,8 @@ export const PEGAS_LEMBAR: WithSpringConfig = { duration: 320, dampingRatio: 0.8
 /** Menutup: TIDAK boleh melewati tepi bawah — celah sekejap terlihat. */
 export const PEGAS_TUTUP: WithSpringConfig = { duration: 300, dampingRatio: 1, overshootClamping: true };
 /** Masuk tanpa jari: tanpa pantulan. Pantulan cuma untuk yang membawa momentum. */
-export const PEGAS_MASUK: WithSpringConfig = { duration: 380, dampingRatio: 1 };
+/* Pemilik minta LEBIH BERANI: lembar masuk boleh sedikit melewati tempatnya. */
+export const PEGAS_MASUK: WithSpringConfig = { duration: 420, dampingRatio: 0.78 };
 
 /**
  * Proyeksi momentum: seberapa jauh jari "akan" membawa benda kalau dilepas

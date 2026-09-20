@@ -13,7 +13,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import {
   ambilKabarOtomatis, ambilPantauan, ambilRingkas,
@@ -26,7 +25,7 @@ import { volumeRingkas } from '../data/tampil';
 /* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
 import { PAKET_PLUS, rupiah } from '../data/amplus';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
 import { FormulirSambung, BOT } from '../komponen/FormulirSambung';
@@ -37,7 +36,7 @@ import { W, H, R, SENTUH, TALANG } from '../gaya/token';
 
 
 function Wadah({ children }: { children: React.ReactNode }) {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   return (
     /* `keyboardShouldPersistTaps="handled"`: tanpa ini, di HP ketukan PERTAMA

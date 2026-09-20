@@ -11,9 +11,8 @@
  */
 import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilRingkas, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
 import { useSesi } from './Akun';
@@ -24,6 +23,8 @@ import type { Setelan } from '../data/simpan';
 import { KartuPasarMini } from '../komponen/KartuPasarMini';
 import { KartuPlus } from '../komponen/KartuPlus';
 import { Tekan } from '../komponen/Tekan';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { EASE_KELUAR, JEDA_URUT } from '../gaya/gerak';
 
 export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
 type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya' | 'kabar') => void; bukaPasarDi: (simbol: string) => void };
@@ -43,8 +44,13 @@ function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
   );
 }
 
+/** Urutan masuk isi Home — hanya saat layar lahir (tab dibekukan sesudahnya), bukan tiap pindah tab. */
+function Masuk({ i, children }: { i: number; children: React.ReactNode }) {
+  return <Animated.View entering={FadeInDown.duration(280).delay(i * JEDA_URUT).easing(EASE_KELUAR)}>{children}</Animated.View>;
+}
+
 export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Props) {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const sesi = useSesi();
 
@@ -78,7 +84,7 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
       {basi !== null && <PitaBasi kalimat={basi} />}
 
       {/* Kartu akun — ringkas: siapa, status, dua angka. Emas hanya untuk AM+. */}
-      <View style={[g.akun, plus ? g.akunPlus : g.akunGratis]}>
+      <Masuk i={0}><View style={[g.akun, plus ? g.akunPlus : g.akunGratis]}>
         {plus && <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.18)', 'rgba(201,169,97,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={g.akunNama} numberOfLines={1}>{nama === null ? 'Selamat datang' : `Halo, ${nama.split(' ')[0] ?? nama}`}</Text>
@@ -88,11 +94,11 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
         </View>
         <View style={g.angka}><Text style={g.angkaBesar}>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Text><Text style={g.angkaLabel}>pantauan</Text></View>
         <View style={g.angka}><Text style={g.angkaBesar}>{plus ? angka(r?.sisaHariPlus) : '—'}</Text><Text style={g.angkaLabel}>hari AM+</Text></View>
-      </View>
+      </View></Masuk>
       {perluTelegram && <Tombol teks="Tautkan Telegram — pantauan & kabar ada di bot" jenis="kedua" onPress={() => { buka('Sambung'); }} />}
 
       {/* Kisi menu — SEMUA pintu di satu tempat, ikon di atas label. */}
-      <View style={g.kisi}>
+      <Masuk i={1}><View style={g.kisi}>
         <Sel ikon="pasar" label="Chart" onPress={bukaPasar} />
         <Sel ikon="kabar" label="Pantauan" lencana={r === null ? undefined : `${String(r.pantauanAktif)} aktif`} warnaLencana="putih" onPress={() => { buka('Pantauan'); }} />
         <Sel ikon="tambah" label="Pantauan baru" onPress={() => { buka('PantauanBaru'); }} />
@@ -105,11 +111,11 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
         <Sel ikon="gir" label="Pengaturan" onPress={() => { buka('Pengaturan'); }} />
         <Sel ikon="plus" label="AnalisMarket+" emas onPress={() => { bukaTab('amplus'); }} />
         <Sel ikon="turunkan" label="Lainnya" onPress={() => { bukaTab('lainnya'); }} />
-      </View>
+      </View></Masuk>
 
       {/* PEMANIS — bento sparkline (referensi pemilik): satu besar, tiga kecil.
           BTC besar; XAU/USD, ETH, SOL kecil. Hiasan yang hidup, bukan daftar. */}
-      <View style={g.bento}>
+      <Masuk i={2}><View style={g.bento}>
         <KartuPasarMini simbol="BTCUSDT" nama="Bitcoin" besar onPress={() => { bukaPasarDi('BTCUSDT'); }} />
         <View style={g.bentoKanan}>
           <KartuPasarMini simbol="XAU/USD" nama="Emas" onPress={() => { bukaPasarDi('XAU/USD'); }} />
@@ -118,9 +124,9 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
             <KartuPasarMini simbol="SOLUSDT" nama="SOL" onPress={() => { bukaPasarDi('SOLUSDT'); }} />
           </View>
         </View>
-      </View>
+      </View></Masuk>
 
-      <KartuPlus plus={plus} sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />
+      <Masuk i={3}><KartuPlus plus={plus} sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} /></Masuk>
 
       <Mikro>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Mikro>
     </ScrollView>

@@ -21,7 +21,7 @@ import { Platform, StatusBar, Text, View } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { initialWindowMetrics, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enableFreeze } from 'react-native-screens';
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
@@ -318,7 +318,8 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
     <ClerkProvider publishableKey={KUNCI_CLERK} tokenCache={simpananToken}>
-      <SafeAreaProvider>
+      {/* Tanpa initialMetrics, render pertama membaca inset 0 dan kalimat kaki tertelan bilah tab. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <StatusBar barStyle="light-content" backgroundColor={W.latar} />
         <JembatanClerk />
         <Isi />
@@ -421,6 +422,19 @@ function Isi() {
              geser penuh menyiratkan kedalaman yang tidak ada. Cukup untuk
              terasa dijawab, tidak cukup untuk terasa seperti perjalanan. */
           animation: 'shift',
+          /* 'shift' bawaan cuma beberapa piksel — pemilik tidak merasakannya.
+             Interpolator sendiri: layar baru memudar masuk sambil naik 16 px
+             dan tumbuh dari 0,97. Tetap BUKAN slide penuh: tab itu setara. */
+          sceneStyleInterpolator: ({ current }) => ({
+            sceneStyle: {
+              opacity: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
+              transform: [
+                { translateY: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [16, 0, 16] }) },
+                { scale: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.97, 1, 0.97] }) },
+              ],
+            },
+          }),
+          transitionSpec: { animation: 'timing', config: { duration: 240 } },
           /**
            * `position: absolute` BUKAN pilihan gaya — ia syarat supaya kaca
            * terbaca: isi harus lewat di bawah bilah. Tingginya IKUT JARAK AMAN,

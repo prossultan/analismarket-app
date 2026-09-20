@@ -8,8 +8,7 @@
  */
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Lbl, Menu, Mikro, PilTf, Saklar } from '../komponen/mockup';
 import { W, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
@@ -22,7 +21,7 @@ type Props = { setelan: Setelan; simpan: (s: Setelan) => void };
 const TF = ['m15', 'm30', 'h1', 'h4', 'd1'];
 
 export function LayarPengaturan({ setelan, simpan }: Props) {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   /**
    * SEBAB DISIMPAN, BUKAN DIBUANG. Saklar yang kembali mati tanpa sepatah kata

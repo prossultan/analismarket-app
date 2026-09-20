@@ -6,14 +6,13 @@
  * dirujuk per nomor — di sini penomoran adalah informasi, bukan hiasan.
  */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilDokumen } from '../data/dokumen';
 import { Lbl } from '../komponen/mockup';
 import { W, H, TALANG } from '../gaya/token';
 
 export function LayarDokumen({ kunci }: { kunci: 'syarat' | 'privasi' }) {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const d = ambilDokumen(kunci);
   return (

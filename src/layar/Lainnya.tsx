@@ -5,8 +5,7 @@
  * mana pun. Blok umur data di bawah menjawabnya untuk seluruh app.
  */
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Lbl, Menu, Mikro, Nil } from '../komponen/mockup';
 import { Merek } from '../komponen/Merek';
 import { useSesi } from './Akun';
@@ -30,7 +29,7 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
      ini tetap bilang belum. Pemilik melihatnya di HP sebagai "AM+ tidak
      terbawa". Keterangan baris harus ikut sesi. */
   const sesi = useSesi();
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const jam = (d: number | null): string => (d === null ? '—' : jamWib(d));
   return (

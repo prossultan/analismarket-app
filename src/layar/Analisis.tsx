@@ -31,6 +31,7 @@ import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pas
 import { angka, ubah, biayaPersen } from '../data/tampil';
 import { LembarPasar } from '../komponen/LembarPasar';
 import { Lembar } from '../komponen/Lembar';
+import { Tekan } from '../komponen/Tekan';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Kosong, Memuat } from '../komponen/dasar';
 import { useSesi } from './Akun';
@@ -187,12 +188,14 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
       {/* ── KEPALA KACA: lambang · simbol ⌄ · harga · ubah ─────────────── */}
       <Kaca tepi="bawah" gaya={{ paddingTop: atas }}>
         <View style={g.kepala}>
-          <Pressable onPress={() => { setLembarPasar(true); }} style={g.pasarTombol} hitSlop={6}
-            accessibilityRole="button" accessibilityLabel="Ganti pasar">
+          {/* PIL BERBINGKAI, bukan teks polos dengan ⌄ kecil: pemilik bingung ini
+              bisa ditekan atau tidak. Yang bisa ditekan harus TERLIHAT bisa
+              ditekan — bingkai, latar, dan kata "ganti" di sebelahnya. */}
+          <Tekan onPress={() => { setLembarPasar(true); }} gaya={g.pasarTombol} hitSlop={6} accessibilityLabel="Ganti pasar">
             <LambangPasar simbol={pasar.simbol} ukuran={19} />
             <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
-            <Text style={g.tanda}>⌄</Text>
-          </Pressable>
+            <View style={g.gantiPil}><Text style={g.gantiTeks}>ganti ⌄</Text></View>
+          </Tekan>
           <View style={{ flex: 1 }} />
           <Harga kecil>{angka(harga ?? pasar.harga, pasar.desimal)}</Harga>
           <Text style={[g.ubahTeks, { color: warnaUbah }]}>{ubah(u)}</Text>
@@ -370,7 +373,13 @@ const TINGGI_LEMBAR = 134;
 const g = StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   kepala: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: TALANG, paddingVertical: 8, minHeight: SENTUH },
-  pasarTombol: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: SENTUH - 8, paddingRight: 4 },
+  pasarTombol: {
+    flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: SENTUH - 8,
+    paddingLeft: 8, paddingRight: 6, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: W.garis,
+  },
+  gantiPil: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)' },
+  gantiTeks: { fontSize: H.label, fontWeight: '600', color: W.teksKuat },
   simbol: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2, flexShrink: 1 },
   tanda: { fontSize: 12, color: W.teksSamar, marginTop: -3 },
   ubahTeks: { fontSize: H.label, ...ANGKA },

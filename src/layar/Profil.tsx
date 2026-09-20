@@ -16,8 +16,7 @@ import { useMuat, type Hasil } from '../data/muat';
 import { hapusSesi } from '../data/sesi';
 import { useSesi } from './Akun';
 import { jamWib, tanggalWib } from '../data/tampil';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Chip, Kosong, Lbl, Menu, Mikro, Nil, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
 import { W, H, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
@@ -25,7 +24,7 @@ import type { Setelan } from '../data/simpan';
 type Props = { setelan: Setelan; bukaSambung: () => void; bukaPengaturan: () => void; bukaPantauan: () => void; buka: (ke: 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Berlangganan') => void };
 
 export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan, buka }: Props) {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const sesi = useSesi();
   /* Sesi mati sudah menjawab dirinya sendiri: `saya.ts` menghapus sesinya
@@ -140,7 +139,7 @@ export function LayarKabar({ bukaSambung, bukaPantauan, setelan, bukaChart }: { 
   /* Blok "menunggu Telegram" dulu tampil TANPA SYARAT — juga untuk pelanggan
      yang sudah tersambung. Sekarang ia membaca sesi, seperti Home. */
   const sesiKabar = useSesi();
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const [saring, setSaring] = useState<'semua' | 'berita'>('semua');
   /* DULU: jadwal yang gagal diambil disetel jadi larik kosong, dan layarnya

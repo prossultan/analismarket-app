@@ -143,8 +143,8 @@ export function BarisPasar({ simbol, label, harga, ubah, ubahWarna, onPress, red
     </View>
   );
   if (onPress === undefined) return isi;
-  /* Baris lebar: skala 0,975 — 0,95 pada benda selebar layar terlihat melompat. */
-  return <Tekan onPress={onPress} skala={0.975}>{isi}</Tekan>;
+  /* Baris lebar: skala 0,96 — 0,95 pada benda selebar layar terlihat melompat. */
+  return <Tekan onPress={onPress} skala={0.96}>{isi}</Tekan>;
 }
 
 /* ── .tarik — tiga isyarat, bukan satu ─────────────────────────────────── */
@@ -183,7 +183,7 @@ export function Butir({ ikon, simbol, nama, ket, ketMono = false, ketEmas = fals
    */
   const bisaDitekan = onPress !== undefined;
   return (
-    <Tekan onPress={onPress} disabled={!bisaDitekan} skala={0.975}
+    <Tekan onPress={onPress} disabled={!bisaDitekan} skala={0.96}
       accessibilityRole={bisaDitekan ? 'button' : 'none'}
       gaya={[g.butir, !pertama && g.garisAtas]}>
       {simbol !== undefined

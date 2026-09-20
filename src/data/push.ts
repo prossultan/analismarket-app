@@ -140,12 +140,16 @@ function bacaTujuan(data: unknown): TujuanKabar | null {
  * langganan tiap kali dipasang ulang.
  */
 export function dengarKetukanKabar(buka: (t: TujuanKabar) => void): () => void {
+  /* Web tidak punya notifikasi native; modulnya melempar saat dipanggil, dan
+     satu lemparan di dalam effect mematikan effect-effect lain di sekitarnya
+     — terlihat di harness sebagai layar yang "diam". Di web: tidak ada apa-apa. */
+  if (Platform.OS === 'web') return () => {};
   let sudahDingin = false;
   void Notifications.getLastNotificationResponseAsync().then((r) => {
     if (sudahDingin || r === null) return;
     const t = bacaTujuan(r.notification.request.content.data);
     if (t !== null) { sudahDingin = true; buka(t); }
-  });
+  }).catch(() => { /* tidak tersedia di platform ini */ });
   const langganan = Notifications.addNotificationResponseReceivedListener((r) => {
     const t = bacaTujuan(r.notification.request.content.data);
     if (t !== null) buka(t);

@@ -6,8 +6,7 @@
  */
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ISTILAH } from '../data/istilah';
 import { Chip, Istilah } from '../komponen/mockup';
 import { W, TALANG } from '../gaya/token';
@@ -22,7 +21,7 @@ const CARA_BACA: ReadonlyArray<{ nama: string; arti: string }> = [
 ];
 
 export function LayarBelajar() {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const [tab, setTab] = useState<'istilah' | 'cara'>('istilah');
   const daftar = tab === 'istilah' ? ISTILAH.map((i) => ({ nama: i.nama, arti: i.arti })) : CARA_BACA;

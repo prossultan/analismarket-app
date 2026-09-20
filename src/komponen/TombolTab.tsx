@@ -24,12 +24,12 @@ export function TombolTab({ ikon, label, nama, emas = false, aktif = false, onPr
   const aktifKini = dariNav || aktif;
   const warna = emas ? W.plus : aktifKini ? W.teksKuat : W.teksSamar;
   /* Pindah tab TIDAK menggeser layar — tab itu setara. Yang terasa adalah pil
-     yang baru aktif MEKAR dari 0,86 dengan pegas kecil: cukup untuk menjawab
+     yang baru aktif MEKAR dari 0,78 dengan pegas kecil: cukup untuk menjawab
      jari, tidak cukup untuk terasa seperti perjalanan. */
   const mekar = useSharedValue(1);
   useEffect(() => {
     if (!aktifKini) return;
-    mekar.set(0.86);
+    mekar.set(0.78);
     mekar.set(withSpring(1, { ...PEGAS_PIL, reduceMotion: ReduceMotion.System }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aktifKini]);

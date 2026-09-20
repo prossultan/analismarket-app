@@ -7,8 +7,7 @@
 import { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilPasar } from '../data/api';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Chip, Lbl, Menu, PitaBasi } from '../komponen/mockup';
 import { W, H, TALANG } from '../gaya/token';
 
@@ -16,7 +15,7 @@ const LOGO = require('../../assets/merek-mark.png') as number;
 const MESIN = ['snr', 'smc', 'ema200', 'ichimoku', 'fibonacci'];
 
 export function LayarTentang({ versi }: { versi: string }) {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   /* Jumlah pasar per penyedia DIHITUNG dari daftar yang sudah ada di simpanan,
      bukan diketik — angka yang diketik akan basi pada hari pasar ke-132 masuk. */

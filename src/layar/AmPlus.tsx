@@ -12,8 +12,7 @@
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { FITUR_GRATIS, FITUR_PLUS, PAKET_PLUS, rupiah } from '../data/amplus';
 import { Blok, Istilah, Lbl, Mikro, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
 import { ambilRingkas, type Ringkas } from '../data/saya';
@@ -34,7 +33,7 @@ const TANYA: ReadonlyArray<{ t: string; j: string }> = [
 const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: number };
 
 export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   /* SUMBER YANG SAMA DENGAN HOME. Dulu layar ini statis — selalu mengajak
      berlangganan, juga kepada pelanggan yang di Home dua ketukan sebelumnya

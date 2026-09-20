@@ -7,8 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useSisaBilah } from '../gaya/jarak';
+import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilJadwal, type Rilis } from '../data/api';
 import { jamWib, judulHariWib, kunciHariWib } from '../data/tampil';
 import { Chip, Dampak, Hari, Kosong, Lbl, Mikro, Rangka } from '../komponen/mockup';
@@ -18,7 +17,7 @@ const HARI = 30;
 type Saring = 'semua' | 'tinggi' | 'sedang';
 
 export function LayarKalender() {
-  const tinggiKepala = useHeaderHeight();
+  const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const [rilis, setRilis] = useState<Rilis[]>([]);
   const [keadaan, setKeadaan] = useState<'memuat' | 'ada' | 'gagal'>('memuat');
