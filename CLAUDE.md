@@ -632,3 +632,37 @@ Jebakan harness: `sesiTiruan` mendaftarkan rute `/api/saya**` — rute yang
 didaftarkan SESUDAHNYA yang menang. Mock kotak masuk harus dipasang sesudah
 `sesiTiruan(p, false)`, lalu reload sendiri. Sempat menghasilkan "Belum ada
 kabar" yang terlihat seperti bug app.
+
+## Siap toko (20 Sep) — yang ditambahkan sesudah audit ujung-ke-ujung
+
+Skor audit 8,3/10 dengan dua penghalang toko: jalur hapus akun dan AAB.
+Keduanya sekarang ada. Yang tidak terbaca dari kode:
+
+- **Hapus akun tiga pintu, satu fungsi.** App (Profil → Hapus akun), web
+  `/hapus-akun` (syarat Google Play: tautan di luar app), dan bot
+  `/hapus_akun`. Semuanya memanggil `hapusSemuaData` di repo bot; app cuma
+  mengirim `{ yakin: true }` ke `/api/saya/hapus` lalu membuang sesinya.
+  Jangan menambah pintu keempat dengan daftar tabelnya sendiri.
+- **Lambang dibuat, bukan diketik.** `node skrip/siapkan-lambang.mjs`
+  membaca SVG hasil `siapkan-logo-pasar.ts` di repo web (yang membaca
+  registri pasar hidup), merender PNG 96 px lewat resvg, dan menulis ulang
+  peta `require` di `LambangPasar.tsx`. Berkas PNG yang tidak ada di peta
+  wajib dibuang: `periksa-lambang.mjs` menuntut peta sejajar dengan folder.
+  Tiga koin teratas (BANK, PROVE, ZAMA) memang tidak ada di paket ikon mana
+  pun — tercatat di `TANPA_LOGO_HULU` `uji-e2e.mts`, diperiksa dari daftar
+  berkas paketnya, bukan diduga.
+- **Tema terang: lambang duduk di cakram, huruf pengganti berona.** Sembilan
+  lambang hampir putih (luminansi > 0,8) hilang di latar krem tanpa cakram.
+  Rona huruf diturunkan dari nama simbol (`ronaSimbol`) supaya BANK selalu
+  sama warnanya di semua layar.
+- **Chart ikut tema** lewat `?tema=terang` ke chart-embed; token `chart`
+  tema terang = latar krem yang sama supaya WebView tidak berkilat hitam.
+- **Layar berbayar untuk akun gratis = kartu ajakan, bukan galat.**
+  `useAkun` meneruskan `jenis` kegagalan; `jenis === 'plus'` menggambar
+  `KartuButuhPlus`. Mencocokkan kalimat server adalah cara yang pecah
+  begitu kalimatnya diubah.
+- **Tanggal berakhir dari `plusBerakhirPada`**, bukan `sekarang + sisaHari`:
+  dua layar yang menghitung sendiri sempat beda satu hari.
+- **AAB untuk Play** dari tombol Run workflow dengan profil `produksi`;
+  push ke `main` tetap membuat APK pratinjau. Daftar syarat toko dan isi
+  formulir privasi: `docs/toko.md`.
