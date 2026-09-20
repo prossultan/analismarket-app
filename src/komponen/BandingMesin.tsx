@@ -15,6 +15,7 @@
  * pendapat bebas.
  */
 import { memo } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { arahTurun, syaratWajib, type Mesin } from '../data/api';
 import { W, H, J, R, ANGKA, SENTUH, TALANG, gayaLabel } from '../gaya/token';
@@ -99,7 +100,7 @@ export const BandingMesin = memo(function BandingMesin({ daftar, aktif, pilih }:
   );
 });
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1 },
   baris: {
     flexDirection: 'row', alignItems: 'center', gap: J.x2,
@@ -125,4 +126,4 @@ const g = StyleSheet.create({
     fontSize: H.label, color: W.teksSamar, lineHeight: 13,
     paddingHorizontal: TALANG, paddingTop: J.x2, paddingBottom: J.x3,
   },
-});
+}));

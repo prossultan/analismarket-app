@@ -10,6 +10,7 @@
  * lalu volume 24 jam menurun. Aturan `DaftarPasar.tsx` di web.
  */
 import { useMemo, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Lembar } from './Lembar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -142,11 +143,11 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) 
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   cari: {
     flexDirection: 'row', alignItems: 'center', gap: 7, marginHorizontal: TALANG,
     minHeight: SENTUH - 6, paddingHorizontal: 10, borderRadius: R.besar,
-    backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: W.garis,
+    backgroundColor: W.tinta(0.05), borderWidth: 1, borderColor: W.garis,
   },
   cariIkon: { fontSize: 13, color: W.teksSamar },
   cariIsi: { flex: 1, color: W.teksKuat, fontSize: H.nilai, paddingVertical: 8 },
@@ -155,4 +156,4 @@ const g = StyleSheet.create({
   kosong: { paddingVertical: 26, paddingHorizontal: J.x3, gap: 5 },
   kosongJudul: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat },
   kosongKet: { fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
-});
+}));

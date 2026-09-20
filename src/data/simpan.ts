@@ -15,9 +15,11 @@ export type Setelan = {
   layarMenyala: boolean;
   /** Saklar notifikasi di HP INI. Izin sistem diminta saat dinyalakan. */
   pushNyala: boolean;
+  /** 'sistem' mengikuti HP. Disimpan di perangkat, bukan akun. */
+  tema: 'gelap' | 'terang' | 'sistem';
 };
 
-export const SETELAN_BAWAAN: Setelan = { pasar: 'SOLUSDT', tf: 'h1', mesin: '', layarMenyala: false, pushNyala: false };
+export const SETELAN_BAWAAN: Setelan = { pasar: 'SOLUSDT', tf: 'h1', mesin: '', layarMenyala: false, pushNyala: false, tema: 'gelap' };
 
 const KUNCI = 'am:setelan:v1';
 
@@ -34,6 +36,7 @@ export async function bacaSetelan(): Promise<Setelan> {
       mesin: typeof j.mesin === 'string' ? j.mesin : SETELAN_BAWAAN.mesin,
       layarMenyala: typeof j.layarMenyala === 'boolean' ? j.layarMenyala : SETELAN_BAWAAN.layarMenyala,
       pushNyala: typeof j.pushNyala === 'boolean' ? j.pushNyala : SETELAN_BAWAAN.pushNyala,
+      tema: j.tema === 'terang' || j.tema === 'sistem' ? j.tema : 'gelap',
     };
   } catch {
     return SETELAN_BAWAAN;

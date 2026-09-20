@@ -5,6 +5,7 @@
  * kartu bertumpuk membuat daftar bacaan terasa seperti papan kendali.
  */
 import { useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ISTILAH } from '../data/istilah';
@@ -38,7 +39,7 @@ export function LayarBelajar() {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   chips: { flexDirection: 'row', gap: 4 },
-});
+}));

@@ -17,6 +17,7 @@
  * jalan keluar demi persis dengan gambar berarti app yang tidak bisa dipakai.
  */
 import { useEffect, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -72,7 +73,7 @@ export function LayarSambutan() {
     return (
       <View style={[g.akar, g.tengah]}>
         <Image source={LOGO} style={g.logoBesar} accessibilityIgnoresInvertColors />
-        <Text style={g.nama}>Analis<Text style={{ color: W.plus }}>Market</Text></Text>
+        <Text style={g.nama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
         <Text style={g.tagline}>Analisa teknikal otomatis untuk 131 pasar.{'\n'}Angka mentah, dan kamu yang memutuskan.</Text>
         <Text style={[g.kaki, { bottom: bottom + 24 }]}>BUKAN NASIHAT INVESTASI</Text>
       </View>
@@ -102,7 +103,7 @@ export function LayarSambutan() {
         <Kaca tebal tepi="atas" gaya={g.kartu}>
           <View style={g.merek}>
             <Image source={LOGO} style={g.logoKecil} accessibilityIgnoresInvertColors />
-            <Text style={g.merekNama}>Analis<Text style={{ color: W.plus }}>Market</Text></Text>
+            <Text style={g.merekNama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
           </View>
           <Text style={g.judul}>Masuk untuk membaca{'\n'}analisa lengkapnya</Text>
           <Text style={g.ajak}>131 pasar · 5 mesin dibaca sekaligus · 7 timeframe. Semuanya angka mentah, dan kamu yang memutuskan.</Text>
@@ -141,7 +142,7 @@ export function LayarSambutan() {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   tengah: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 26, gap: 14 },
   logoBesar: { width: 104, height: 104, borderRadius: 28 },
@@ -153,17 +154,17 @@ const g = StyleSheet.create({
   chartBalik: { height: 300, position: 'relative', borderRadius: R.besar, borderWidth: 1, borderColor: W.garis, backgroundColor: W.chart, overflow: 'hidden' },
 
   tembok: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: TALANG, backgroundColor: 'rgba(12,11,9,0.45)' },
-  kartu: { borderRadius: 22, paddingHorizontal: 15, paddingTop: 17, paddingBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
+  kartu: { borderRadius: 22, paddingHorizontal: 15, paddingTop: 17, paddingBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: W.tinta(0.16) },
   merek: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 13 },
   logoKecil: { width: 28, height: 28, borderRadius: 8 },
   merekNama: { fontSize: 17, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4 },
   judul: { fontSize: 17, fontWeight: '600', color: W.teksKuat, textAlign: 'center', lineHeight: 21, letterSpacing: -0.5 },
   ajak: { marginTop: 7, fontSize: H.alat, color: W.teksRedup, lineHeight: 15, textAlign: 'center' },
   untung: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 13 },
-  untungSel: { width: '48.5%', minHeight: 64, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: W.garisSamar, backgroundColor: 'rgba(255,255,255,0.035)' },
+  untungSel: { width: '48.5%', minHeight: 64, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: W.garisSamar, backgroundColor: W.tinta(0.035) },
   untungJudul: { marginTop: 5, fontSize: H.alat, fontWeight: '600', color: W.teksKuat },
   untungKet: { marginTop: 1, fontSize: H.label, color: W.teksSamar, lineHeight: 12, minHeight: 24 },
   syarat: { marginTop: 11, fontSize: 8.5, color: W.teksSamar, textAlign: 'center', lineHeight: 13 },
   lewati: { alignSelf: 'center', marginTop: 8, minHeight: 32, justifyContent: 'center' },
   lewatiTeks: { fontSize: H.alat, color: W.teksRedup },
-});
+}));

@@ -27,9 +27,11 @@ const GIR = 'M12 9a3 3 0 100 6 3 3 0 000-6zM12 2v3m0 14v3M4.2 4.2l2.2 2.2m11.2 1
 const TAMBAH = 'M12 5v14M5 12h14';
 const KISI = 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z';
 const TURUNKAN = 'M6 9l6 6 6-6';
+const MATAHARI = 'M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4l1.4-1.4';
+const BULAN = 'M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z';
 
 export const JALUR = {
-  tambah: TAMBAH, kisi: KISI, turunkan: TURUNKAN,
+  tambah: TAMBAH, kisi: KISI, turunkan: TURUNKAN, matahari: MATAHARI, bulan: BULAN,
   rumah: RUMAH, pasar: PASAR, analisis: ANALISIS, plus: PLUS,
   kabar: KABAR, profil: PROFIL, lainnya: LAINNYA, kalender: KALENDER, buku: BUKU, gir: GIR,
 } as const;

@@ -9,6 +9,7 @@
  * satu pekerjaan yang sama: Sambungkan Telegram.
  */
 import { useCallback, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilBacaan, ambilJadwal, syaratWajib, type Mesin, type Rilis } from '../data/api';
 import { ambilRingkas, type Ringkas } from '../data/saya';
@@ -270,7 +271,7 @@ export function LayarKabar({ bukaSambung, bukaPantauan, setelan, bukaChart }: { 
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   baris: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis },
@@ -288,4 +289,4 @@ const g = StyleSheet.create({
   kabarIsi: { fontSize: H.alat, color: W.teksRedup, lineHeight: 14, marginTop: 2 },
   kabarWaktu: { fontSize: H.label, color: W.teksSamar, marginTop: 2, fontVariant: ['tabular-nums'] },
   kosongKet: { fontSize: H.alat, color: W.teksSamar, marginTop: 8 },
-});
+}));

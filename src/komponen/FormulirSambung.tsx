@@ -7,6 +7,7 @@
  * yang datang ke layar masuk, bukan sebaliknya.
  */
 import { useCallback, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { sambungkan } from '../data/sesi';
@@ -77,7 +78,7 @@ export function FormulirSambung({ ringkas = false }: { ringkas?: boolean }) {
           )}
         </View>
         {galat !== '' && <Text style={g.galat}>{galat}</Text>}
-        <Mikro>Tautannya berlaku 10 menit dan sekali pakai. Kalau lewat, minta lagi ke bot.</Mikro>
+        <Mikro>Tautannya sekali pakai dan tidak kedaluwarsa. Kalau sudah terpakai, minta lagi ke bot.</Mikro>
       </Blok>
 
       <Blok>
@@ -90,7 +91,7 @@ export function FormulirSambung({ ringkas = false }: { ringkas?: boolean }) {
 
       {!ringkas && (
         <Blok emas gaya={{ alignItems: 'center', paddingVertical: 14 }}>
-          <Lbl warna={W.plus}>Nama bot di Telegram</Lbl>
+          <Lbl warna={W.plusTeks}>Nama bot di Telegram</Lbl>
           <Text selectable style={g.handle}>@{BOT}</Text>
           <Chip teks="Salin nama" emas onPress={() => { void Clipboard.setStringAsync(`@${BOT}`); }} />
         </Blok>
@@ -99,14 +100,14 @@ export function FormulirSambung({ ringkas = false }: { ringkas?: boolean }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   judulTengah: { marginTop: 8, fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, textAlign: 'center', letterSpacing: -0.2 },
   ketTengah: { marginTop: 6, fontSize: H.alat, color: W.teksRedup, lineHeight: 15, textAlign: 'center', maxWidth: 260 },
   tempelKotak: {
     marginTop: 6, minHeight: SENTUH, paddingHorizontal: 10, borderRadius: R.besar,
-    borderWidth: 1, borderColor: W.garis, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center',
+    borderWidth: 1, borderColor: W.garis, backgroundColor: W.tinta(0.05), justifyContent: 'center',
   },
   tempelIsi: { color: W.teksKuat, fontSize: H.nilai, paddingVertical: 10 },
   galat: { marginTop: 8, fontSize: H.alat, color: W.turun, lineHeight: 15 },
   handle: { marginTop: 6, marginBottom: 8, fontSize: 22, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4 },
-});
+}));

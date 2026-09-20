@@ -17,6 +17,7 @@
  *   .kosong      -> <Kosong>      .dampak     -> <Dampak>
  */
 import type { ReactNode } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { Pressable, StyleSheet, Text, View, type ViewStyle, type TextStyle } from 'react-native';
 import { W, H, J, R, ANGKA, SENTUH, TALANG } from '../gaya/token';
 import Animated from 'react-native-reanimated';
@@ -192,7 +193,7 @@ export function Butir({ ikon, simbol, nama, ket, ketMono = false, ketEmas = fals
       <Text style={g.butirNama} numberOfLines={1}>{nama}</Text>
       <View style={{ flex: 1 }} />
       {kanan ?? (ket === undefined && !bisaDitekan ? null : (
-        <Text style={[g.butirKet, ketMono && ANGKA, ketEmas && { color: W.plus }]} numberOfLines={1}>
+        <Text style={[g.butirKet, ketMono && ANGKA, ketEmas && { color: W.plusTeks }]} numberOfLines={1}>
           {`${ket ?? ''}${bisaDitekan ? (ket === undefined ? '›' : ' ›') : ''}`}
         </Text>
       ))}
@@ -374,7 +375,7 @@ export function BarIsi({ porsi, warna = W.plus }: { porsi: number; warna?: strin
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   blok: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu, padding: 10 },
   blokRapat: { padding: 8 },
   blokEmas: { borderColor: 'rgba(201,169,97,0.32)', backgroundColor: 'rgba(201,169,97,0.07)' },
@@ -395,11 +396,11 @@ const g = StyleSheet.create({
   chipEmas: { borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.plusRedup },
   chipTeks: { fontSize: H.label, color: W.teksRedup },
   chipTeksOn: { color: W.latar, fontWeight: '600' },
-  chipTeksEmas: { color: W.plus },
+  chipTeksEmas: { color: W.plusTeks },
 
-  pilTf: { flexDirection: 'row', gap: 2, padding: 2, borderRadius: R.bulat, backgroundColor: 'rgba(255,255,255,0.05)' },
+  pilTf: { flexDirection: 'row', gap: 2, padding: 2, borderRadius: R.bulat, backgroundColor: W.tinta(0.05) },
   pilSel: { flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: R.bulat },
-  pilSelOn: { backgroundColor: 'rgba(255,255,255,0.12)' },
+  pilSelOn: { backgroundColor: W.tinta(0.12) },
   pilTeks: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
   pilTeksOn: { color: W.teksKuat },
 
@@ -420,9 +421,9 @@ const g = StyleSheet.create({
   pasarUbah: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
 
   tarik: { alignItems: 'center', gap: 2, marginBottom: 7 },
-  gagang: { width: 32, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.28)' },
+  gagang: { width: 32, height: 4, borderRadius: 2, backgroundColor: W.tinta(0.28) },
   tarikKata: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  panah: { color: W.plus, fontSize: 10, fontWeight: '700', lineHeight: 12 },
+  panah: { color: W.plusTeks, fontSize: 10, fontWeight: '700', lineHeight: 12 },
   tarikTeks: { fontSize: 8, color: W.teksSamar, letterSpacing: 0.8, textTransform: 'uppercase' },
 
   menu: { borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu, overflow: 'hidden', backgroundColor: W.kartu },
@@ -430,7 +431,7 @@ const g = StyleSheet.create({
   butirNama: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500', flexShrink: 1 },
   butirKet: { fontSize: H.label, color: W.teksSamar },
 
-  saklar: { width: 28, height: 16, borderRadius: R.bulat, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: W.garis, justifyContent: 'center' },
+  saklar: { width: 28, height: 16, borderRadius: R.bulat, backgroundColor: W.tinta(0.10), borderWidth: 1, borderColor: W.garis, justifyContent: 'center' },
   saklarOn: { backgroundColor: W.plusRedup, borderColor: 'rgba(201,169,97,0.38)' },
   saklarBulat: { width: 12, height: 12, borderRadius: 6, backgroundColor: W.teksRedup, marginLeft: 1 },
   saklarBulatOn: { backgroundColor: W.plus, transform: [{ translateX: 12 }] },
@@ -440,20 +441,20 @@ const g = StyleSheet.create({
 
   langkah: { flexDirection: 'row', gap: 9, alignItems: 'flex-start', paddingVertical: 7 },
   langkahNo: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.plusRedup },
-  langkahNoTeks: { fontSize: 9, fontWeight: '700', color: W.plus, ...ANGKA },
+  langkahNoTeks: { fontSize: 9, fontWeight: '700', color: W.plusTeks, ...ANGKA },
   langkahJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat },
   langkahKet: { fontSize: H.label, color: W.teksSamar, marginTop: 1, lineHeight: 13 },
 
-  rangka: { borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.07)' },
+  rangka: { borderRadius: 4, backgroundColor: W.tinta(0.07) },
 
   tombol: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, paddingHorizontal: 18, borderRadius: R.besar + 3, backgroundColor: W.teksKuat },
   tombolTeks: { fontSize: H.nilai, fontWeight: '700', color: '#14130F', letterSpacing: -0.1 },
   tombolEmas: { backgroundColor: W.plus },
   tombolEmasTeks: { color: '#1A1508' },
   tombolEmasMati: { backgroundColor: 'rgba(201,169,97,0.22)' },
-  tombolKedua: { backgroundColor: 'rgba(255,255,255,0.07)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
+  tombolKedua: { backgroundColor: W.tinta(0.07), borderWidth: 1, borderColor: W.tinta(0.16) },
   tombolKeduaTeks: { color: W.teksKuat, fontWeight: '500' },
-  tombolMati: { backgroundColor: 'rgba(255,255,255,0.10)' },
+  tombolMati: { backgroundColor: W.tinta(0.10) },
   tombolTeksMati: { color: 'rgba(232,231,229,0.45)' },
 
   mikro: { fontSize: 9, color: W.teksSamar, lineHeight: 13 },
@@ -492,9 +493,9 @@ const g = StyleSheet.create({
   pakaiKiri: { fontSize: H.alat, color: W.teksRedup },
   pakaiKanan: { fontSize: H.alat, color: W.teksRedup, ...ANGKA },
 
-  barLuar: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.07)', overflow: 'hidden' },
+  barLuar: { height: 5, borderRadius: 3, backgroundColor: W.tinta(0.07), overflow: 'hidden' },
   barDalam: { height: '100%' },
-});
+}));
 
 /** Jarak tepi layar mockup (11px) — dipakai layar-layar baru. */
 export const TALANG_MOCKUP = TALANG;

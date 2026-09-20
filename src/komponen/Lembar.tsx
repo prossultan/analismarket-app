@@ -24,6 +24,7 @@
  * lompatannya seketika, gesturnya tetap jalan.
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { Modal, Pressable, StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -143,11 +144,11 @@ export function Lembar({ terbuka, onTutup, kepala, children, gaya, gayaLuar, tir
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1 },
   luar: { flex: 1, justifyContent: 'flex-end' },
   bungkus: { maxHeight: '100%' },
   tiraiTebal: { backgroundColor: W.tirai },
   tiraiTipis: { backgroundColor: 'rgba(0,0,0,0.28)' },
   lembar: { flexShrink: 1, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden', paddingTop: 6 },
-});
+}));

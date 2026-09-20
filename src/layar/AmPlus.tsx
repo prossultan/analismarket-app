@@ -10,6 +10,7 @@
  * kalimat terbaca sebagai bug.
  */
 import { useCallback } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
@@ -116,7 +117,7 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   kartu: {
     borderRadius: R.kartu, padding: 12, overflow: 'hidden', gap: 0,
@@ -124,12 +125,12 @@ const g = StyleSheet.create({
   },
   /* Gradasi 158deg dari mockup, ditiru dengan dua bidang miring lembut —
      RN tidak punya linear-gradient tanpa paket tambahan. */
-  cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plus, fontWeight: '600' },
+  cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plusTeks, fontWeight: '600' },
   judul: { marginTop: 6, fontSize: 14, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
-  harga: { fontSize: 19, fontWeight: '700', color: '#E3CE97', marginTop: 7, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  harga: { fontSize: 19, fontWeight: '700', color: W.plusTerang, marginTop: 7, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   perBulan: { fontSize: H.alat, color: W.teksRedup, fontWeight: '400' },
   daftar: { marginTop: 9, gap: 5 },
   butir: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
-  centang: { color: W.plus, fontSize: 9, marginTop: 2 },
+  centang: { color: W.plusTeks, fontSize: 9, marginTop: 2 },
   butirTeks: { flex: 1, fontSize: H.alat, color: W.teks, lineHeight: 14 },
-});
+}));

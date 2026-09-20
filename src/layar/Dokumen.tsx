@@ -6,6 +6,7 @@
  * dirujuk per nomor — di sini penomoran adalah informasi, bukan hiasan.
  */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilDokumen } from '../data/dokumen';
 import { Lbl } from '../komponen/mockup';
@@ -35,10 +36,10 @@ export function LayarDokumen({ kunci }: { kunci: 'syarat' | 'privasi' }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   subjudul: { marginTop: 14, marginBottom: 5, fontSize: H.status, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
   isi: { fontSize: H.pasar, lineHeight: 20, color: W.teksRedup, marginBottom: 4 },
   catatan: { marginTop: 14, padding: 10, borderRadius: 14, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu },
   catatanIsi: { marginTop: 3, fontSize: H.alat, lineHeight: 15, color: W.teksRedup },
-});
+}));

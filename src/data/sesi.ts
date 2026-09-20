@@ -3,7 +3,7 @@
  *
  * Jalurnya SUDAH ADA di server dan tidak perlu satu pun perubahan bot:
  *
- *   1. Bot menerbitkan token sekali pakai (32 byte base64url, umur 10 menit)
+ *   1. Bot menerbitkan token sekali pakai (32 byte base64url, sekali pakai, tanpa batas waktu sejak 20 Sep)
  *      dan mengirimnya sebagai tombol `https://analismarket.com/?masuk=<token>`.
  *   2. `POST /api/sambung/masuk {token}` menukarnya dengan SESI (umur 12 jam)
  *      — dan di situ gerbang wajib-gabung ikut diperiksa, sama seperti web.
@@ -194,7 +194,7 @@ export function tokenDariTempelan(teks: string): string | null {
 
 function kalimatSebab(galat: string): { sebab: 'kedaluwarsa' | 'dipakai' | 'belum-gabung' | 'lain'; kalimat: string } {
   if (galat === 'kedaluwarsa') {
-    return { sebab: 'kedaluwarsa', kalimat: 'Tautannya sudah lewat 10 menit. Minta yang baru ke bot, lalu tempel lagi.' };
+    return { sebab: 'kedaluwarsa', kalimat: 'Tautan ini sudah tidak berlaku. Minta yang baru ke bot, lalu tempel lagi.' };
   }
   if (galat === 'dipakai') {
     /* Sebabnya hampir selalu SATU hal: tombolnya ditekan biasa, peramban

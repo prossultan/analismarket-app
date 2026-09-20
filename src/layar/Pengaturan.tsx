@@ -6,10 +6,11 @@
  * Telegram. Layar ini mengatakannya — bukan membiarkan orang menemukannya
  * sendiri saat ganti HP.
  */
+import { gayaTema } from '../gaya/tema';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
-import { Blok, Butir, Lbl, Menu, Mikro, PilTf, Saklar } from '../komponen/mockup';
+import { Blok, Butir, Chip, Lbl, Menu, Mikro, PilTf, Saklar } from '../komponen/mockup';
 import { W, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
 import { mintaIzinPush, siapkanSaluran, tokenPerangkat } from '../data/push';
@@ -96,7 +97,15 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
 
       <Lbl gaya={{ marginTop: 2 }}>Tampilan</Lbl>
       <Menu>
-        <Butir ikon="lainnya" nama="Tema" ket="Gelap" pertama />
+        <Butir ikon={setelan.tema === 'terang' ? 'matahari' : 'bulan'} nama="Tema" pertama
+          kanan={(
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              {(['gelap', 'terang', 'sistem'] as const).map((t) => (
+                <Chip key={t} teks={t === 'gelap' ? 'Gelap' : t === 'terang' ? 'Terang' : 'Sistem'} on={setelan.tema === t}
+                  onPress={() => { simpan({ ...setelan, tema: t }); }} />
+              ))}
+            </View>
+          )} />
         <Butir ikon="lainnya" nama="Bahasa" ket="Indonesia" />
         <Butir ikon="kalender" nama="Zona waktu" ket="WIB" ketMono />
       </Menu>
@@ -105,11 +114,9 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
       <Blok>
         <Lbl>Di mana setelan ini disimpan</Lbl>
         <Mikro>Di perangkat ini saja. Setelan per-akun butuh identitas yang belum lepas dari Telegram, jadi pilihanmu tidak ikut pindah kalau kamu ganti HP.</Mikro>
-        <Lbl gaya={{ marginTop: 8 }}>Tema terang belum ada</Lbl>
-        <Mikro>Kartu bot memang terang, tapi app dan web gelap — dan yang disatukan PERAN warnanya, bukan nilainya. Tema terang butuh paletnya sendiri, bukan pembalikan.</Mikro>
       </Blok>
     </ScrollView>
   );
 }
 
-const g = StyleSheet.create({ akar: { flex: 1, backgroundColor: W.latar } });
+const g = gayaTema((W) => StyleSheet.create({ akar: { flex: 1, backgroundColor: W.latar } }));

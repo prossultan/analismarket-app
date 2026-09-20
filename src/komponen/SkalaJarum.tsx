@@ -14,6 +14,7 @@
  * satu pun jarak sendiri.
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import type { Mesin } from '../data/api';
 import { W, H, J, R, ANGKA, TALANG } from '../gaya/token';
 
@@ -75,13 +76,13 @@ export function SkalaJarum({ daftar, aktif, pilih }: {
         <Text style={g.tandaTeks}>0</Text>
         <Text style={g.tandaTeks}>1 ATR</Text>
         <Text style={g.tandaTeks}>2 ATR</Text>
-        <Text style={[g.tandaTeks, { color: W.plus }]}>batas</Text>
+        <Text style={[g.tandaTeks, { color: W.plusTeks }]}>batas</Text>
       </View>
     </View>
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { paddingHorizontal: TALANG, paddingTop: J.x2, paddingBottom: J.x3, borderTopWidth: 1, borderTopColor: W.garis },
   kepala: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
   kini: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.1, textTransform: 'uppercase' },
@@ -98,4 +99,4 @@ const g = StyleSheet.create({
   tanda: { flexDirection: 'row', justifyContent: 'space-between', marginTop: J.x1 },
   tandaTeks: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
   kosong: { fontSize: H.label, color: W.teksSamar, paddingVertical: J.x3 },
-});
+}));

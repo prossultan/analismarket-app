@@ -17,8 +17,8 @@
  * Sambungkan Telegram.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, StatusBar, Text, View } from 'react-native';
-import { NavigationContainer, DarkTheme, createNavigationContainerRef, type Theme } from '@react-navigation/native';
+import { Platform, StatusBar, Text, View, useColorScheme } from 'react-native';
+import { NavigationContainer, DarkTheme, createNavigationContainerRef, type NavigationState, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { initialWindowMetrics, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,6 +57,14 @@ import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/
 import { umurTerakhir } from './src/data/antrian';
 import { W, H, TINGGI_BILAH, TEPI_BILAH, ANGKAT_BILAH } from './src/gaya/token';
 import { TombolTab } from './src/komponen/TombolTab';
+import { TombolTema } from './src/komponen/TombolTema';
+import { pasangPenyimpanTema, setTema, useTema, type Tema } from './src/gaya/tema';
+
+/** Status bar mengikuti tema — hitam di atas krem, putih di atas obsidian. */
+function BilahStatus() {
+  const tema = useTema();
+  return <StatusBar barStyle={tema === 'terang' ? 'dark-content' : 'light-content'} backgroundColor={W.latar} />;
+}
 import konfigApp from './app.json';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { dengarKetukanKabar, segarkanPendaftaran } from './src/data/push';
@@ -119,13 +127,17 @@ const KE_LAYAR: Record<KunciMenu, keyof DaftarTumpukan> = {
 const Tumpukan = createNativeStackNavigator<DaftarTumpukan>();
 const Tab = createBottomTabNavigator();
 
-const TEMA: Theme = {
+const temaNav = (): Theme => ({
   ...DarkTheme,
   colors: { ...DarkTheme.colors, background: W.latar, card: W.latar, text: W.teksKuat, border: W.garis, primary: W.plus },
-};
+});
 
 /** Kepala kaca — berlaku untuk tab maupun tumpukan. */
-const OPSI_KEPALA = {
+/**
+ * FUNGSI, bukan konstanta: warnanya dibaca dari palet yang sedang aktif.
+ * Sebagai konstanta modul, `W.teksKuat` di sini beku selamanya di tema gelap.
+ */
+const opsiKepala = () => ({
   headerTransparent: true,
   /* Kilau emas samar dari kiri atas — ambient, terasa lebih dulu daripada
      terlihat. Ini yang membedakan kaca 2026 dari panel gelap datar. */
@@ -135,24 +147,25 @@ const OPSI_KEPALA = {
     </Kaca>,
   headerStyle: { backgroundColor: 'transparent' },
   headerTitleStyle: { color: W.teksKuat, fontSize: H.pasar, fontWeight: '600' as const },
-  headerTintColor: W.plus,
+  headerTintColor: W.plusTeks,
   headerShadowVisible: false,
   headerBackTitle: '',
-};
+  headerRight: () => <TombolTema />,
+});
 /**
  * Perpindahan layar di dalam tumpukan: geser dari kanan — bawaan iOS, dan di
  * Android bawaan native-stack nyaris tanpa gerak sehingga pemilik menyebutnya
  * "tidak ada animasi sama sekali". Hierarkinya nyata (Lainnya → Profil), jadi
  * geser adalah gerak yang jujur. Gestur geser-balik penuh layar di iOS ikut.
  */
-const OPSI_TUMPUKAN = {
-  ...OPSI_KEPALA,
+const opsiTumpukan = () => ({
+  ...opsiKepala(),
   contentStyle: { backgroundColor: W.latar },
   animation: 'slide_from_right' as const,
   animationDuration: 320,
   gestureEnabled: true,
   fullScreenGestureEnabled: true,
-};
+});
 
 type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void };
 
@@ -208,7 +221,7 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
 
 function AlurLain({ setelan, simpan }: IsiTumpukan) {
   return (
-    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
+    <Tumpukan.Navigator screenOptions={opsiTumpukan()}>
       <Tumpukan.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
         {({ navigation }) => (
           <LayarLainnya
@@ -227,7 +240,7 @@ function AlurLain({ setelan, simpan }: IsiTumpukan) {
 
 function AlurKabar({ setelan, simpan }: IsiTumpukan) {
   return (
-    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
+    <Tumpukan.Navigator screenOptions={opsiTumpukan()}>
       <Tumpukan.Screen name="Kabar" options={{ title: 'Kabar' }}>
         {({ navigation }) => (
           <LayarKabar setelan={setelan}
@@ -243,7 +256,7 @@ function AlurKabar({ setelan, simpan }: IsiTumpukan) {
 
 function AlurPlus({ setelan, simpan }: IsiTumpukan) {
   return (
-    <Tumpukan.Navigator screenOptions={OPSI_TUMPUKAN}>
+    <Tumpukan.Navigator screenOptions={opsiTumpukan()}>
       <Tumpukan.Screen name="AmPlus" options={{ title: 'AnalisMarket+' }}>
         {({ navigation }) => <LayarAmPlus bukaLangganan={() => { (navigation as Nav).navigate('Berlangganan'); }} />}
       </Tumpukan.Screen>
@@ -320,7 +333,7 @@ export default function App() {
     <ClerkProvider publishableKey={KUNCI_CLERK} tokenCache={simpananToken}>
       {/* Tanpa initialMetrics, render pertama membaca inset 0 dan kalimat kaki tertelan bilah tab. */}
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        <StatusBar barStyle="light-content" backgroundColor={W.latar} />
+        <BilahStatus />
         <JembatanClerk />
         <Isi />
       </SafeAreaProvider>
@@ -373,6 +386,22 @@ function Isi() {
   const simpan = useCallback((s: Setelan): void => { setSetelan(s); void simpanSetelan(s); }, []);
 
   /**
+   * TEMA. 'sistem' mengikuti HP; selebihnya pilihan orangnya. Berganti tema
+   * MEREMOUNT pohon navigasi (key) supaya tiap StyleSheet dibangun ulang dari
+   * palet baru — keadaan navigasinya disimpan dan dipulihkan, jadi layar yang
+   * sedang dibuka tidak hilang.
+   */
+  const skema = useColorScheme();
+  const tema = useTema();
+  const temaDipilih = setelan?.tema ?? 'gelap';
+  const temaEfektif: Tema = temaDipilih === 'sistem' ? (skema === 'light' ? 'terang' : 'gelap') : temaDipilih;
+  useEffect(() => { setTema(temaEfektif); }, [temaEfektif]);
+  useEffect(() => {
+    pasangPenyimpanTema((t) => { if (setelan !== null) simpan({ ...setelan, tema: t }); });
+  }, [setelan, simpan]);
+  const [keadaanNav, setKeadaanNav] = useState<NavigationState | undefined>(undefined);
+
+  /**
    * KETUKAN NOTIFIKASI → CHART pasar yang dikabarkan.
    *
    * Pasar dan timeframe disimpan dulu lewat `simpan`, karena layar chart
@@ -413,7 +442,8 @@ function Isi() {
   if (sesi === null) return <LayarSambutan />;
 
   return (
-    <NavigationContainer theme={TEMA} ref={navRef}>
+    <NavigationContainer key={tema} theme={temaNav()} ref={navRef}
+      initialState={keadaanNav} onStateChange={(st) => { setKeadaanNav(st); }}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
@@ -459,10 +489,15 @@ function Isi() {
         <Tab.Screen
           name="home"
           options={({ navigation }) => ({
-            title: 'Home', headerShown: true, ...OPSI_KEPALA,
+            title: 'Home', headerShown: true, ...opsiKepala(),
             headerTitle: () => <Merek sub={`${tanggalPendek()} · 131 pasar hidup`} />,
             headerTitleAlign: 'left' as const,
-            headerRight: () => <AvatarKepala onPress={() => { navigation.navigate('lainnya', { screen: 'Profil' }); }} />,
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <TombolTema />
+                <AvatarKepala onPress={() => { navigation.navigate('lainnya', { screen: 'Profil' }); }} />
+              </View>
+            ),
             tabBarButton: (p) => <TombolTab ikon="rumah" label="Home" nama="home" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} />,
           })}
         >

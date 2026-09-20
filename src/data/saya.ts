@@ -156,3 +156,15 @@ export const daftarkanPerangkat = (token: string, platform: 'android' | 'ios'): 
 
 export const cabutPerangkat = (token: string): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/perangkat/cabut', 'POST', { token });
+
+/* ── TAUTKAN TELEGRAM KE AKUN INI (sesi Google) ─────────────────────────── */
+
+/**
+ * Arahnya KEBALIKAN dari "tempel tautan dari bot": di sini akun app yang
+ * meminta tautan, dan BOT yang menautkan Telegram ke akun ini saat tautan
+ * dibuka. Sesi Google-nya TIDAK diganti — sebelum ini "Sambungkan Telegram"
+ * di app menukar token jadi sesi baru, jadi dari akun Google ia terasa
+ * seperti dipaksa keluar dari Google. Itu yang dikeluhkan pemilik 20 Sep.
+ */
+export const mintaTautanTelegram = (): Promise<JawabanSaya<{ tautan: string; kedaluwarsaDetik: number }>> =>
+  panggil('/api/akun/token-telegram', 'POST', {});

@@ -5,6 +5,7 @@
  * mana pun. Blok umur data di bawah menjawabnya untuk seluruh app.
  */
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Lbl, Menu, Mikro, Nil } from '../komponen/mockup';
 import { Merek } from '../komponen/Merek';
@@ -71,7 +72,7 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   umur: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
-});
+}));

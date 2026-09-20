@@ -6,6 +6,7 @@
  * membedakannya; pita saja tidak cukup cepat dibaca.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilJadwal, type Rilis } from '../data/api';
@@ -115,7 +116,7 @@ export function LayarKalender() {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   chips: { flexDirection: 'row', gap: 4, paddingBottom: 4 },
   rilis: { flexDirection: 'row', gap: 8, alignItems: 'stretch', paddingVertical: 6 },
@@ -127,4 +128,4 @@ const g = StyleSheet.create({
   legendaBaris: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
   legendaTeks: { flex: 1, fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
   legendaTebal: { color: W.teksKuat, fontWeight: '600' },
-});
+}));

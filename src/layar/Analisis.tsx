@@ -21,6 +21,7 @@
  * mesin lain saat membaca menukar bacaannya di tempat.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
@@ -278,7 +279,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
             </View>
           ) : ditahan ? (
             <View style={g.ditahan}>
-              <Lbl warna={W.plus}>angka rencana ditahan</Lbl>
+              <Lbl warna={W.plusTeks}>angka rencana ditahan</Lbl>
               <Text style={g.ditahanJudul}>{m.sebabTanpaAngka ?? m.keputusan.label}</Text>
               <Text style={g.ditahanKet} numberOfLines={2}>{m.keputusan.alasan}</Text>
             </View>
@@ -370,15 +371,15 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
 /** Tinggi lembar yang melayang — ruang yang harus disisakan isi di atasnya. */
 const TINGGI_LEMBAR = 134;
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   kepala: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: TALANG, paddingVertical: 8, minHeight: SENTUH },
   pasarTombol: {
     flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: SENTUH - 8,
     paddingLeft: 8, paddingRight: 6, borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: W.garis,
+    backgroundColor: W.tinta(0.06), borderWidth: 1, borderColor: W.garis,
   },
-  gantiPil: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)' },
+  gantiPil: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: W.tinta(0.10) },
   gantiTeks: { fontSize: H.label, fontWeight: '600', color: W.teksKuat },
   simbol: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2, flexShrink: 1 },
   tanda: { fontSize: 12, color: W.teksSamar, marginTop: -3 },
@@ -409,4 +410,4 @@ const g = StyleSheet.create({
   lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH - 6, borderBottomWidth: 1, borderBottomColor: W.garis },
   tutup: { minHeight: SENTUH, justifyContent: 'center', paddingHorizontal: J.x2 },
   tutupTeks: { fontSize: H.nilai, color: W.teksRedup },
-});
+}));

@@ -3,6 +3,7 @@
  * Bacaan dan kartu di halaman Banding tidak perlahan-lahan jadi dua bentuk.
  */
 import type { ReactNode } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BIAYA_WAJAR_PERSEN, biayaLebar, biayaPersen } from '../data/tampil';
 import { W, H, J, R, ANGKA, gayaLabel } from '../gaya/token';
@@ -114,7 +115,7 @@ export function BarBiaya({ porsi, ringkas = false }: { porsi: number | null; rin
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   kartu: {
     backgroundColor: W.kartu, borderRadius: R.kartu, borderWidth: 1, borderColor: W.garis,
     padding: J.x3, marginHorizontal: J.x3, marginBottom: J.x3,
@@ -138,4 +139,4 @@ const g = StyleSheet.create({
   tombolTeks: { fontSize: H.kontrol, color: W.teks },
   barLuar: { height: 6, borderRadius: R.bulat, backgroundColor: W.isiSamarKuat, overflow: 'hidden' },
   barDalam: { height: 6, borderRadius: R.bulat },
-});
+}));

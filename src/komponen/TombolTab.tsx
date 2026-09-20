@@ -4,6 +4,7 @@
  * tabBarIcon/tabBarLabel bawaan supaya sorotnya membungkus KEDUANYA.
  */
 import { StyleSheet, Text, type GestureResponderEvent } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { useEffect } from 'react';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Tekan } from './Tekan';
@@ -22,7 +23,8 @@ export function TombolTab({ ikon, label, nama, emas = false, aktif = false, onPr
 }) {
   const dariNav = useNavigationState((st) => st.routes[st.index]?.name === nama);
   const aktifKini = dariNav || aktif;
-  const warna = emas ? W.plus : aktifKini ? W.teksKuat : W.teksSamar;
+  /* Label PLUS+ memakai emas-TEKS (lolos kontras di tema terang); ikonnya tetap emas isian. */
+  const warna = emas ? W.plusTeks : aktifKini ? W.teksKuat : W.teksSamar;
   /* Pindah tab TIDAK menggeser layar — tab itu setara. Yang terasa adalah pil
      yang baru aktif MEKAR dari 0,78 dengan pegas kecil: cukup untuk menjawab
      jari, tidak cukup untuk terasa seperti perjalanan. */
@@ -50,13 +52,13 @@ export function TombolTab({ ikon, label, nama, emas = false, aktif = false, onPr
 
 /* Latar pil menyilang, bukan melompat. Di luar StyleSheet: tipenya milik Reanimated. */
 const PIL_TRANSISI = {
-  backgroundColor: 'rgba(255,255,255,0)',
+  backgroundColor: W.tinta(0),
   transitionProperty: 'backgroundColor', transitionDuration: MS.tekan, transitionTimingFunction: KURVA_KELUAR,
 } satisfies GayaGerak;
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, paddingVertical: 6, paddingHorizontal: 3 },
   pil: { flex: 1, borderRadius: 26, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  pilAktif: { backgroundColor: 'rgba(255,255,255,0.10)' },
+  pilAktif: { backgroundColor: W.tinta(0.10) },
   label: { fontSize: H.alat, fontWeight: '500' },
-});
+}));

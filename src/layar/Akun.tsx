@@ -11,13 +11,14 @@
  * diketahui; yang belum ada dicetak "—".
  */
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
+import { ScrollView, StyleSheet, Text, TextInput, View, AppState, Linking } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import {
   ambilKabarOtomatis, ambilPantauan, ambilRingkas,
   cekBanyak, matikanPantauan, setelJamKabar, setelKabarOtomatis, tambahPantauan, MAKS_SLOT_CEK_BANYAK,
-  type BarisCekBanyak, type DaftarPantauan, type HasilCekBanyak, type JawabanSaya, type KabarOtomatis, type Ringkas,
+  type BarisCekBanyak, type DaftarPantauan, type HasilCekBanyak, type JawabanSaya, type KabarOtomatis, type Ringkas, mintaTautanTelegram,
 } from '../data/saya';
 import { bacaSesi, dengarSesi, hapusSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
 import { useMuat, type Hasil } from '../data/muat';
@@ -119,22 +120,68 @@ const SATU_BULAN = PAKET_PLUS[0] as { kode: string; bulan: number; hargaRp: numb
 /* ══ 21 · SAMBUNGKAN TELEGRAM ═══════════════════════════════════════════ */
 export function LayarSambung() {
   const sesi = useSesi();
+  const { isi: r, ulangi } = useAkun(ambilRingkas, sesi);
+  const [galatTaut, setGalatTaut] = useState<string | null>(null);
+  const [sibukTaut, setSibukTaut] = useState(false);
+
+  /* Kembali dari Telegram → baca ulang: bot mungkin sudah menautkan. */
+  useEffect(() => {
+    const l = AppState.addEventListener('change', (st) => { if (st === 'active') ulangi(); });
+    return () => { l.remove(); };
+  }, [ulangi]);
+
+  async function tautkan(): Promise<void> {
+    setSibukTaut(true); setGalatTaut(null);
+    try {
+      const j = await mintaTautanTelegram();
+      if (!j.ok) { setGalatTaut(j.kalimat); return; }
+      /* Tautan t.me datang dari SERVER, bukan diketik di sini — penjaga
+         tautan-keluar memeriksa literal di sumber, dan ini bukan tautan ke
+         harga web. Membuka Telegram adalah satu-satunya cara bot bisa menautkan. */
+      await Linking.openURL(j.isi.tautan);
+    } catch {
+      setGalatTaut('Telegram tidak bisa dibuka di HP ini.');
+    } finally { setSibukTaut(false); }
+  }
+
   if (sesi !== null) {
+    const tersambung = r?.telegramTersambung === true || sesi.jenis === 'mini';
     return (
       <Wadah>
         <Blok gaya={{ alignItems: 'center', paddingVertical: 16 }}>
           <Ikon nama="profil" warna={W.naik} ukuran={28} />
-          <Text style={g.judulTengah}>{sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Sudah tersambung'}</Text>
+          <Text style={g.judulTengah}>{sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Tersambung lewat Telegram'}</Text>
           <Text style={g.ketTengah}>
             {sesi.akun.nama ?? (sesi.jenis === 'clerk' ? 'Akun Google' : 'Akun Telegram')} · {sesi.akun.langganan === 'plus' ? 'AnalisMarket+' : 'Gratis'}
           </Text>
         </Blok>
+
+        {/* TAUTKAN, bukan ganti sesi. Sebelumnya layar ini menawarkan formulir
+            "tempel tautan dari bot" kepada akun Google — yang menukar token jadi
+            SESI BARU, jadi Google-nya terasa dipaksa lepas. Sekarang arahnya
+            dibalik: app meminta tautan, bot yang menautkan ke akun ini. */}
+        <Blok emas={!tersambung}>
+          <Lbl>Telegram</Lbl>
+          {tersambung ? (
+            <Text style={[g.centangTeks, { marginTop: 6 }]}>Tersambung. Kabar juga bisa lewat Telegram saat HP tidak terdaftar.</Text>
+          ) : (
+            <>
+              <Text style={[g.centangTeks, { marginTop: 6 }]}>Opsional. Kabar sudah jalan lewat notifikasi HP; Telegram jadi cadangan dan pintu ke bot.</Text>
+              <View style={{ marginTop: 10 }}>
+                <Tombol teks={sibukTaut ? 'Menyiapkan…' : 'Buka Telegram untuk menautkan'} jenis="emas" mati={sibukTaut} onPress={() => { void tautkan(); }} />
+              </View>
+              {galatTaut !== null && <Mikro>{galatTaut}</Mikro>}
+              <Mikro>Telegram terbuka di bot @analismarketbot, tekan Start — selesai. Kembali ke app, statusnya ikut berubah.</Mikro>
+            </>
+          )}
+        </Blok>
+
         <Blok gaya={{ flex: 1 }}>
           <Lbl>Yang terbuka sekarang</Lbl>
           <View style={{ marginTop: 8, gap: 8 }}>
             {[
-              ['Pantauan dan kabar otomatis', 'Dikabari saat syarat setup lolos, tanpa membuka app.'],
-              ['Setelan bawaan ikut dari bot', 'Pasar, timeframe, dan mesin yang sama di Telegram, web, dan app.'],
+              ['Pantauan dan kabar otomatis', 'Dikabari ke HP ini saat syarat setup lolos, tanpa membuka app.'],
+              ['Setelan bawaan', 'Pasar, timeframe, dan mesin yang sama di app dan web.'],
               ['Status AM+', 'Terbaca di Home dan Profil.'],
             ].map(([j, k]) => (
               <View key={j} style={g.centangBaris}>
@@ -147,8 +194,8 @@ export function LayarSambung() {
             ))}
           </View>
         </Blok>
-        <Tombol teks="Putuskan sambungan" jenis="kedua" onPress={() => { void hapusSesi(); }} />
-        <Mikro tengah>Sesi berlaku 12 jam, lalu perlu disambung ulang lewat bot.</Mikro>
+        <Tombol teks={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan'} jenis="kedua" onPress={() => { void hapusSesi(); }} />
+        {sesi.jenis === 'mini' && <Mikro tengah>Sesi berlaku 12 jam, lalu perlu disambung ulang lewat bot.</Mikro>}
       </Wadah>
     );
   }
@@ -162,7 +209,7 @@ export function LayarSambung() {
       </Blok>
       <FormulirSambung />
       <View style={{ flex: 1 }} />
-      <Mikro>App ini tidak memasang tautan keluar, jadi bot dibuka sendiri dari Telegram.</Mikro>
+      <Mikro>Tautannya ditempel di sini — tidak perlu berpindah app.</Mikro>
     </Wadah>
   );
 }
@@ -663,7 +710,7 @@ export function LayarBerlangganan() {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   baris: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   rata: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
@@ -672,7 +719,7 @@ const g = StyleSheet.create({
   judulTengah: { marginTop: 8, fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, textAlign: 'center', letterSpacing: -0.2 },
   ketTengah: { marginTop: 6, fontSize: H.alat, color: W.teksRedup, lineHeight: 15, textAlign: 'center', maxWidth: 260 },
   centangBaris: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
-  centang: { color: W.plus, fontSize: 9, marginTop: 2 },
+  centang: { color: W.plusTeks, fontSize: 9, marginTop: 2 },
   centangTeks: { flex: 1, fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
   pilih: { flexDirection: 'row', gap: 9, alignItems: 'flex-start', paddingHorizontal: 11, paddingVertical: 9 },
   pilihJudul: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat },
@@ -681,13 +728,13 @@ const g = StyleSheet.create({
   besar: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, fontVariant: ['tabular-nums'] },
   dari: { fontSize: H.alat, color: W.teksRedup, fontWeight: '400' },
   kartuEmas: { borderRadius: R.kartu, padding: 13, borderWidth: 1, borderColor: 'rgba(201,169,97,0.38)', backgroundColor: 'rgba(201,169,97,0.10)' },
-  cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plus, fontWeight: '600' },
-  harga: { fontSize: 19, fontWeight: '700', color: '#E3CE97', marginTop: 5, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plusTeks, fontWeight: '600' },
+  harga: { fontSize: 19, fontWeight: '700', color: W.plusTerang, marginTop: 5, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   handle: { marginTop: 6, marginBottom: 8, fontSize: 22, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4 },
   tempelKotak: {
     marginTop: 6, minHeight: SENTUH, paddingHorizontal: 10, borderRadius: R.besar,
-    borderWidth: 1, borderColor: W.garis, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center',
+    borderWidth: 1, borderColor: W.garis, backgroundColor: W.tinta(0.05), justifyContent: 'center',
   },
   tempelIsi: { color: W.teksKuat, fontSize: H.nilai, paddingVertical: 10 },
   galat: { marginTop: 8, fontSize: H.alat, color: W.turun, lineHeight: 15 },
-});
+}));

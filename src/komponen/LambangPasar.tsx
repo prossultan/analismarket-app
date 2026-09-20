@@ -13,6 +13,7 @@
  * dan gagalnya diam: gambar kosong, tanpa satu pun galat.
  */
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { W, R } from '../gaya/token';
 
 const LAMBANG: Record<string, number> = {
@@ -151,7 +152,7 @@ export function LambangPasar({ simbol, ukuran = 22 }: { simbol: string; ukuran?:
   return <Image source={LAMBANG[kunci]} style={gaya} accessibilityIgnoresInvertColors />;
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   ganti: { alignItems: 'center', justifyContent: 'center', backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis },
   huruf: { color: W.teksRedup, fontWeight: '700' },
-});
+}));

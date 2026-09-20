@@ -5,6 +5,7 @@
  * baru menyatakan SYARATNYA — bukan menjanjikan akan ada banyak.
  */
 import { useEffect, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilPasar } from '../data/api';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
@@ -34,7 +35,7 @@ export function LayarTentang({ versi }: { versi: string }) {
       {sebab !== null && <PitaBasi kalimat={sebab} />}
       <Blok gaya={{ alignItems: 'center', paddingVertical: 15 }}>
         <Image source={LOGO} style={g.logo} accessibilityIgnoresInvertColors />
-        <Text style={g.nama}>Analis<Text style={{ color: W.plus }}>Market</Text></Text>
+        <Text style={g.nama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
         <Lbl polos gaya={{ marginTop: 3, fontVariant: ['tabular-nums'] }}>Versi {versi}</Lbl>
         <Text style={g.ket}>Analisa teknikal otomatis untuk 131 pasar. Bukan nasihat investasi, dan tidak menjanjikan hasil apa pun.</Text>
       </Blok>
@@ -75,7 +76,7 @@ export function LayarTentang({ versi }: { versi: string }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   logo: { width: 54, height: 54, borderRadius: 15, marginBottom: 9 },
   nama: { fontSize: 15, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.3 },
@@ -85,4 +86,4 @@ const g = StyleSheet.create({
   cara: { marginTop: 7 },
   caraJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat },
   caraKet: { fontSize: H.alat, color: W.teksRedup, lineHeight: 14, marginTop: 1 },
-});
+}));

@@ -5,6 +5,7 @@
  * layar tidak menyusun sendiri dan menyimpang.
  */
 import { StyleSheet, Text, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { W, H } from '../gaya/token';
 
 export function JudulKepala({ judul, sub }: { judul: string; sub?: string }) {
@@ -16,8 +17,8 @@ export function JudulKepala({ judul, sub }: { judul: string; sub?: string }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { justifyContent: 'center' },
   judul: { color: W.teksKuat, fontSize: H.status, fontWeight: '700', letterSpacing: -0.2 },
   sub: { color: W.teksSamar, fontSize: H.alat, marginTop: 1 },
-});
+}));

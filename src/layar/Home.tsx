@@ -10,6 +10,7 @@
  * bacaan tiap dibuka; sekarang kedua permintaan itu milik tab Pasar.
  */
 import { useCallback } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
@@ -137,7 +138,7 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
   akun: { borderRadius: R.kartu + 2, paddingVertical: 12, paddingHorizontal: 13, overflow: 'hidden', borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   akunPlus: { borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.kartu },
@@ -151,9 +152,9 @@ const g = StyleSheet.create({
   sel: { alignItems: 'center', paddingTop: 12, paddingBottom: 10, gap: 7 },
   selLabel: { fontSize: 11, color: W.teks },
   lencana: { position: 'absolute', top: -2, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
-  lencanaEmas: { backgroundColor: W.plus }, lencanaPutih: { backgroundColor: 'rgba(255,255,255,0.12)' }, lencanaMerah: { backgroundColor: W.turun },
+  lencanaEmas: { backgroundColor: W.plus }, lencanaPutih: { backgroundColor: W.tinta(0.12) }, lencanaMerah: { backgroundColor: W.turun },
   lencanaTeks: { fontSize: 9, fontWeight: '700' },
   bento: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
   bentoKanan: { flex: 1.2, gap: 8 },
   bentoBawah: { flexDirection: 'row', gap: 8 },
-});
+}));

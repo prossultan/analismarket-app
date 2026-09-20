@@ -8,6 +8,7 @@
  * dengan tab Pasar — jadi kalau tab Pasar sudah memuatnya, kartu ini gratis.
  */
 import { useCallback, useState } from 'react';
+import { gayaTema } from '../gaya/tema';
 import { StyleSheet, Text, View } from 'react-native';
 import { ambilBacaan } from '../data/api';
 import { useMuat, type Hasil } from '../data/muat';
@@ -78,7 +79,7 @@ function SparklineIsi({ deret, warna }: { deret: number[]; warna: string }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   /* flex 1 + minWidth 0: di baris dua kartu, keduanya berbagi lebar dan
      tidak ada yang meluap keluar layar (terlihat di potret: Solana terpotong). */
   kartu: { flex: 1, minWidth: 0, backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, padding: 11, overflow: 'hidden' },
@@ -91,4 +92,4 @@ const g = StyleSheet.create({
   garis: { marginTop: 6, marginHorizontal: -11, flexDirection: 'row' },
   kaki: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
   ubah: { fontSize: H.nilai, fontWeight: '700', fontVariant: ['tabular-nums'] },
-});
+}));

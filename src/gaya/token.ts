@@ -12,7 +12,24 @@ import { Platform } from 'react-native';
  * `SKILL.md` sebelah berkas itu.
  */
 
-export const W = {
+/** Semua warna bertema. Kuncinya SAMA di kedua tema — yang berbeda nilainya. */
+export type Palet = {
+  latar: string; latar900: string; kartu: string; kartuTerang: string; garis: string; garisSamar: string;
+  teks: string; teksKuat: string; teksRedup: string; teksSamar: string;
+  naik: string; turun: string; tanda: string;
+  /** Emas sebagai ISIAN (ikon, lencana) — sama di kedua tema. */
+  plus: string;
+  /** Emas sebagai TEKS. Di latar terang #C9A961 cuma 1,9:1; ini yang lolos kontras. */
+  plusTeks: string;
+  /** Emas pucat untuk ANGKA BESAR (harga AM+): terang di gelap, pekat di terang. */
+  plusTerang: string;
+  plusRedup: string; chart: string; turunTepi: string; turunLatar: string; tirai: string;
+  isiSamar: string; isiSamarKuat: string;
+  /** "Tinta" beralfa: putih di tema gelap, hampir-hitam di tema terang. Pengganti rgba(255,255,255,a). */
+  tinta: (a: number) => string;
+};
+
+export const PALET_GELAP: Palet = {
   /** obsidian hangat — latar halaman */
   latar: '#0C0B09',
   latar900: '#11100D',
@@ -54,7 +71,57 @@ export const W = {
   /** Isian chip netral dan bar biaya kosong. */
   isiSamar: 'rgba(255,255,255,0.05)',
   isiSamarKuat: 'rgba(255,255,255,0.06)',
-} as const;
+  plusTeks: '#C9A961',
+  plusTerang: '#E3CE97',
+  tinta: (a) => `rgba(255,255,255,${String(a)})`,
+};
+
+/**
+ * TEMA TERANG — palet sendiri, bukan pembalikan. Hangat seperti latar mockup
+ * Play (krem gading), bukan putih klinis; teks hampir-hitam hangat #14120F.
+ * Chart TETAP gelap: kanvas web chart-embed belum bertema, dan kandil di
+ * atas kanvas gelap adalah bahasa visual yang sudah dikenal pengguna.
+ */
+export const PALET_TERANG: Palet = {
+  latar: '#F6F3EC',
+  latar900: '#EFEBE3',
+  kartu: '#FFFFFF',
+  kartuTerang: '#FBF9F5',
+  garis: '#E4DED3',
+  garisSamar: 'rgba(20,18,15,0.06)',
+  teks: '#3B3630',
+  teksKuat: '#14120F',
+  teksRedup: '#5F5850',
+  teksSamar: '#7C7468',
+  naik: '#0C8F6B',
+  turun: '#D63A52',
+  tanda: '#B8650A',
+  plus: '#C9A961',
+  plusTeks: '#8A6B26',
+  plusTerang: '#7A5C1E',
+  plusRedup: 'rgba(201,169,97,0.18)',
+  chart: '#0B0B0D',
+  turunTepi: 'rgba(214,58,82,0.30)',
+  turunLatar: 'rgba(214,58,82,0.08)',
+  tirai: 'rgba(20,18,15,0.35)',
+  isiSamar: 'rgba(20,18,15,0.04)',
+  isiSamarKuat: 'rgba(20,18,15,0.06)',
+  tinta: (a) => `rgba(20,18,15,${String(a)})`,
+};
+
+let paletSekarang: Palet = PALET_GELAP;
+let terang = false;
+/** Dipanggil tema.ts; bukan untuk komponen. */
+export function _pasangPalet(p: Palet): void { paletSekarang = p; terang = p === PALET_TERANG; }
+
+/**
+ * `W` HIDUP: tiap akses membaca palet yang sedang aktif. Aman dipakai
+ * langsung di JSX (dibaca saat render). Di dalam `StyleSheet.create` TIDAK
+ * aman — nilainya dibaca saat modul dimuat; pakai `gayaTema((W) => ...)`.
+ */
+export const W: Palet = new Proxy({} as Palet, {
+  get: (_, k) => (paletSekarang as unknown as Record<string | symbol, unknown>)[k],
+});
 
 /**
  * TANGGA HURUF MOBILE — disalin dari `.mobil` di `mobil.css`, bukan
@@ -143,7 +210,7 @@ export const SELA_CHIP = 6;
  */
 const IOS = Platform.OS === 'ios';
 
-export const KACA = {
+const KACA_GELAP = {
   /** Bilah: isi di baliknya harus tetap terbaca. */
   /* Intensitas dinaikkan (34 → 68): mockup memakai blur(26px), dan di
      expo-blur angka 34 setara ~10px — separuhnya. Di HP pemilik kaca tidak
@@ -165,6 +232,20 @@ export const KACA = {
   tepi: 'rgba(255,255,255,0.16)',
   rim: 'rgba(255,255,255,0.15)',
 } as const;
+
+/** Kaca tema terang: krem gading pekat, rim gelap tipis. Android tetap lebih pekat. */
+const KACA_TERANG = {
+  tipis: { intensitas: 68, warna: IOS ? 'rgba(246,243,236,0.62)' : 'rgba(246,243,236,0.92)' },
+  tebal: { intensitas: 84, warna: IOS ? 'rgba(250,248,243,0.78)' : 'rgba(250,248,243,0.96)' },
+  tepi: 'rgba(20,18,15,0.10)',
+  rim: 'rgba(255,255,255,0.7)',
+} as const;
+
+export type Kaca = typeof KACA_GELAP;
+/** HIDUP seperti `W`: dibaca saat render oleh Kaca.tsx. */
+export const KACA: Kaca = new Proxy({} as Kaca, {
+  get: (_, k) => ((terang ? KACA_TERANG : KACA_GELAP) as unknown as Record<string | symbol, unknown>)[k],
+});
 
 export const J = { x1: 4, x2: 8, x3: 12, x4: 18, x5: 26 } as const;
 export const R = { kecil: 4, sedang: 6, besar: 8, kartu: 12, bulat: 999 } as const;

@@ -4,6 +4,7 @@
  * pola app 2026; chip "PLUS+" yang dulu di situ sudah ada sebagai tab.
  */
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { useSesi } from '../layar/Akun';
 import { W } from '../gaya/token';
 
@@ -22,12 +23,12 @@ export function AvatarKepala({ onPress }: { onPress: () => void }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   akar: {
     width: 30, height: 30, borderRadius: 15, marginRight: 12,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.tinta(0.12),
   },
   plus: { backgroundColor: '#D6BE7E', borderColor: 'rgba(201,169,97,0.7)' },
   huruf: { fontSize: 12, fontWeight: '700', color: W.teks },
-});
+}));

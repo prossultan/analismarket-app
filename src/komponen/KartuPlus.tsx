@@ -5,6 +5,7 @@
  * Tidak ada pembayaran di app; tombolnya cuma membuka halaman AM+.
  */
 import { StyleSheet, Text, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PAKET_PLUS, rupiah } from '../data/amplus';
 import { Ikon } from './Ikon';
@@ -43,16 +44,16 @@ export function KartuPlus({ plus, sisaHari, onPress }: { plus: boolean; sisaHari
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   kartu: { borderRadius: R.kartu + 2, padding: 14, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(201,169,97,0.42)', backgroundColor: W.kartu },
   kepala: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  cap: { fontSize: H.label, letterSpacing: 1.6, textTransform: 'uppercase', color: W.plus, fontWeight: '700' },
+  cap: { fontSize: H.label, letterSpacing: 1.6, textTransform: 'uppercase', color: W.plusTeks, fontWeight: '700' },
   judul: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, marginTop: 8, letterSpacing: -0.2 },
   ket: { fontSize: H.alat, color: W.teksRedup, marginTop: 4, lineHeight: 15 },
-  harga: { fontSize: 20, fontWeight: '700', color: '#E3CE97', marginTop: 4, letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
+  harga: { fontSize: 20, fontWeight: '700', color: W.plusTerang, marginTop: 4, letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   per: { fontSize: H.alat, fontWeight: '400', color: W.teksRedup },
   manfaat: { marginTop: 8, gap: 5 },
   baris: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
-  centang: { color: W.plus, fontSize: 11, marginTop: 1 },
+  centang: { color: W.plusTeks, fontSize: 11, marginTop: 1 },
   manfaatTeks: { fontSize: H.nilai, color: W.teks, flex: 1 },
-});
+}));

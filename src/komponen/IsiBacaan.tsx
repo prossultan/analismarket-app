@@ -10,6 +10,7 @@
  * ulang letak apa pun.
  */
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { gayaTema } from '../gaya/tema';
 import { arahTurun, syaratWajib, type Mesin } from '../data/api';
 import { angka } from '../data/tampil';
 import { BarBiaya, Kartu, Pisah } from './dasar';
@@ -139,7 +140,7 @@ function BarisKV({ k, v }: { k: string; v: string }) {
   );
 }
 
-const g = StyleSheet.create({
+const g = gayaTema((W) => StyleSheet.create({
   rr: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
   kepalaBaris: { flexDirection: 'row', alignItems: 'baseline', gap: J.x2, marginBottom: J.x2 },
   status: { fontSize: H.status, fontWeight: '700', color: W.teksKuat },
@@ -167,4 +168,4 @@ const g = StyleSheet.create({
   kvK: { fontSize: 11, color: W.teksRedup, flexShrink: 1 },
   kvV: { fontSize: 11, color: W.teksKuat, fontWeight: '500', ...ANGKA },
   kaki: { fontSize: H.label, color: W.teksSamar, paddingHorizontal: TALANG, paddingBottom: J.x4, lineHeight: 14 },
-});
+}));
