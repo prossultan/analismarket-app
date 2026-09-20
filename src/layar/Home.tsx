@@ -9,7 +9,7 @@
  * Satu permintaan jaringan saja (`/api/saya`). Dulu Home menarik pasar DAN
  * bacaan tiap dibuka; sekarang kedua permintaan itu milik tab Pasar.
  */
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { gayaTema } from '../gaya/tema';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +24,7 @@ import type { Setelan } from '../data/simpan';
 import { KartuPasarMini } from '../komponen/KartuPasarMini';
 import { KartuPlus } from '../komponen/KartuPlus';
 import { Tekan } from '../komponen/Tekan';
+import { setBelumDibaca, useBelumDibaca } from '../data/kotakMasuk';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { JEDA_URUT } from '../gaya/gerak';
 
@@ -75,6 +76,8 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
   const r = keadaan.fase === 'ada' ? keadaan.isi : null;
   const basi = keadaan.fase === 'ada' ? keadaan.basi : null;
   const plus = r?.langganan === 'plus';
+  const belum = useBelumDibaca();
+  useEffect(() => { if (r !== null && r.kabarBelumDibaca !== undefined) setBelumDibaca(r.kabarBelumDibaca); }, [r]);
   const nama = sesi?.akun.nama ?? null;
   const google = sesi?.jenis === 'clerk';
   const angka = (n: number | undefined): string => (n === undefined ? '—' : n.toLocaleString('id-ID'));
@@ -108,7 +111,7 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
         <Sel ikon="kabar" label="Pantauan" lencana={r === null ? undefined : `${String(r.pantauanAktif)} aktif`} warnaLencana="putih" onPress={() => { buka('Pantauan'); }} />
         <Sel ikon="tambah" label="Pantauan baru" onPress={() => { buka('PantauanBaru'); }} />
         <Sel ikon="kalender" label="Kabar otomatis" lencana="AM+" emas={plus} onPress={() => { buka('KabarOtomatis'); }} />
-        <Sel ikon="kabar" label="Kabar" onPress={() => { bukaTab('kabar'); }} />
+        <Sel ikon="kabar" label="Kabar" lencana={belum > 0 ? `${String(belum)} baru` : undefined} warnaLencana="merah" onPress={() => { bukaTab('kabar'); }} />
         <Sel ikon="kisi" label="Cek banyak" lencana="AM+" emas={plus} onPress={() => { buka('CekBanyak'); }} />
         <Sel ikon="kalender" label="Kalender" onPress={() => { buka('Kalender'); }} />
         <Sel ikon="buku" label="Belajar" onPress={() => { buka('Belajar'); }} />

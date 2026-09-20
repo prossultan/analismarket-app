@@ -36,7 +36,9 @@ import { LayarAnalisis } from './src/layar/Analisis';
 import { LayarBelajar } from './src/layar/Belajar';
 import { LayarPengaturan } from './src/layar/Pengaturan';
 import { LayarHome } from './src/layar/Home';
-import { LayarProfil, LayarKabar } from './src/layar/Profil';
+import { LayarProfil } from './src/layar/Profil';
+import { LayarKabar } from './src/layar/KotakMasuk';
+import { pasangPenyegarLencana, setBelumDibaca, useBelumDibaca } from './src/data/kotakMasuk';
 import { LayarKalender } from './src/layar/Kalender';
 import { LayarAmPlus } from './src/layar/AmPlus';
 import { LayarLainnya, type KunciMenu } from './src/layar/Lainnya';
@@ -243,10 +245,10 @@ function AlurKabar({ setelan, simpan }: IsiTumpukan) {
     <Tumpukan.Navigator screenOptions={opsiTumpukan()}>
       <Tumpukan.Screen name="Kabar" options={{ title: 'Kabar' }}>
         {({ navigation }) => (
-          <LayarKabar setelan={setelan}
-            bukaPantauan={() => { (navigation as Nav).navigate('Pantauan'); }}
-            bukaSambung={() => { (navigation as Nav).navigate('Sambung'); }}
-            bukaChart={() => { navigation.getParent()?.navigate('pasar'); }} />
+          <LayarKabar bukaPasarDi={(pair, tf) => {
+            simpan({ ...setelan, pasar: pair, tf: tf.toLowerCase() });
+            navigation.getParent()?.navigate('pasar');
+          }} />
         )}
       </Tumpukan.Screen>
       {LayarBersama({ setelan, simpan })}
@@ -401,6 +403,13 @@ function Isi() {
   }, [setelan, simpan]);
   const [keadaanNav, setKeadaanNav] = useState<NavigationState | undefined>(undefined);
 
+  /* LENCANA KOTAK MASUK realtime: push tiba → segarkan; app ke depan → segarkan. */
+  const belum = useBelumDibaca();
+  useEffect(() => {
+    if (sesi === null) { setBelumDibaca(0); return undefined; }
+    return pasangPenyegarLencana();
+  }, [sesi]);
+
   /**
    * KETUKAN NOTIFIKASI → CHART pasar yang dikabarkan.
    *
@@ -527,7 +536,7 @@ function Isi() {
           {() => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} />}
         </Tab.Screen>
 
-        <Tab.Screen name="kabar" options={{ title: 'Kabar', tabBarButton: (p) => <TombolTab ikon="kabar" label="Kabar" nama="kabar" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>
+        <Tab.Screen name="kabar" options={{ title: 'Kabar', tabBarButton: (p) => <TombolTab ikon="kabar" label="Kabar" nama="kabar" lencana={belum} aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>
           {() => <AlurKabar setelan={setelan} simpan={simpan} />}
         </Tab.Screen>
 

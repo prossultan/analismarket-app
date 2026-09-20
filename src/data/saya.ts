@@ -81,6 +81,8 @@ export type Ringkas = {
   sisaHariPlus: number;
   plusBerakhirPada: number | null;
   poin: number;
+  /** Lencana kotak masuk. Ikut di sini supaya Home tidak perlu permintaan kedua. */
+  kabarBelumDibaca?: number;
   pantauanAktif: number;
   maksPantauan: number;
   setelan: { pair: string; tf: string; strategi: string | null } | null;
@@ -168,3 +170,17 @@ export const cabutPerangkat = (token: string): Promise<JawabanSaya<unknown>> =>
  */
 export const mintaTautanTelegram = (): Promise<JawabanSaya<{ tautan: string; kedaluwarsaDetik: number }>> =>
   panggil('/api/akun/token-telegram', 'POST', {});
+
+/* ── KOTAK MASUK ───────────────────────────────────────────────────────── */
+
+export type JenisKabar = 'pantauan' | 'otomatis' | 'sistem' | 'promo';
+export type KabarMasuk = {
+  id: number; jenis: JenisKabar; judul: string; isi: string;
+  data: { pair?: string; tf?: string; mesin?: string } | null;
+  /** ISO UTC. */
+  dibuat: string; dibaca: boolean;
+};
+export const ambilKabarMasuk = (sebelum: number | null): Promise<JawabanSaya<{ kabar: KabarMasuk[]; belumDibaca: number }>> =>
+  panggil('/api/saya/kabar', 'POST', sebelum === null ? {} : { sebelum });
+export const tandaiKabarDibaca = (id: number | 'semua'): Promise<JawabanSaya<{ ditandai: number; belumDibaca: number }>> =>
+  panggil('/api/saya/kabar/baca', 'POST', id === 'semua' ? { semua: true } : { id });

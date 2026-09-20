@@ -3,7 +3,7 @@
  * (mockup home-2026/kisi, mengikuti referensi pemilik). Menggantikan
  * tabBarIcon/tabBarLabel bawaan supaya sorotnya membungkus KEDUANYA.
  */
-import { StyleSheet, Text, type GestureResponderEvent } from 'react-native';
+import { StyleSheet, Text, View, type GestureResponderEvent } from 'react-native';
 import { gayaTema } from '../gaya/tema';
 import { useEffect } from 'react';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -13,12 +13,14 @@ import { useNavigationState } from '@react-navigation/native';
 import { Ikon, type NamaIkon } from './Ikon';
 import { W, H } from '../gaya/token';
 
-export function TombolTab({ ikon, label, nama, emas = false, aktif = false, onPress, onLongPress }: {
+export function TombolTab({ ikon, label, nama, emas = false, aktif = false, lencana = 0, onPress, onLongPress }: {
   ikon: NamaIkon; label: string;
   /** Nama rute tab — keadaan aktif dibaca dari NAVIGATOR. `accessibilityState.selected`
       yang diteruskan bottom-tabs v7 kosong di runtime (terlihat di potret: tak ada tab
       yang disorot), jadi prop `aktif` cuma cadangan. */
   nama: string; emas?: boolean; aktif?: boolean;
+  /** Angka belum-dibaca. 0 = tidak digambar. */
+  lencana?: number;
   onPress?: ((e: GestureResponderEvent) => void) | null; onLongPress?: ((e: GestureResponderEvent) => void) | null;
 }) {
   const dariNav = useNavigationState((st) => st.routes[st.index]?.name === nama);
@@ -43,7 +45,11 @@ export function TombolTab({ ikon, label, nama, emas = false, aktif = false, onPr
           orang membayarnya puluhan kali sehari. Yang menyilang cuma latar
           pilnya, 120 ms: cukup untuk tidak "berkedip", tidak cukup untuk terasa. */}
       <Animated.View style={[g.pil, PIL_TRANSISI, aktifKini && g.pilAktif, gayaMekar]}>
-        <Ikon nama={ikon} warna={warna} ukuran={22} isi={emas ? W.plus : undefined} tebal={aktifKini} />
+        <View>
+          <Ikon nama={ikon} warna={warna} ukuran={22} isi={emas ? W.plus : undefined} tebal={aktifKini} />
+          {/* Satu-satunya merah di luar arti "turun": "ada yang belum dibaca" memang butuh mata. */}
+          {lencana > 0 && <View style={g.lencana}><Text style={g.lencanaTeks}>{lencana > 99 ? '99+' : String(lencana)}</Text></View>}
+        </View>
         <Text style={[g.label, { color: warna }, aktifKini && { fontWeight: '600' }]} numberOfLines={1}>{label}</Text>
       </Animated.View>
     </Tekan>
@@ -61,4 +67,6 @@ const g = gayaTema((W) => StyleSheet.create({
   pil: { flex: 1, borderRadius: 26, alignItems: 'center', justifyContent: 'center', gap: 3 },
   pilAktif: { backgroundColor: W.tinta(0.10) },
   label: { fontSize: H.alat, fontWeight: '500' },
+  lencana: { position: 'absolute', top: -5, right: -10, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 4, backgroundColor: W.turun, alignItems: 'center', justifyContent: 'center' },
+  lencanaTeks: { fontSize: 10, fontWeight: '700', color: '#fff' },
 }));

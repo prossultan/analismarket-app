@@ -613,3 +613,22 @@ padahal terminatornya `} as const;` — token.ts terpotong sampai ANGKA;
 (2) skrip pengganti `useHeaderHeight()` ikut mengganti definisi cadangannya
 sendiri → rekursi, Home putih. Keduanya ketahuan dari tsc/harness, bukan
 dari skripnya.
+
+## Kotak masuk (20 Sep) — tab Kabar menjadi catatan yang tidak hilang
+
+Tab Kabar dulu berisi bacaan mesin + kalender — bukan kabar. Sekarang kotak
+masuk: empat jenis (pantauan · otomatis · sistem · promo), per hari, baris
+pantauan = satu ketukan ke chart. Sumbernya `/api/saya/kabar`; server mencatat
+baris di PINTU YANG SAMA dengan pengiriman, apa pun salurannya, jadi push yang
+hilang di jalan tetap punya catatan.
+
+Lencana belum-dibaca "realtime" TANPA polling (`src/data/kotakMasuk.ts`):
+satu angka bersama untuk Home, tab, dan layar; disegarkan saat push TIBA
+(listener notifikasi), saat app kembali ke depan, dan saat kotak masuk
+sendiri bertindak. Ditambah tiap /api/saya yang memang sudah dipanggil Home
+(`kabarBelumDibaca` ikut di sana — nol permintaan tambahan).
+
+Jebakan harness: `sesiTiruan` mendaftarkan rute `/api/saya**` — rute yang
+didaftarkan SESUDAHNYA yang menang. Mock kotak masuk harus dipasang sesudah
+`sesiTiruan(p, false)`, lalu reload sendiri. Sempat menghasilkan "Belum ada
+kabar" yang terlihat seperti bug app.
