@@ -21,6 +21,9 @@ concurrency:
   group: build-android-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write   # untuk menerbitkan APK ke Release 'pratinjau'
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -63,3 +66,16 @@ jobs:
           name: AnalisMarket-${{ github.sha }}
           path: AnalisMarket.apk
           retention-days: 14
+
+      # SATU rilis bergulir 'pratinjau': aset lama diganti, tautannya tetap.
+      # Artefak Actions butuh token untuk diunduh; aset Release di repo publik
+      # tidak — itu yang membuat VPS bisa menariknya tanpa kredensial GitHub.
+      - name: Terbitkan ke Release 'pratinjau'
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete pratinjau --yes --cleanup-tag 2>/dev/null || true
+          gh release create pratinjau AnalisMarket.apk --prerelease \
+            --title "Pratinjau ${GITHUB_SHA::7}" \
+            --notes "Build otomatis dari ${GITHUB_SHA}. Bukan rilis toko."
