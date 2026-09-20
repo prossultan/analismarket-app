@@ -1,21 +1,22 @@
 /**
  * TEKAN — umpan balik tekan untuk SEMUA yang bisa ditekan, satu pintu.
  *
- * Skala 0,97 dalam 120 ms lewat transisi CSS Reanimated: tidak ada nilai
- * bersama, tidak ada worklet, dan `setState`-nya cuma dua kali per tekanan,
- * bukan per frame. Untuk sesuatu yang disentuh puluhan kali sehari, ini
- * batas atas yang masih terasa "ada" tanpa pernah terasa "menunggu".
+ * Versi pertama: transisi CSS 0,97 / 120 ms — batas "nyaris tak terasa"
+ * menurut skill. Pemilik mencobanya di HP: KAKU. Sekarang:
  *
- * Umpan baliknya di PRESS-IN, bukan di lepas: yang dirasakan orang sebagai
- * lambat adalah jeda antara jari menyentuh dan layar menjawab.
+ * - Jari menyentuh → turun ke 0,95 dalam 90 ms (seketika, tanpa pantulan).
+ * - Jari lepas → BALIK DENGAN PEGAS yang sedikit melewati 1 lalu diam.
+ *   Yang terasa "empuk" adalah pantulan baliknya; tanpa itu tekan cuma
+ *   mengecil-membesar, dan itulah yang terasa kaku.
+ * - Semuanya nilai bersama di UI thread: onPressIn cuma menulis satu angka,
+ *   React tidak merender ulang apa pun.
  *
- * Gerak-dikurangi (setelan sistem): skalanya dibuang, tinggal peredupan
- * — perubahan keadaan tetap terlihat, yang bergerak tidak ada.
+ * Gerak-dikurangi: skalanya dibuang, tinggal peredupan.
  */
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Pressable, type AccessibilityRole, type AccessibilityState, type GestureResponderEvent, type Insets, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { useReducedMotion } from 'react-native-reanimated';
-import { KURVA_KELUAR, MS, SKALA_TEKAN, type GayaGerak } from '../gaya/gerak';
+import Animated, { ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { EASE_KELUAR, MS_TURUN, PEGAS_EMPUK, SKALA_TEKAN } from '../gaya/gerak';
 
 type Props = {
   children: ReactNode;
@@ -30,7 +31,7 @@ type Props = {
   accessibilityRole?: AccessibilityRole;
   accessibilityState?: AccessibilityState;
   accessibilityLabel?: string;
-  /** Skala tekan; bawaan 0,97. Kartu besar boleh 0,985 supaya tidak "melompat". */
+  /** Skala tekan; bawaan 0,95. Baris selebar layar 0,975 supaya tidak "melompat". */
   skala?: number;
 };
 
@@ -38,16 +39,29 @@ export function Tekan({
   children, onPress, onLongPress, disabled = false, gaya, gayaLuar, hitSlop,
   accessibilityRole = 'button', accessibilityState, accessibilityLabel, skala = SKALA_TEKAN,
 }: Props) {
-  const [ditekan, setDitekan] = useState(false);
   const tenang = useReducedMotion();
-  const aktif = ditekan && !disabled;
+  const s = useSharedValue(1);
+  const redup = useSharedValue(1);
+
+  const turun = (): void => {
+    if (disabled) return;
+    if (tenang) { redup.set(withTiming(0.72, { duration: MS_TURUN })); return; }
+    s.set(withTiming(skala, { duration: MS_TURUN, easing: EASE_KELUAR }));
+  };
+  const naik = (): void => {
+    if (tenang) { redup.set(withTiming(1, { duration: 160 })); return; }
+    s.set(withSpring(1, { ...PEGAS_EMPUK, reduceMotion: ReduceMotion.System }));
+  };
+
+  const gerak = useAnimatedStyle(() => ({ transform: [{ scale: s.get() }], opacity: redup.get() }));
+
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={disabled}
-      onPressIn={() => { setDitekan(true); }}
-      onPressOut={() => { setDitekan(false); }}
+      onPressIn={turun}
+      onPressOut={naik}
       hitSlop={hitSlop}
       pressRetentionOffset={16}
       style={gayaLuar}
@@ -55,27 +69,7 @@ export function Tekan({
       accessibilityState={accessibilityState}
       accessibilityLabel={accessibilityLabel}
     >
-      <Animated.View
-        style={[
-          g.kotak,
-          gaya,
-          tenang
-            ? aktif && { opacity: 0.72 }
-            : aktif && { transform: [{ scale: skala }] },
-        ]}
-      >
-        {children}
-      </Animated.View>
+      <Animated.View style={[gaya, gerak]}>{children}</Animated.View>
     </Pressable>
   );
 }
-
-const g = {
-  kotak: {
-    transform: [{ scale: 1 }],
-    opacity: 1,
-    transitionProperty: ['transform', 'opacity'],
-    transitionDuration: MS.tekan,
-    transitionTimingFunction: KURVA_KELUAR,
-  } satisfies GayaGerak,
-};

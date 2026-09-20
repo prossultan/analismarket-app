@@ -139,7 +139,20 @@ const OPSI_KEPALA = {
   headerShadowVisible: false,
   headerBackTitle: '',
 };
-const OPSI_TUMPUKAN = { ...OPSI_KEPALA, contentStyle: { backgroundColor: W.latar } };
+/**
+ * Perpindahan layar di dalam tumpukan: geser dari kanan — bawaan iOS, dan di
+ * Android bawaan native-stack nyaris tanpa gerak sehingga pemilik menyebutnya
+ * "tidak ada animasi sama sekali". Hierarkinya nyata (Lainnya → Profil), jadi
+ * geser adalah gerak yang jujur. Gestur geser-balik penuh layar di iOS ikut.
+ */
+const OPSI_TUMPUKAN = {
+  ...OPSI_KEPALA,
+  contentStyle: { backgroundColor: W.latar },
+  animation: 'slide_from_right' as const,
+  animationDuration: 320,
+  gestureEnabled: true,
+  fullScreenGestureEnabled: true,
+};
 
 type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void };
 
@@ -403,6 +416,11 @@ function Isi() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
+          /* Pindah tab: `shift` — isi bergeser beberapa piksel ke arah tab yang
+             ditekan sambil memudar. BUKAN slide penuh: tab itu setara, dan
+             geser penuh menyiratkan kedalaman yang tidak ada. Cukup untuk
+             terasa dijawab, tidak cukup untuk terasa seperti perjalanan. */
+          animation: 'shift',
           /**
            * `position: absolute` BUKAN pilihan gaya — ia syarat supaya kaca
            * terbaca: isi harus lewat di bawah bilah. Tingginya IKUT JARAK AMAN,

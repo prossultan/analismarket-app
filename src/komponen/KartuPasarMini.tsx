@@ -40,7 +40,7 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
 
   return (
     <Tekan onPress={onPress} accessibilityLabel={`Buka chart ${simbol}`}
-      gaya={[g.kartu, besar && g.besar]} skala={0.985}>
+      gaya={[g.kartu, besar && g.besar]} skala={0.975}>
       <View style={g.kepala}>
         <LambangPasar simbol={simbol} ukuran={20} />
         <Text style={g.nama} numberOfLines={1}>{nama}</Text>

@@ -4,9 +4,10 @@
  * tabBarIcon/tabBarLabel bawaan supaya sorotnya membungkus KEDUANYA.
  */
 import { StyleSheet, Text, type GestureResponderEvent } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { useEffect } from 'react';
+import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Tekan } from './Tekan';
-import { KURVA_KELUAR, MS, type GayaGerak } from '../gaya/gerak';
+import { KURVA_KELUAR, MS, PEGAS_PIL, type GayaGerak } from '../gaya/gerak';
 import { useNavigationState } from '@react-navigation/native';
 import { Ikon, type NamaIkon } from './Ikon';
 import { W, H } from '../gaya/token';
@@ -22,13 +23,24 @@ export function TombolTab({ ikon, label, nama, emas = false, aktif = false, onPr
   const dariNav = useNavigationState((st) => st.routes[st.index]?.name === nama);
   const aktifKini = dariNav || aktif;
   const warna = emas ? W.plus : aktifKini ? W.teksKuat : W.teksSamar;
+  /* Pindah tab TIDAK menggeser layar — tab itu setara. Yang terasa adalah pil
+     yang baru aktif MEKAR dari 0,86 dengan pegas kecil: cukup untuk menjawab
+     jari, tidak cukup untuk terasa seperti perjalanan. */
+  const mekar = useSharedValue(1);
+  useEffect(() => {
+    if (!aktifKini) return;
+    mekar.set(0.86);
+    mekar.set(withSpring(1, { ...PEGAS_PIL, reduceMotion: ReduceMotion.System }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aktifKini]);
+  const gayaMekar = useAnimatedStyle(() => ({ transform: [{ scale: mekar.get() }] }));
   return (
     <Tekan onPress={onPress ?? undefined} onLongPress={onLongPress ?? undefined} gayaLuar={g.akar} gaya={{ flex: 1 }}
       accessibilityRole="tab" accessibilityState={{ selected: aktifKini }} accessibilityLabel={label}>
       {/* Pindah tab TIDAK dianimasikan — tab itu setara, bukan bertingkat, dan
           orang membayarnya puluhan kali sehari. Yang menyilang cuma latar
           pilnya, 120 ms: cukup untuk tidak "berkedip", tidak cukup untuk terasa. */}
-      <Animated.View style={[g.pil, PIL_TRANSISI, aktifKini && g.pilAktif]}>
+      <Animated.View style={[g.pil, PIL_TRANSISI, aktifKini && g.pilAktif, gayaMekar]}>
         <Ikon nama={ikon} warna={warna} ukuran={22} isi={emas ? W.plus : undefined} tebal={aktifKini} />
         <Text style={[g.label, { color: warna }, aktifKini && { fontWeight: '600' }]} numberOfLines={1}>{label}</Text>
       </Animated.View>

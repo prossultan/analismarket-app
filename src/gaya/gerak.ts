@@ -41,8 +41,20 @@ export const MS = {
   muncul: 180,
 } as const;
 
-/** Skala tekan. 0,97 batas atas; di bawah 0,95 terasa berlebihan. */
-export const SKALA_TEKAN = 0.97;
+/**
+ * Skala tekan. Skill menyarankan 0,97 sebagai batas "nyaris tak terasa";
+ * pemilik mencobanya di HP dan menyebutnya KAKU. Keputusannya: tekan harus
+ * TERASA — 0,95 saat jari menyentuh, lalu memantul balik dengan pegas yang
+ * sedikit melewati 1. "Empuk" lahir dari pantulan baliknya, bukan dari
+ * seberapa dalam ia turun.
+ */
+export const SKALA_TEKAN = 0.95;
+/** Turun cepat saat disentuh — 90 ms, supaya jawabannya seketika. */
+export const MS_TURUN = 90;
+/** Balik dengan pantulan kecil: dampingRatio 0,55 melewati 1 sedikit lalu diam. */
+export const PEGAS_EMPUK: WithSpringConfig = { duration: 420, dampingRatio: 0.55 };
+/** Pil tab yang baru aktif "mekar" dari 0,86 — pindah tab tidak menggeser layar, tapi terasa. */
+export const PEGAS_PIL: WithSpringConfig = { duration: 380, dampingRatio: 0.6 };
 
 /**
  * Pegas lembar — dua parameter perancang Apple, bukan mass/stiffness/damping.
