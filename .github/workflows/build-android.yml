@@ -18,10 +18,10 @@ on:
   workflow_dispatch:
     inputs:
       profil:
-        description: "pratinjau = APK untuk tautan unduhan · produksi = AAB untuk Google Play"
+        description: "pratinjau = APK tautan unduhan · produksi = AAB Google Play · toko-apk = APK flavor Play, untuk memastikan crash-nya ada di flavor atau di pengiriman Play"
         type: choice
         default: pratinjau
-        options: [pratinjau, produksi]
+        options: [pratinjau, produksi, toko-apk]
 
 concurrency:
   group: build-android-${{ github.ref }}
@@ -77,11 +77,11 @@ jobs:
         id: profil
         run: |
           P="${{ github.event.inputs.profil || 'pratinjau' }}"
-          if [ "$P" = "produksi" ]; then
-            echo "profil=produksi" >> "$GITHUB_OUTPUT"; echo "berkas=AnalisMarket.aab" >> "$GITHUB_OUTPUT"
-          else
-            echo "profil=pratinjau" >> "$GITHUB_OUTPUT"; echo "berkas=AnalisMarket.apk" >> "$GITHUB_OUTPUT"
-          fi
+          case "$P" in
+            produksi) echo "profil=produksi" >> "$GITHUB_OUTPUT"; echo "berkas=AnalisMarket.aab" >> "$GITHUB_OUTPUT" ;;
+            toko-apk) echo "profil=toko-apk" >> "$GITHUB_OUTPUT"; echo "berkas=AnalisMarket-toko.apk" >> "$GITHUB_OUTPUT" ;;
+            *)        echo "profil=pratinjau" >> "$GITHUB_OUTPUT"; echo "berkas=AnalisMarket.apk" >> "$GITHUB_OUTPUT" ;;
+          esac
 
       - name: Build (eas --local, kredensial dari EAS)
         env:
@@ -97,8 +97,8 @@ jobs:
       # diunggah sebagai artefak; penjaganya sudah berjalan di APK pratinjau
       # dari commit yang sama.
       - name: Penjaga APK
-        if: steps.profil.outputs.profil == 'pratinjau'
-        run: node skrip/periksa-apk.mjs "$GITHUB_WORKSPACE/AnalisMarket.apk"
+        if: steps.profil.outputs.profil != 'produksi'
+        run: node skrip/periksa-apk.mjs "$GITHUB_WORKSPACE/${{ steps.profil.outputs.berkas }}"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -118,3 +118,17 @@ jobs:
           gh release create pratinjau AnalisMarket.apk --prerelease \
             --title "Pratinjau ${GITHUB_SHA::7}" \
             --notes "Build otomatis dari ${GITHUB_SHA}. Bukan rilis toko."
+
+      # RILIS TERPISAH untuk build diagnostik. Ia TIDAK boleh menimpa aset
+      # 'pratinjau': tautan unduhan publik harus tetap memakai flavor yang
+      # menyebut harga, sementara yang ini justru flavor Play yang diam soal
+      # harga. Satu tag, satu arti.
+      - name: Terbitkan ke Release 'toko-apk'
+        if: steps.profil.outputs.profil == 'toko-apk'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete toko-apk --yes --cleanup-tag 2>/dev/null || true
+          gh release create toko-apk AnalisMarket-toko.apk --prerelease \
+            --title "Flavor toko ${GITHUB_SHA::7}" \
+            --notes "APK dengan EXPO_PUBLIC_TOKO=play — isinya sama dengan AAB Play, tapi bisa dipasang tangan. Untuk diagnosis, bukan untuk disebar."

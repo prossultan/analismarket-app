@@ -44,6 +44,16 @@
         "EXPO_PUBLIC_TANPA_TEMBOK": "1",
         "EXPO_PUBLIC_TOKO": "play"
       }
+    },
+    "toko-apk": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a"
+      },
+      "env": {
+        "EXPO_PUBLIC_TOKO": "play"
+      }
     }
   },
   "submit": {

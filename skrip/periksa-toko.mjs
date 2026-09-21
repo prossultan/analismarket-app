@@ -87,10 +87,27 @@ if (eas.build?.pratinjau?.env?.EXPO_PUBLIC_TOKO !== undefined) {
   masalah.push('profil "pratinjau" memasang EXPO_PUBLIC_TOKO — build tautan unduhan tidak tunduk aturan Play dan harus menyebut harganya');
 }
 
+/* PROFIL DIAGNOSTIK `toko-apk`: flavor Play yang sama persis, tapi APK yang
+   bisa dipasang tangan. Ia ada karena AAB Play tidak bisa dijalankan di mana
+   pun kecuali lewat Play, jadi "apakah flavor tokonya yang crash" tidak bisa
+   dijawab tanpa build seperti ini. Tiga syaratnya bukan gaya:
+     · TOKO=play, kalau tidak ia menguji flavor yang BUKAN yang di Play;
+     · tanpa channel, supaya ia tidak pernah menimpa app orang lewat OTA;
+     · tanpa autoIncrement, supaya ia tidak memakan nomor versi Play — nomor
+       yang termakan tidak bisa dikembalikan, dan itu sudah terjadi sekali. */
+const tokoApk = eas.build?.['toko-apk'];
+if (tokoApk === undefined) masalah.push('profil build "toko-apk" tidak ada di eas.json');
+else {
+  if (tokoApk.env?.EXPO_PUBLIC_TOKO !== 'play') masalah.push('profil "toko-apk" tidak memasang EXPO_PUBLIC_TOKO=play — ia akan menguji flavor yang bukan flavor Play');
+  if (tokoApk.channel !== undefined) masalah.push('profil "toko-apk" punya channel — build diagnostik tidak boleh masuk jalur pembaruan mana pun');
+  if (tokoApk.autoIncrement !== undefined) masalah.push('profil "toko-apk" memakai autoIncrement — ia akan memakan nomor versi Play yang tidak bisa dikembalikan');
+  if (tokoApk.android?.buildType !== 'apk') masalah.push('profil "toko-apk" bukan apk — AAB tidak bisa dipasang tangan, dan itu satu-satunya alasan profil ini ada');
+}
+
 /* SEKAT UJI (EXPO_PUBLIC_TANPA_TEMBOK) membuka app tanpa masuk — cuma untuk
    emulator CI. Bocor ke profil yang dibagikan ke orang berarti app tanpa
    tembok masuk beredar. */
-for (const nama of ['pratinjau', 'produksi', 'development']) {
+for (const nama of ['pratinjau', 'produksi', 'development', 'toko-apk']) {
   if (eas.build?.[nama]?.env?.EXPO_PUBLIC_TANPA_TEMBOK !== undefined) {
     masalah.push(`profil "${nama}" memasang EXPO_PUBLIC_TANPA_TEMBOK — sekat uji bocor ke build yang dibagikan`);
   }
