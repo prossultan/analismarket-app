@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { gayaTema } from '../gaya/tema';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Lbl, Menu, Mikro, Nil } from '../komponen/mockup';
+import { capBuild } from '../data/versi';
 import { Merek } from '../komponen/Merek';
 import { useSesi } from './Akun';
 import { jamWib } from '../data/tampil';
@@ -54,14 +55,14 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
       <Menu>
         <Butir ikon="buku" nama="Syarat & Ketentuan" onPress={() => { bukaDokumen('syarat'); }} pertama />
         <Butir ikon="buku" nama="Kebijakan Privasi" onPress={() => { bukaDokumen('privasi'); }} />
-        <Butir ikon="lainnya" nama="Tentang AnalisMarket" ket={`v${versi}`} ketMono onPress={() => { bukaMenu('tentang'); }} />
+        <Butir ikon="lainnya" nama="Tentang AnalisMarket" ket={capBuild()} ketMono onPress={() => { bukaMenu('tentang'); }} />
       </Menu>
 
       {/* Kartu merek SETINGGI ISINYA. `flex: 1` membuatnya 460 px dengan isi
           200 px (audit 20 Sep). Baris umur data cuma tampil kalau ada angkanya;
           tiga garis "—" terbaca sebagai sesuatu yang rusak. */}
       <Blok>
-        <Merek sub={`v${versi} · Binance & Twelve Data`} />
+        <Merek sub={`${capBuild()} · Binance & Twelve Data`} />
         {(umur?.harga ?? umur?.lilin ?? umur?.kalender ?? null) !== null && (
           <>
             <Lbl gaya={{ marginTop: 10 }}>Data terakhir masuk</Lbl>

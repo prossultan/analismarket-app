@@ -10,6 +10,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilPasar } from '../data/api';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Chip, Lbl, Menu, PitaBasi } from '../komponen/mockup';
+import { capBuild } from '../data/versi';
 import { W, H, TALANG } from '../gaya/token';
 
 const LOGO = require('../../assets/merek-mark.png') as number;
@@ -36,7 +37,7 @@ export function LayarTentang({ versi }: { versi: string }) {
       <Blok gaya={{ alignItems: 'center', paddingVertical: 15 }}>
         <Image source={LOGO} style={g.logo} accessibilityIgnoresInvertColors />
         <Text style={g.nama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
-        <Lbl polos gaya={{ marginTop: 3, fontVariant: ['tabular-nums'] }}>Versi {versi}</Lbl>
+        <Lbl polos gaya={{ marginTop: 3, fontVariant: ['tabular-nums'] }}>{capBuild()}</Lbl>
         <Text style={g.ket}>Analisa teknikal otomatis untuk 131 pasar. Bukan nasihat investasi, dan tidak menjanjikan hasil apa pun.</Text>
       </Blok>
 

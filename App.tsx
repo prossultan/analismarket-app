@@ -45,6 +45,7 @@ import { LayarLainnya, type KunciMenu } from './src/layar/Lainnya';
 import { LayarDokumen } from './src/layar/Dokumen';
 import { LayarTentang } from './src/layar/Tentang';
 import { LayarSambutan } from './src/layar/Sambutan';
+import { TANPA_TEMBOK } from './src/data/uji';
 import {
   useSesi,
   LayarSambung, LayarPantauan, LayarPantauanBaru, LayarKabarOtomatis, LayarCekBanyak, LayarBerlangganan,
@@ -452,7 +453,8 @@ function Isi() {
   /* Menunggu KEDUANYA. Menahan splash sepersekian detik jauh lebih murah
      daripada satu putaran permintaan yang dibuang. */
   if (!siap) return null;
-  if (sesi === null) return <LayarSambutan />;
+  /* Build `uji` (emulator CI) melewati tembok: lihat src/data/uji.ts. */
+  if (sesi === null && !TANPA_TEMBOK) return <LayarSambutan />;
 
   return (
     <NavigationContainer key={tema} theme={temaNav()} ref={navRef}

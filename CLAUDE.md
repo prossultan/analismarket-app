@@ -723,3 +723,31 @@ sebelum benar — dua-duanya bentuk "lulus tanpa memeriksa apa pun":
 Sesudah benar ia menemukan tiga: satu di Chart, dua di Home yang sudah ada
 sebelumnya (`useBelumDibaca` dan `useEffect` di bawah early return `gagal`) —
 artinya Home meledak tiap kali `/api/saya` gagal, dan tidak ada yang tahu.
+
+## Bukti di Android sungguhan, bukan di web (21 Sep)
+
+"Masih crash" sesudah perbaikan didorong. Setengah jam terbuang membuktikan
+bahwa ketiga saluran yang bisa dipasang pemilik masih memuat build lama —
+lewat perbandingan ukuran byte, karena app cuma menulis "v1.0.0". Dua
+jawaban permanen:
+
+- **Cap build di layar.** `src/data/versi.ts`: versi (app.json), kode build
+  (`expo-application`, versionCode native), dan komit (`EXPO_PUBLIC_KOMIT`
+  dari `github.sha`, disuntik kedua workflow). Tampil di Lainnya dan Tentang.
+  "Build mana yang kamu jalankan" dijawab dari layar, bukan ditebak.
+- **Emulator Android di GitHub Actions** (`.github/workflows/uji-android.yml`,
+  `skrip/uji-emulator.sh`). Server produksi tidak punya KVM; runner GitHub
+  punya. APK profil `uji` dipasang ke emulator API 34, tab Pasar dicari dari
+  POHON UI (`uiautomator dump`, bukan koordinat tebakan), diketuk, dan
+  prosesnya harus tetap hidup — persis titik crash 20 Sep. Merah kalau
+  proses mati, kalau chart tidak terisi, atau kalau logcat memuat FATAL.
+
+Profil `uji` membuka tembok masuk lewat `EXPO_PUBLIC_TANPA_TEMBOK=1`
+(`src/data/uji.ts`), karena emulator tidak bisa masuk Google maupun
+Telegram sedangkan Chart hidup di baliknya. Sekat itu TIDAK boleh ada di
+`pratinjau`/`produksi`/`development` — `periksa-toko.mjs` menjaganya, dua
+mutasi merah. Dibuktikan dulu di web sebelum membakar 25 menit CI: tanpa
+sesi, tab Pasar ada dan chart terisi, nol galat.
+
+Yang tetap tidak bisa dibuktikan dari sini: build yang ditandatangani Play
+(kunci berbeda) — cuma HP atau pre-launch report Play yang melihatnya.

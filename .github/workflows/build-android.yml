@@ -87,6 +87,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_SKIP_AUTO_FINGERPRINT: '1'
+          EXPO_PUBLIC_KOMIT: ${{ github.sha }}
         run: |
           npx --yes eas-cli@latest build --platform android --profile "${{ steps.profil.outputs.profil }}" \
             --local --non-interactive --output "$GITHUB_WORKSPACE/${{ steps.profil.outputs.berkas }}"

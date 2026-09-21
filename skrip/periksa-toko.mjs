@@ -87,6 +87,17 @@ if (eas.build?.pratinjau?.env?.EXPO_PUBLIC_TOKO !== undefined) {
   masalah.push('profil "pratinjau" memasang EXPO_PUBLIC_TOKO — build tautan unduhan tidak tunduk aturan Play dan harus menyebut harganya');
 }
 
+/* SEKAT UJI (EXPO_PUBLIC_TANPA_TEMBOK) membuka app tanpa masuk — cuma untuk
+   emulator CI. Bocor ke profil yang dibagikan ke orang berarti app tanpa
+   tembok masuk beredar. */
+for (const nama of ['pratinjau', 'produksi', 'development']) {
+  if (eas.build?.[nama]?.env?.EXPO_PUBLIC_TANPA_TEMBOK !== undefined) {
+    masalah.push(`profil "${nama}" memasang EXPO_PUBLIC_TANPA_TEMBOK — sekat uji bocor ke build yang dibagikan`);
+  }
+}
+if (eas.build?.uji?.env?.EXPO_PUBLIC_TANPA_TEMBOK !== '1') masalah.push('profil "uji" tidak memasang EXPO_PUBLIC_TANPA_TEMBOK=1 — emulator CI akan terkurung di tembok masuk');
+if (eas.build?.uji?.channel !== undefined) masalah.push('profil "uji" punya channel — build uji tidak boleh masuk jalur pembaruan mana pun');
+
 if (masalah.length > 0) {
   process.stderr.write(`GAGAL — ${masalah.length} masalah toko:\n${masalah.map((m) => `  - ${m}`).join('\n')}\n`);
   process.exit(1);
