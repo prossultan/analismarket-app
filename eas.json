@@ -41,7 +41,8 @@
         "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=x86_64"
       },
       "env": {
-        "EXPO_PUBLIC_TANPA_TEMBOK": "1"
+        "EXPO_PUBLIC_TANPA_TEMBOK": "1",
+        "EXPO_PUBLIC_TOKO": "play"
       }
     }
   },

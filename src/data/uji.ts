@@ -8,6 +8,11 @@
  * karena endpoint-nya memang publik; layar akun cukup menggambar keadaan
  * "belum masuk".
  *
+ * Profil `uji` juga memasang EXPO_PUBLIC_TOKO=play: emulator harus menguji
+ * FLAVOR yang dikirim ke Play (harga disembunyikan), bukan flavor tautan
+ * unduhan — 21 Sep build Play crash sementara APK tautan unduhan dari
+ * commit yang sama tidak, dan flavor adalah salah satu dari dua bedanya.
+ *
  * Profil `pratinjau` dan `produksi` TIDAK boleh memasangnya — dijaga
  * `skrip/periksa-toko.mjs`. Nilainya disisipkan saat bundel dibuat, jadi di
  * build biasa cabang ini terkompilasi jadi konstanta `false`.
