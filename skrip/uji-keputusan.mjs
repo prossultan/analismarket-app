@@ -376,6 +376,108 @@ await uji('KEPUTUSAN: AM+ sekali bayar, tanpa potong otomatis — tidak ada kata
   tegas(amplus.tanyaPlus(false).length === amplus.tanyaPlus(true).length + 1, 'kedua cabang FAQ tidak berbeda tepat satu pertanyaan bayar');
 });
 
+/* ── teks yang TERCETAK di build Play, dibaca dari pohon sintaks ───────── */
+/**
+ * Uji FAQ di atas memanggil `tanyaPlus(true)`, tapi kartu AM+ dan layar
+ * Berlangganan mencetak kalimatnya langsung di JSX — dan di situlah 3 Okt
+ * "Tidak ada potong otomatis" lolos ke build Play: cabang `plus ? ...`
+ * dievaluasi SEBELUM `TOKO_PLAY`. Layar `.tsx` tidak bisa dijalankan di sini,
+ * jadi pohon sintaksnya (TypeScript, versi app) dipangkas dengan TOKO_PLAY
+ * ditetapkan: cabang `TOKO_PLAY ? a : b`, `!TOKO_PLAY && x`, dan syarat yang
+ * menyiratkan nilai lain (`(plus || !TOKO_PLAY) && ...` = plus benar di
+ * dalamnya) dibuang; syarat yang tidak diketahui DUA cabangnya dibaca.
+ * Hasilnya: setiap string dan teks JSX yang bisa tercetak di build itu.
+ */
+const ts = (await import('typescript')).default;
+function teksTercetak(jalur, { toko, fungsi }) {
+  const sf = ts.createSourceFile(jalur, readFileSync(jalur, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let akar = sf;
+  if (fungsi !== undefined) {
+    akar = null;
+    const cari = (n) => { if (akar === null && ts.isFunctionDeclaration(n) && n.name?.text === fungsi) akar = n; else ts.forEachChild(n, cari); };
+    cari(sf);
+    tegas(akar !== null, `fungsi ${fungsi} tidak ada di ${jalur} — pemindai menembak berkas yang salah`);
+  }
+  const DAN = ts.SyntaxKind.AmpersandAmpersandToken;
+  const ATAU = ts.SyntaxKind.BarBarToken;
+  const nilai = (e, a) => {
+    if (ts.isParenthesizedExpression(e)) return nilai(e.expression, a);
+    if (ts.isIdentifier(e)) return e.text === 'TOKO_PLAY' ? toko : a.get(e.text);
+    if (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.ExclamationToken) { const v = nilai(e.operand, a); return v === undefined ? undefined : !v; }
+    if (ts.isBinaryExpression(e) && (e.operatorToken.kind === DAN || e.operatorToken.kind === ATAU)) {
+      const x = nilai(e.left, a); const y = nilai(e.right, a);
+      if (e.operatorToken.kind === DAN) return x === false || y === false ? false : x === true && y === true ? true : undefined;
+      return x === true || y === true ? true : x === false && y === false ? false : undefined;
+    }
+    return undefined;
+  };
+  /** Nilai pengenal yang PASTI berlaku kalau `e` bernilai `benar`. */
+  const asumsikan = (e, benar, a) => {
+    if (ts.isParenthesizedExpression(e)) return asumsikan(e.expression, benar, a);
+    if (ts.isIdentifier(e)) return e.text === 'TOKO_PLAY' ? a : new Map([...a, [e.text, benar]]);
+    if (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.ExclamationToken) return asumsikan(e.operand, !benar, a);
+    if (ts.isBinaryExpression(e)) {
+      const dan = e.operatorToken.kind === DAN; const atau = e.operatorToken.kind === ATAU;
+      if ((dan && benar) || (atau && !benar)) return asumsikan(e.right, benar, asumsikan(e.left, benar, a));
+      if (atau && benar) { if (nilai(e.left, a) === false) return asumsikan(e.right, true, a); if (nilai(e.right, a) === false) return asumsikan(e.left, true, a); }
+      if (dan && !benar) { if (nilai(e.left, a) === true) return asumsikan(e.right, false, a); if (nilai(e.right, a) === true) return asumsikan(e.left, false, a); }
+    }
+    return a;
+  };
+  const teks = [];
+  const kunjungi = (n, a) => {
+    if (ts.isImportDeclaration(n)) return;
+    if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) { teks.push(n.text); return; }
+    if (ts.isJsxText(n)) { const t = n.text.replace(/\s+/g, ' ').trim(); if (t !== '') teks.push(t); return; }
+    if (ts.isTemplateExpression(n)) { teks.push(n.head.text); for (const sp of n.templateSpans) { kunjungi(sp.expression, a); teks.push(sp.literal.text); } return; }
+    if (ts.isConditionalExpression(n)) {
+      const v = nilai(n.condition, a);
+      if (v !== false) kunjungi(n.whenTrue, asumsikan(n.condition, true, a));
+      if (v !== true) kunjungi(n.whenFalse, asumsikan(n.condition, false, a));
+      return;
+    }
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === DAN) {
+      if (nilai(n.left, a) !== false) kunjungi(n.right, asumsikan(n.left, true, a));
+      return;
+    }
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ATAU) {
+      kunjungi(n.left, a);
+      if (nilai(n.left, a) !== true) kunjungi(n.right, asumsikan(n.left, false, a));
+      return;
+    }
+    ts.forEachChild(n, (c) => kunjungi(c, a));
+  };
+  kunjungi(akar, new Map());
+  return teks;
+}
+/** Permukaan AM+ yang mencetak kalimat langganan sendiri, dengan satu kalimat jangkar tiap permukaan. */
+const PERMUKAAN_PLUS = [
+  { jalur: 'src/layar/AmPlus.tsx', jangkar: 'Yang tetap gratis' },
+  { jalur: 'src/komponen/KartuPlus.tsx', jangkar: 'Kelola langganan' },
+  { jalur: 'src/layar/Akun.tsx', fungsi: 'LayarBerlangganan', jangkar: 'Keadaan akunmu' },
+];
+/** Harga, cara bayar, dan jalur beli — pola `periksa-toko.mjs` ditambah kata pembayarannya. */
+const SOAL_BAYAR = /Rp|bayar|potong otomatis|\/plus|@|lewat bot|berlangganan lewat|cara berlangganan|\bbeli|pembelian/i;
+
+await uji('KEPUTUSAN: build Play tidak mencetak satu kalimat pun soal pembayaran di kartu AM+, kartu Home, dan layar Berlangganan', async () => {
+  for (const p of PERMUKAAN_PLUS) {
+    const play = teksTercetak(p.jalur, { toko: true, fungsi: p.fungsi });
+    tegas(play.length >= 15, `cuma ${play.length} teks terbaca dari ${p.jalur} ${p.fungsi ?? ''} — pemindaian ini tidak menguji apa pun`);
+    tegas(play.includes(p.jangkar), `"${p.jangkar}" tidak terbaca dari ${p.jalur} — pemindai memangkas cabang yang salah`);
+    const langgar = play.filter((t) => SOAL_BAYAR.test(t));
+    tegas(langgar.length === 0, `${p.jalur} ${p.fungsi ?? ''} di build Play bisa mencetak: ${langgar.map((t) => `"${t}"`).join(', ')} — kebijakan pembayaran Play, dan tanyaPlus(true) sudah diam`);
+  }
+});
+
+await uji('teks build Play, cabang lawan: build tautan unduhan TETAP menyebut sekali bayar tanpa potong otomatis (pemindai bisa merah)', async () => {
+  const unduhan = PERMUKAAN_PLUS.flatMap((p) => teksTercetak(p.jalur, { toko: false, fungsi: p.fungsi }));
+  tegas(unduhan.some((t) => /potong otomatis/.test(t)) && unduhan.some((t) => /\/plus ke @/.test(t)), 'pemindai tidak melihat kalimat bayar di build unduhan — ia tidak akan pernah bisa merah');
+  const amUnduhan = teksTercetak('src/layar/AmPlus.tsx', { toko: false });
+  const amPlay = teksTercetak('src/layar/AmPlus.tsx', { toko: true });
+  tegas(amUnduhan.includes('Berakhir sendiri di tanggalnya. Tidak ada potong otomatis.'), 'kartu AM+ pelanggan di build unduhan kehilangan "Tidak ada potong otomatis" — S&K app, web, dan bot menyebutnya');
+  tegas(amPlay.includes('Berakhir sendiri di tanggalnya.'), 'kartu AM+ pelanggan di build Play tidak lagi menyebut tanggal berakhirnya');
+});
+
 await uji('KEPUTUSAN: jumlah pasar tidak diketik — dihitung dari /api/pasar atau tanpa angka', async () => {
   const angkaPasar = /\b\d{3}\s+pasar\b/i;
   const langgar = SUMBER.filter((f) => angkaPasar.test(tanpaKomentar(readFileSync(f, 'utf8'))));

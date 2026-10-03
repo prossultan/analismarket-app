@@ -96,12 +96,18 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
             pembayaran Play. Pelanggan tetap punya tombol status. */}
         {(plus || !TOKO_PLAY) && (
           <Tombol
-            teks={bukaLangganan === undefined ? 'Berlangganan lewat web' : plus ? 'Kelola langganan' : 'Lihat cara berlangganan'}
+            teks={plus ? 'Kelola langganan' : bukaLangganan === undefined ? 'Berlangganan lewat web' : 'Lihat cara berlangganan'}
             jenis={plus ? 'kedua' : 'emas'} mati={bukaLangganan === undefined || menunggu} onPress={bukaLangganan} />
         )}
         {/* Pelanggan: tidak ada yang perlu "dihentikan" — sekali bayar, tanpa
-            potong otomatis. Kalimat lamanya berbicara seperti langganan berulang. */}
-        <Mikro tengah>{plus ? 'Berakhir sendiri di tanggalnya. Tidak ada potong otomatis.' : TOKO_PLAY ? 'AnalisMarket+ belum aktif di akun ini.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
+            potong otomatis. Kalimat lamanya berbicara seperti langganan berulang.
+            BUILD PLAY: cukup tanggalnya. "Tidak ada potong otomatis" menyebut
+            model pembayaran, dan build Play tidak menyebut pembayaran sama
+            sekali — sampai 3 Okt cabang pelanggan dievaluasi SEBELUM saklar
+            toko, jadi kalimat itu lolos di build Play. */}
+        <Mikro tengah>{plus
+          ? (TOKO_PLAY ? 'Berakhir sendiri di tanggalnya.' : 'Berakhir sendiri di tanggalnya. Tidak ada potong otomatis.')
+          : TOKO_PLAY ? 'AnalisMarket+ belum aktif di akun ini.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
       </View>
 
       <Blok>
