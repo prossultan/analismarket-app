@@ -84,6 +84,7 @@ const gagalBacaan = await muat('src/data/gagalBacaan.ts');
 const sesiChart = await muat('src/data/sesiChart.ts');
 const amplus = await muat('src/data/amplus.ts');
 const tampil = await muat('src/data/tampil.ts');
+const tfPengganti = await muat('src/data/tfPengganti.ts');
 
 /* ── pembantu uji ───────────────────────────────────────────────────────── */
 let jumlah = 0;
@@ -413,6 +414,29 @@ await uji('KEPUTUSAN: daftar fitur app tidak menjanjikan yang cuma ada di bot', 
   tegas(!amplus.FITUR_GRATIS.some((f) => /m15 ke atas/i.test(f.nama)), 'daftar gratis menulis "semua pasar m15 ke atas" — cuma 31 dari 155 pasar punya m15 (3 Okt)');
   const cek = amplus.FITUR_PLUS.find((f) => f.nama === 'Cek Banyak');
   tegas(cek !== undefined && /×\s*timeframe/.test(cek.keterangan), `Cek Banyak: "${cek?.keterangan}" — batasnya 12 slot pasar × timeframe`);
+});
+
+/* ── tf pengganti (3 Okt): terdekat DI ATAS, disebut — sama dengan web ─── */
+await uji('KEPUTUSAN: EURUSDT (m1 m5 d1) yang diminta h1 dibuka d1 dan DISEBUT — bukan m1 diam-diam (punya[0])', async () => {
+  const ada = ['m1', 'm5', 'd1'];
+  const dibuka = tfPengganti.tfNaik(ada, 'h1');
+  tegas(dibuka === 'd1', `terbuka ${String(dibuka)}, seharusnya d1 — terdekat di atas h1; m1 = aturan lama punya[0], beda dengan web`);
+  const kata = tfPengganti.catatanTf('EURUSDT', 'h1', dibuka);
+  tegas(kata !== null && /\bh1\b/.test(kata) && /\bd1\b/.test(kata) && kata.includes('EURUSDT'), `kalimat "${String(kata)}" wajib menyebut pasar, h1 yang diminta, dan d1 yang dibuka`);
+});
+await uji('tf pengganti, cabang lawan: tf yang ada tidak diganti dan tidak berkalimat; di atas semua → tertinggi', async () => {
+  tegas(tfPengganti.tfNaik(['m1', 'm5', 'm15', 'h1', 'h4', 'd1'], 'h1') === 'h1', 'h1 yang ada wajib tetap h1');
+  tegas(tfPengganti.catatanTf('BTCUSDT', 'h1', 'h1') === null, 'tanpa penggantian tidak boleh ada kalimat');
+  tegas(tfPengganti.tfNaik(['h1', 'h4', 'd1'], 'm15') === 'h1', 'berkuota m15 wajib h1');
+  tegas(tfPengganti.tfNaik(['m1', 'm5', 'h1'], 'd1') === 'h1', 'di atas semua wajib yang tertinggi (h1)');
+  tegas(tfPengganti.tfNaik([], 'h1') === undefined, 'daftar kosong wajib undefined');
+});
+await uji('tf pengganti dipakai KEDUA jalan layar Pasar (muat daftar & pilih pasar), tanpa punya[0]', async () => {
+  const kode = tanpaKomentar(readFileSync(join(AKAR, 'src/layar/Analisis.tsx'), 'utf8'));
+  const pakai = (kode.match(/tfNaik\(/g) ?? []).length;
+  tegas(pakai >= 2, `tfNaik dipanggil ${pakai}x di Analisis.tsx, seharusnya di kedua jalan (muat daftar, pilih pasar)`);
+  tegas(!/punya\[0\]/.test(kode), 'Analisis.tsx masih memakai punya[0] — penggantian diam-diam ke tf terendah');
+  tegas((kode.match(/setKataTf\(catatanTf\(/g) ?? []).length >= 2, 'kedua jalan wajib menyimpan kalimat penggantian (setKataTf(catatanTf(...)))');
 });
 
 process.stdout.write(`\n  ${jumlah} uji · ${terkirim.length} permintaan tiruan · nol jaringan\n`);

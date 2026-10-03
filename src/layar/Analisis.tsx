@@ -39,6 +39,7 @@ import { useSesi } from './Akun';
 import { tokenSesi } from '../data/sesi';
 import { kunciSesi } from '../data/statusPlus';
 import { gagalBacaan, isiLembarGagal, type GagalBacaan } from '../data/gagalBacaan';
+import { catatanTf, tfNaik } from '../data/tfPengganti';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -88,6 +89,11 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
   const [daftarPasar, setDaftarPasar] = useState<Pasar[]>([]);
   const [pasar, setPasar] = useState<Pasar | null>(null);
   const [tf, setTf] = useState(setelan.tf);
+  /** Penggantian timeframe yang WAJIB disebut (tfPengganti.ts) — kosong = tidak ada yang diganti. */
+  const [kataTf, setKataTf] = useState('');
+  /** tf TERBARU untuk callback yang selesai sesudah fetch — bukan tf saat efeknya dibuat. */
+  const tfTerbaru = useRef(tf);
+  tfTerbaru.current = tf;
   const [mesin, setMesin] = useState(setelan.mesin);
   const [alat, setAlat] = useState<ReadonlySet<string>>(() => new Set(['volume', 'zona', 'struktur', 'level']));
   const [bacaan, setBacaan] = useState<Bacaan | null>(null);
@@ -129,7 +135,10 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
       setPasar(p);
       if (p !== null) {
         const punya = p.timeframes.map((t) => t.toLowerCase());
-        setTf((t) => (punya.includes(t) ? t : (punya[0] ?? 'h1')));
+        const diminta = tfTerbaru.current;
+        const dibuka = tfNaik(punya, diminta) ?? 'h1';
+        setKataTf(catatanTf(p.simbol, diminta, dibuka) ?? '');
+        setTf(dibuka);
       }
     });
     return () => { batal = true; };
@@ -226,8 +235,9 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
         <PilTf
           daftar={pasar.timeframes.map((t) => t.toLowerCase())}
           aktif={tf}
-          pilih={(k) => { setTf(k); simpan({ ...setelan, pasar: pasar.simbol, tf: k }); setMemuatChart(true); }}
+          pilih={(k) => { setTf(k); setKataTf(''); simpan({ ...setelan, pasar: pasar.simbol, tf: k }); setMemuatChart(true); }}
         />
+        {kataTf !== '' && <Text style={g.kataTf} accessibilityLiveRegion="polite">{kataTf}</Text>}
 
         {/* ── MESIN: lima kolom rata, dengan tombol banding di ujung ────── */}
         {selMesin.length > 0 ? (
@@ -385,7 +395,8 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
           pilih={(p) => {
             setPasar(p);
             const punya = p.timeframes.map((t) => t.toLowerCase());
-            const t = punya.includes(tf) ? tf : (punya[0] ?? 'h1');
+            const t = tfNaik(punya, tf) ?? 'h1';
+            setKataTf(catatanTf(p.simbol, tf, t) ?? '');
             setTf(t);
             simpan({ ...setelan, pasar: p.simbol, tf: t });
             setMemuatChart(true);
@@ -412,6 +423,7 @@ const g = gayaTema((W) => StyleSheet.create({
   gantiTeks: { fontSize: H.label, fontWeight: '600', color: W.teksKuat },
   simbol: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2, flexShrink: 1 },
   tanda: { fontSize: 12, color: W.teksSamar, marginTop: -3 },
+  kataTf: { fontSize: H.label, color: W.teksRedup, lineHeight: 15 },
   ubahTeks: { fontSize: H.label, ...ANGKA },
   isi: { flex: 1, paddingHorizontal: TALANG, paddingTop: 9, gap: 6 },
   mesinRangka: { flexDirection: 'row', gap: 6, paddingVertical: 8, paddingHorizontal: 6, borderWidth: 1, borderColor: W.garis, borderRadius: R.besar },
