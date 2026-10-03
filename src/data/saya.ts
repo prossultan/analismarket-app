@@ -14,6 +14,7 @@
  */
 import { ASAL } from './antrian';
 import { hapusSesi, headerSesi, sesiSekarang } from './sesi';
+import type { JendelaJam } from './jamSunyi';
 
 export type JawabanSaya<T> =
   | { ok: true; isi: T }
@@ -117,8 +118,15 @@ export type KabarOtomatis = {
   plus: boolean;
   dipilih: { tf: string; mesin: string }[];
   irama: string;
-  jam: { mulai: number; selesai: number } | null;
-  pilihanJam: number[];
+  /** Jendela KIRIM, bukan jam diam — lihat `jamSunyi.ts`. */
+  jam: JendelaJam | null;
+  /**
+   * OBJEK, bukan angka: `JAM_SUNYI_PILIHAN` di `src/bot/amplus-menu.ts` bot.
+   * Dideklarasikan `number[]` sampai 3 Okt, jadi chipnya tercetak
+   * "[object Object].00" dan ditolak server saat ditekan. Layar wajib
+   * membacanya lewat `bacaPilihanJam`, yang membuang bentuk lain.
+   */
+  pilihanJam: JendelaJam[];
   tfTersedia: { tf: string; mesin: { kode: string; nama: string }[] }[];
 };
 

@@ -26,6 +26,7 @@ import { volumeRingkas } from '../data/tampil';
 /* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
 import { PAKET_PLUS, hargaPlus, rupiah, TOKO_PLAY } from '../data/amplus';
+import { KALIMAT_JAM_SUNYI, bacaJendela, bacaPilihanJam, labelKirim, labelSunyi, samaJendela, tanpaSunyi } from '../data/jamSunyi';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -491,6 +492,9 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
       muat();
     });
   };
+  /* Jendela KIRIM dari server, dibaca gagal-tertutup — lihat `jamSunyi.ts`. */
+  const jendela = d === null ? null : bacaJendela(d.jam);
+  const pilihanJam = d === null ? [] : bacaPilihanJam(d.pilihanJam);
 
   /* Akun gratis: server menjawab 402 `perlu-plus`. Itu bukan galat, itu
      harga — jadi layarnya ajakan, bukan rangka yang gagal dimuat. */
@@ -498,8 +502,8 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
     return (
       <Wadah>
         <KartuButuhPlus apa="Kabar otomatis" bukaPlus={bukaPlus} manfaat={[
-          'Pantauan berjalan sendiri di timeframe pilihanmu, tanpa membuka app',
-          'Jam sunyi: kabar dicatat, tidak dibunyikan, dikirim saat jam sunyi selesai',
+          'Pasar dipantau sendiri di timeframe dan mesin pilihanmu, tanpa dipasang satu-satu',
+          'Jam sunyi: pilih jam kabar otomatis berhenti dikirim',
           'Kabar ke HP ini lewat notifikasi; Telegram jadi cadangan',
         ]} />
         <View style={{ flex: 1 }} />
@@ -533,20 +537,25 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
         </View>
       </Blok>
 
+      {/* JENDELA KIRIM, BUKAN JAM DIAM. Baris lama "Mulai 5.00 · Selesai
+          23.00" di bawah judul "Jam sunyi" membaca jendela kirim sebagai jam
+          diam — yang sebenarnya sunyi justru 00.00–05.00. Dua-duanya ditulis
+          terang sekarang, dengan rumus yang sama dengan bot. */}
       <Lbl>Jam sunyi</Lbl>
       <Menu>
-        <Butir ikon="kalender" nama="Mulai" ket={d?.jam === null || d === null ? '—' : `${String(d.jam.mulai)}.00`} ketMono pertama />
-        <Butir ikon="kalender" nama="Selesai" ket={d?.jam === null || d === null ? '—' : `${String(d.jam.selesai)}.00`} ketMono />
+        <Butir ikon="kalender" nama="Kabar dikirim" ket={jendela === null ? '—' : `${labelKirim(jendela)} WIB`} ketMono pertama />
+        <Butir ikon="kalender" nama="Sunyi" ket={jendela === null ? '—' : tanpaSunyi(jendela) ? 'tidak ada' : `${labelSunyi(jendela)} WIB`} ketMono />
       </Menu>
-      {d !== null && d.pilihanJam.length > 0 && (
+      {pilihanJam.length > 0 && (
         <View style={[g.chips, { flexWrap: 'wrap' }]}>
-          {d.pilihanJam.map((h) => (
-            <Chip key={h} teks={`${String(h)}.00`} mono on={d.jam?.mulai === h}
-              onPress={() => { tulis(setelJamKabar(h, d.jam?.selesai ?? 6)); }} />
+          {pilihanJam.map((j) => (
+            <Chip key={`${String(j.mulai)}-${String(j.selesai)}`} teks={labelSunyi(j)} mono
+              on={jendela !== null && samaJendela(j, jendela)}
+              onPress={() => { tulis(setelJamKabar(j.mulai, j.selesai)); }} />
           ))}
         </View>
       )}
-      <Mikro>Di dalam jam sunyi kabar TETAP dicatat, cuma tidak dibunyikan. Yang tertahan dikirim sekaligus saat jam sunyi selesai.</Mikro>
+      <Mikro>{KALIMAT_JAM_SUNYI}</Mikro>
 
       <Lbl gaya={{ marginTop: 2 }}>Timeframe yang dipantau otomatis</Lbl>
       {d === null ? (
