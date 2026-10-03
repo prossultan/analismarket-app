@@ -751,3 +751,46 @@ sesi, tab Pasar ada dan chart terisi, nol galat.
 
 Yang tetap tidak bisa dibuktikan dari sini: build yang ditandatangani Play
 (kunci berbeda) — cuma HP atau pre-launch report Play yang melihatnya.
+
+## Kontrak app ↔ bot dikunci `uji-keputusan.mjs` (3 Okt)
+
+Enam ketidaksesuaian dari peta fitur 2 Okt, semuanya lolos tsc dan ketujuh
+penjaga teks karena bentuknya di sisi app TERLIHAT benar:
+
+| bug | sebab | sekarang |
+|---|---|---|
+| "+ pantau" memasang mesin lain atau 409 tanpa kata | app kirim `strategi`, server baca `mesin`; `.then(() => muat())` menelan jawaban | kunci `mesin`; mesin kosong tidak dikirim; kalimat server dicetak |
+| chip jam sunyi "[object Object].00" | `pilihanJam` diketik `number[]`, server kirim `{mulai,selesai}` | `jamSunyi.ts`: dibaca gagal-tertutup, label rumus bot (chip = jam DIAM, baris = jam KIRIM) |
+| janji "kabar jam sunyi dikirim sekaligus sesudahnya" | tidak pernah benar: `pemindai.ts` melewati penerima sunyi SEBELUM mencatat | dicabut, diganti "tidak dikirim dan tidak disusulkan" |
+| m5 emas akun gratis: "Mesin tidak menjawab · Coba lagi" | semua kegagalan bacaan satu string | `gagalBacaan.ts`: 402 = ajakan AM+, 429 = jatah, Coba lagi cuma jaringan |
+| pelanggan Google dibaca "Gratis" | `JembatanClerk` mengetik `langganan: 'gratis'` | sesi Clerk `null`; status dari `/api/saya` lewat `statusPlus.ts` |
+| chart Google anonim | cuma sesi mini disuntik ke WebView | `tokenSesi()` jenis apa pun → `am_sesi_mini`; tanpa sesi kuncinya DIHAPUS |
+
+`skrip/uji-keputusan.mjs` (ikut `npm run periksa`) mengimpor `saya.ts`,
+`sesi.ts`, `antrian.ts`, dan modul keputusan APA ADANYA — Node 22 membuang
+tipe sendiri, `module.registerHooks` menyelesaikan impor tanpa ekstensi dan
+mengganti `react-native`/AsyncStorage dengan potongan kecil, `fetch` diganti
+tiruan. Yang ditegaskan BADAN JSON yang berangkat dan kalimat yang kembali,
+bukan bahan antaranya. Modul keputusan yang dipanggilnya sengaja tanpa impor
+RN supaya bisa ditembak begini; layar `.tsx` tidak bisa (JSX), jadi layar
+cukup memanggil keputusannya dan uji memeriksa pemanggilan itu.
+
+Batas pantauan dan pilihan jam sunyi dibaca dari repo bot (`REPO_BOT`), dengan
+potret `skrip/keputusan-bot.json` untuk CI — pola `periksa-harga.mjs`, gagal
+keras kalau dua-duanya hilang. Uji-mutasi 36/36 merah.
+
+`periksa-jawaban.mjs` sekarang juga menolak jawaban TULIS yang ditelan:
+`f(...).then(() =>`, `.then(namaFungsi)`, dan `await f(...)` yang tidak
+ditampung. Ditemukan di enam tempat, termasuk saklar notifikasi yang
+berkata "mati" padahal server menolak mencabut perangkatnya.
+
+Dua yang masih di sisi BOT, tidak bisa dibereskan dari sini:
+`identitasBacaan` (health.ts) mencari user lewat `telegramId`, jadi akun
+Google TANPA Telegram tidak pernah dibaca pelanggan di `/api/bacaan` — app
+maupun chart. Dan `kabarOtomatisSaya` menjawab 200 `plus:false`, bukan 402,
+jadi cabang `KartuButuhPlus` di layar Kabar otomatis tidak pernah tercapai.
+
+Jebakan harness yang memakan satu putaran: `innerText` mengembalikan teks
+SESUDAH `textTransform: uppercase` — mencari "Pertanyaan yang sering masuk"
+gagal untuk layar yang benar. Dan `pkill -f` dengan pola yang ikut tertulis
+di perintahnya membunuh shell sendiri (exit 144) — kali ketiga.
