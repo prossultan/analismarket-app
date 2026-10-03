@@ -323,19 +323,20 @@ await uji('KEPUTUSAN: sesi Google tidak diisi status karangan di App.tsx', async
 
 process.stdout.write('\n── K15 · sesi ikut ke chart tertanam ──\n');
 
-/** Jalankan skrip suntikan seperti WebView menjalankannya, atas localStorage tiruan. */
-function jalankanSuntikan(skrip, awal = {}) {
+/** Jalankan skrip suntikan seperti WebView menjalankannya, atas localStorage tiruan milik halaman berasal `origin`. */
+const ASAL_APP = (await muat('src/data/antrian.ts')).ASAL;
+function jalankanSuntikan(skrip, awal = {}, origin = ASAL_APP) {
   const isi = new Map(Object.entries(awal));
   const localStorage = { setItem: (k, v) => { isi.set(k, String(v)); }, removeItem: (k) => { isi.delete(k); }, getItem: (k) => isi.get(k) ?? null };
   // eslint-disable-next-line no-new-func
-  new Function('localStorage', skrip)(localStorage);
+  new Function('localStorage', 'location', skrip)(localStorage, { origin });
   return isi;
 }
 
 await uji('KEPUTUSAN: chart tertanam membawa token sesi Google, bukan cuma sesi mini', async () => {
   const token = await sesi.tokenSesi();
   tegas(token === 'jwt-clerk-uji', `tokenSesi() untuk sesi Google menjawab ${JSON.stringify(token)}`);
-  const ls = jalankanSuntikan(sesiChart.skripSesiChart(token));
+  const ls = jalankanSuntikan(sesiChart.skripSesiChart(token, ASAL_APP));
   tegas(ls.get(sesiChart.KUNCI_SESI_CHART) === 'jwt-clerk-uji', `localStorage halaman embed sesudah suntikan: ${JSON.stringify([...ls])} — web membaca 'am_sesi_mini' sebagai Bearer`);
   tegas(sesiChart.KUNCI_SESI_CHART === 'am_sesi_mini', `kunci "${sesiChart.KUNCI_SESI_CHART}" bukan kunci yang dibaca miniapp.ts web`);
   const layar = tanpaKomentar(readFileSync('src/layar/Analisis.tsx', 'utf8'));
@@ -344,10 +345,46 @@ await uji('KEPUTUSAN: chart tertanam membawa token sesi Google, bukan cuma sesi 
 });
 
 await uji('KEPUTUSAN: tanpa sesi, token lama DIHAPUS dari WebView (cabang lawan)', async () => {
-  const ls = jalankanSuntikan(sesiChart.skripSesiChart(null), { am_sesi_mini: 'token-orang-sebelumnya' });
+  const ls = jalankanSuntikan(sesiChart.skripSesiChart(null, ASAL_APP), { am_sesi_mini: 'token-orang-sebelumnya' });
   tegas(!ls.has('am_sesi_mini'), 'token sesi orang sebelumnya tertinggal di localStorage WebView sesudah keluar');
-  tegas(sesiChart.skripSesiChart(null) !== sesiChart.skripSesiChart('x'), 'skrip dengan dan tanpa token identik');
+  tegas(sesiChart.skripSesiChart(null, ASAL_APP) !== sesiChart.skripSesiChart('x', ASAL_APP), 'skrip dengan dan tanpa token identik');
   tegas(sesiChart.SEGARKAN_TOKEN_CHART_MS < 60_000, `token chart disegarkan tiap ${sesiChart.SEGARKAN_TOKEN_CHART_MS} ms — JWT Clerk berumur ±60 detik`);
+});
+
+/* Tiga alamat yang LOLOS `originWhitelist` react-native-webview 13.16.1 (regex
+   `^` + asal tanpa `$`, diuji 3 Okt) padahal bukan analismarket.com. Alamat
+   asing dirakit lewat `alamat()` — periksa-teks menolak tautan keluar yang
+   diketik utuh, dan di sini justru itu bahan ujinya. */
+const alamat = (skema, sisa) => `${skema}:/${'/'}${sisa}`;
+const ASAL_TIRUAN = ['https://analismarket.com.contoh-lain.net', 'https://analismarket.com@contoh-lain.net', 'https://analismarket.com:8443'];
+
+await uji('KEPUTUSAN: token sesi disuntik HANYA ke halaman berasal analismarket.com — halaman asing di WebView tidak menerimanya', async () => {
+  tegas(ASAL_APP === 'https://analismarket.com', `ASAL app ${JSON.stringify(ASAL_APP)} — uji ini menembak asal yang salah`);
+  /* `location.origin` seperti dilaporkan peramban: `pengguna@` sudah dibuang dari origin halaman itu. */
+  for (const origin of ['https://analismarket.com.contoh-lain.net', alamat('https', 'contoh-lain.net'), 'https://analismarket.com:8443', alamat('http', 'analismarket.com')]) {
+    const ls = jalankanSuntikan(sesiChart.skripSesiChart('jwt-rahasia', ASAL_APP), {}, origin);
+    tegas(!ls.has(sesiChart.KUNCI_SESI_CHART), `halaman ${origin} menerima token sesi lewat suntikan 40 detik — JWT/sesi mini membuka /api/saya/*, termasuk hapus akun`);
+  }
+  /* Cabang lawan: halaman asal sendiri tetap menerimanya. */
+  const sah = jalankanSuntikan(sesiChart.skripSesiChart('jwt-rahasia', ASAL_APP), {}, ASAL_APP);
+  tegas(sah.get(sesiChart.KUNCI_SESI_CHART) === 'jwt-rahasia', 'halaman chart-embed analismarket.com tidak lagi menerima token — chart pelanggan jadi anonim');
+});
+
+await uji('KEPUTUSAN: navigasi WebView chart dibandingkan origin PERSIS — awalan "https://analismarket.com" tidak cukup', async () => {
+  for (const u of ASAL_TIRUAN) tegas(!sesiChart.bolehDimuatChart(`${u}/chart-embed`, ASAL_APP), `${u} dimuat di bingkai atas WebView chart`);
+  for (const u of [alamat('http', 'analismarket.com/chart-embed'), 'about:blank', 'javascript:alert(1)', `${alamat('https', 'contoh-lain.net')}/?k=${ASAL_APP}`]) {
+    tegas(!sesiChart.bolehDimuatChart(u, ASAL_APP), `${u} dimuat di bingkai atas WebView chart`);
+  }
+  tegas(!sesiChart.bolehDimuatChart(`${ASAL_APP}/chart-embed`, ''), 'asal kosong (web) meloloskan navigasi');
+  /* Cabang lawan: halaman chart sendiri — termasuk ganti pair/tf/tema — tetap dimuat. */
+  for (const u of [`${ASAL_APP}/chart-embed?pair=XAU%2FUSD&tf=m5&alat=volume,zona&tema=terang`, `${ASAL_APP}/`, alamat('https', 'AnalisMarket.com/chart-embed')]) {
+    tegas(sesiChart.bolehDimuatChart(u, ASAL_APP), `${u} ditolak — chart tidak bisa berpindah pasar/tf`);
+  }
+  const kode = tanpaKomentar(readFileSync('src/komponen/ChartTertanam.tsx', 'utf8'));
+  tegas(/onShouldStartLoadWithRequest=\{\(e\) => bolehDimuatChart\(e\.url, asal, e\.isTopFrame\)\}/.test(kode), 'ChartTertanam tidak memeriksa origin persis lewat onShouldStartLoadWithRequest — originWhitelist saja meloloskan awalan');
+  const suntik = kode.match(/skripSesiChart\(/g) ?? [];
+  const berasal = kode.match(/skripSesiChart\([^()]*,\s*asal\)/g) ?? [];
+  tegas(suntik.length >= 3 && berasal.length === suntik.length, `${berasal.length} dari ${suntik.length} suntikan membawa asal — tiap pintu suntikan (muat, segarkan 40 dtk, awal halaman) wajib`);
 });
 
 process.stdout.write('\n── Teks yang dilihat orang ──\n');

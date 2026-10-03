@@ -9,7 +9,7 @@
 import { Platform, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { createElement, useEffect, useRef, useState } from 'react';
-import { SEGARKAN_TOKEN_CHART_MS, skripSesiChart } from '../data/sesiChart';
+import { SEGARKAN_TOKEN_CHART_MS, bolehDimuatChart, skripSesiChart } from '../data/sesiChart';
 
 type Props = {
   url: string;
@@ -49,10 +49,10 @@ export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan, ambil
       setMuatan({ url, token });
       /* Sesi berganti tapi URL sama: halaman yang sedang terbuka tidak
          dimuat ulang, jadi tokennya ditukar di tempat. */
-      ref.current?.injectJavaScript(skripSesiChart(token));
+      ref.current?.injectJavaScript(skripSesiChart(token, asal));
     });
     return () => { batal = true; };
-  }, [url, ambilToken, kunciSesi]);
+  }, [url, asal, ambilToken, kunciSesi]);
 
   /* Halaman m15 ke atas menyegarkan bacaannya sendiri; dengan JWT yang sudah
      kedaluwarsa server menjawabnya sebagai anonim dan mesin AM+ hilang dari
@@ -60,10 +60,10 @@ export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan, ambil
   useEffect(() => {
     if (Platform.OS === 'web') return undefined;
     const jam = setInterval(() => {
-      void ambilToken().catch(() => null).then((token) => { ref.current?.injectJavaScript(skripSesiChart(token)); });
+      void ambilToken().catch(() => null).then((token) => { ref.current?.injectJavaScript(skripSesiChart(token, asal)); });
     }, SEGARKAN_TOKEN_CHART_MS);
     return () => { clearInterval(jam); };
-  }, [ambilToken, kunciSesi]);
+  }, [asal, ambilToken, kunciSesi]);
 
   if (Platform.OS === 'web') {
     return createElement('iframe', {
@@ -97,7 +97,7 @@ export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan, ambil
       onLoadEnd={() => { onMuat(false); }}
       onMessage={onPesan}
       injectedJavaScript={suntik}
-      injectedJavaScriptBeforeContentLoaded={skripSesiChart(muatan.token)}
+      injectedJavaScriptBeforeContentLoaded={skripSesiChart(muatan.token, asal)}
       scalesPageToFit={false}
       setBuiltInZoomControls={false}
       scrollEnabled={false}
@@ -106,6 +106,9 @@ export function ChartTertanam({ url, asal, suntik, latar, onMuat, onPesan, ambil
       javaScriptEnabled
       domStorageEnabled
       originWhitelist={[asal]}
+      /* `originWhitelist` cuma mencocokkan AWALAN — analismarket.com.domain-
+         lain.net lolos. Pemeriksaan origin PERSIS di sini; lihat sesiChart.ts. */
+      onShouldStartLoadWithRequest={(e) => bolehDimuatChart(e.url, asal, e.isTopFrame)}
     />
   );
 }

@@ -30,10 +30,45 @@ export const KUNCI_SESI_CHART = 'am_sesi_mini';
  */
 export const SEGARKAN_TOKEN_CHART_MS = 40_000;
 
-/** Skrip yang disuntik ke WebView: pasang token, atau hapus kalau tidak ada sesi. */
-export function skripSesiChart(token: string | null): string {
+/**
+ * Skrip yang disuntik ke WebView: pasang token, atau hapus kalau tidak ada
+ * sesi — HANYA kalau halaman yang sedang terbuka berasal persis `asal`.
+ *
+ * Skrip ini berjalan di halaman APA PUN yang sedang dimuat WebView, tiap 40
+ * detik dan di tiap awal halaman. Sampai 3 Okt ia tidak memeriksa itu, dan
+ * `originWhitelist` react-native-webview cuma mencocokkan AWALAN
+ * (regex `^` + asal, tanpa `$`): `https://analismarket.com.domain-lain.net`
+ * lolos dan dimuat di dalam WebView, lalu menerima JWT Clerk atau sesi mini
+ * 12 jam — kunci yang membuka /api/saya/*, termasuk hapus akun.
+ */
+export function skripSesiChart(token: string | null, asal: string): string {
   const isi = token === null || token === ''
     ? `localStorage.removeItem(${JSON.stringify(KUNCI_SESI_CHART)})`
     : `localStorage.setItem(${JSON.stringify(KUNCI_SESI_CHART)},${JSON.stringify(token)})`;
-  return `try{${isi}}catch(e){};true;`;
+  return `try{if(location.origin===${JSON.stringify(asal)}){${isi}}}catch(e){};true;`;
+}
+
+/**
+ * Origin PERSIS sebuah URL (`skema://host[:port]`, huruf kecil), atau `null`.
+ * Dibaca sendiri, bukan lewat `URL`: `URL` bawaan React Native tidak lengkap,
+ * dan yang dibutuhkan cuma dua bagian. Otoritas diambil utuh — termasuk
+ * `pengguna@` dan port — jadi `https://analismarket.com@domain-lain.net`
+ * tidak pernah sama dengan `https://analismarket.com`.
+ */
+export function asalUrl(url: string): string | null {
+  const m = /^([a-z][a-z0-9+.-]*):\/\/([^/?#\\]*)/i.exec(url);
+  if (m === null || (m[2] ?? '') === '') return null;
+  return `${(m[1] ?? '').toLowerCase()}://${(m[2] ?? '').toLowerCase()}`;
+}
+
+/**
+ * Navigasi bingkai ATAS chart tertanam cuma boleh ke origin yang sama persis.
+ * Bingkai dalam (iframe, cuma dilaporkan iOS) tidak dibatasi di sini: token
+ * disuntik ke bingkai atas saja, dan iframe beda origin tidak bisa membaca
+ * localStorage-nya. URL yang gagal `originWhitelist` tetap dibuka peramban HP
+ * oleh react-native-webview sendiri, sebelum fungsi ini ditanya.
+ */
+export function bolehDimuatChart(url: string, asal: string, bingkaiAtas = true): boolean {
+  if (!bingkaiAtas) return true;
+  return asal !== '' && asalUrl(url) === asal.toLowerCase();
 }
