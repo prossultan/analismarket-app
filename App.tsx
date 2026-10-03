@@ -539,7 +539,7 @@ function Isi() {
             },
           })}
         >
-          {() => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} />}
+          {({ navigation }) => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} bukaPlus={() => { navigation.navigate('amplus'); }} />}
         </Tab.Screen>
 
         <Tab.Screen name="kabar" options={{ title: 'Kabar', tabBarButton: (p) => <TombolTab ikon="kabar" label="Kabar" nama="kabar" lencana={belum} aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>

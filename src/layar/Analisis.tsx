@@ -36,6 +36,7 @@ import { Tekan } from '../komponen/Tekan';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Kosong, Memuat } from '../komponen/dasar';
 import { useSesi } from './Akun';
+import { gagalBacaan, isiLembarGagal, type GagalBacaan } from '../data/gagalBacaan';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -67,9 +68,9 @@ true;
 /** Lapisan chart yang bisa dinyalakan — nama dan urutannya sama dengan web. */
 const ALAT = ['volume', 'zona', 'struktur', 'level', 'pola lilin'] as const;
 
-type Props = { setelan: Setelan; simpan: (s: Setelan) => void; bukaPasarTanda: number };
+type Props = { setelan: Setelan; simpan: (s: Setelan) => void; bukaPasarTanda: number; bukaPlus: () => void };
 
-export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
+export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Props) {
   const sesiChart = useSesi();
   /* Menahan layar HANYA kalau orangnya sendiri yang memintanya di Pengaturan.
      `useKeepAwake` tidak bisa dipakai di sini: ia tidak punya cara dimatikan
@@ -88,7 +89,13 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
   const [mesin, setMesin] = useState(setelan.mesin);
   const [alat, setAlat] = useState<ReadonlySet<string>>(() => new Set(['volume', 'zona', 'struktur', 'level']));
   const [bacaan, setBacaan] = useState<Bacaan | null>(null);
+  /* DUA kegagalan, DUA keadaan. Daftar pasar yang gagal mengosongkan layar;
+     bacaan yang gagal cuma mengisi lembar bawah — dan bacaan yang DITOLAK
+     (402 butuh AM+, 429 jatah habis) bukan "mesin tidak menjawab". Dulu
+     keduanya satu string, jadi m5 emas akun gratis tercetak "tidak
+     tersambung · Coba lagi" untuk jawaban yang tidak akan pernah berubah. */
   const [gagal, setGagal] = useState('');
+  const [gagalBaca, setGagalBaca] = useState<GagalBacaan | null>(null);
   const [harga, setHarga] = useState<number | null>(null);
   const [memuatChart, setMemuatChart] = useState(true);
   const [lembarPasar, setLembarPasar] = useState(false);
@@ -128,8 +135,8 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
 
   const muatBacaan = useCallback(async (simbol: string, t: string, segarkan = false): Promise<void> => {
     const j = await ambilBacaan(simbol, t, segarkan);
-    if (!j.ok) { setGagal(j.kalimat); setBacaan(null); return; }
-    setGagal('');
+    if (!j.ok) { setGagalBaca(gagalBacaan({ jenis: j.jenis, kalimat: j.kalimat, galat: j.galat })); setBacaan(null); return; }
+    setGagalBaca(null);
     setBacaan(j.isi);
     if (!dariChart.current && j.isi.harga > 0) setHarga(j.isi.harga);
   }, []);
@@ -271,16 +278,24 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda }: Props) {
       >
         <Kaca tebal tepi="atas" gaya={g.lembarIsi}>
           <Tarik kata="tarik untuk detail" />
-          {gagal !== '' ? (
-            <View style={g.lembarBaris}>
-              <View>
-                <Lbl>tidak tersambung</Lbl>
-                <Text style={g.lembarStatus}>Mesin tidak menjawab</Text>
+          {gagalBaca !== null ? (() => {
+            /* Isinya diputuskan `isiLembarGagal`: "Coba lagi" cuma untuk
+               jaringan; butuh AM+ jadi ajakan ke tab PLUS+, tanpa harga dan
+               tanpa cara beli di build mana pun — tab itulah yang tunduk
+               pada TOKO_PLAY. */
+            const isi = isiLembarGagal(gagalBaca, pasar.simbol, tf);
+            return (
+              <View style={g.lembarBaris}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Lbl warna={isi.emas ? W.plusTeks : undefined}>{isi.label}</Lbl>
+                  <Text style={g.lembarStatus} numberOfLines={1}>{isi.judul}</Text>
+                  <Text style={g.ditahanKet} numberOfLines={2}>{isi.ket}</Text>
+                </View>
+                {isi.aksi === 'coba' && <Chip teks="Coba lagi" onPress={() => { void muatBacaan(pasar.simbol, tf, true); }} />}
+                {isi.aksi === 'plus' && <Chip teks="Lihat AnalisMarket+" emas onPress={bukaPlus} />}
               </View>
-              <View style={{ flex: 1 }} />
-              <Chip teks="Coba lagi" onPress={() => { void muatBacaan(pasar.simbol, tf, true); }} />
-            </View>
-          ) : m === null ? (
+            );
+          })() : m === null ? (
             <View style={g.lembarBaris}>
               <View style={{ flex: 1, gap: 6 }}>
                 <Rangka lebar="34%" tinggi={8} /><Rangka lebar="58%" tinggi={14} />
