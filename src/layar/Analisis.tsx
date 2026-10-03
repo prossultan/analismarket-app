@@ -36,6 +36,8 @@ import { Tekan } from '../komponen/Tekan';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Kosong, Memuat } from '../komponen/dasar';
 import { useSesi } from './Akun';
+import { tokenSesi } from '../data/sesi';
+import { kunciSesi } from '../data/statusPlus';
 import { gagalBacaan, isiLembarGagal, type GagalBacaan } from '../data/gagalBacaan';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
@@ -251,7 +253,10 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
 
         {/* ── CHART: mengambil semua sisa tinggi ────────────────────────── */}
         <View style={g.wadahChart}>
-          <ChartTertanam sesi={sesiChart?.jenis === 'mini' ? sesiChart.sesi : undefined} url={url} asal={ASAL} suntik={SUNTIK} latar={W.chart}
+          {/* Token SESI APA PUN — mini maupun Google. Dulu cuma sesi mini, jadi
+              chart pengguna Google selalu anonim sementara bacaan di luar
+              WebView membawa tokennya. Lihat `sesiChart.ts`. */}
+          <ChartTertanam ambilToken={tokenSesi} kunciSesi={kunciSesi(sesiChart)} url={url} asal={ASAL} suntik={SUNTIK} latar={W.chart}
             onMuat={setMemuatChart} onPesan={pesan} />
           {memuatChart && (
             <View style={g.tunggu} pointerEvents="none">
