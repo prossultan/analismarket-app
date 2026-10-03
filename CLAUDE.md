@@ -794,3 +794,26 @@ Jebakan harness yang memakan satu putaran: `innerText` mengembalikan teks
 SESUDAH `textTransform: uppercase` — mencari "Pertanyaan yang sering masuk"
 gagal untuk layar yang benar. Dan `pkill -f` dengan pola yang ikut tertulis
 di perintahnya membunuh shell sendiri (exit 144) — kali ketiga.
+
+## Layar Pasar tidak menyalin setelan; kaitnya diuji di React sungguhan (3 Okt sore)
+
+Peninjau menemukan tiga bug layar Pasar dengan satu bentuk: SALINAN lokal
+dari sesuatu yang sudah punya sumber, ditimpa jawaban jaringan yang tiba
+belakangan. `useState(setelan.tf)` membuat ketukan kabar membuka tf lama,
+tf pengganti (d1) tertulis balik sebagai pilihan user, dan kalimat
+penggantiannya dihapus efek muat daftar. `gagalBaca` yang tidak dikosongkan
+mencetak tembok AM+ m5 di tf gratis.
+
+- Pasar dan tf DIHITUNG dari setelan + daftar (`usePasarTf`, `bukaTf`).
+  Jangan pasang efek "sinkronkan tf dari setelan": efek itu dua sumber lagi.
+- Bacaan lewat `useBacaanPasar`: jawaban yang bukan milik permintaan
+  terakhir dibuang; penolakan membawa pasar/tf yang DITOLAK.
+- `uji-keputusan.mjs` menjalankan kait itu di React 19 + react-dom (wadah
+  tiruan, komponen merender `null`). Uji teks sebelumnya menuntut
+  `tfNaik(` dua kali dan `setKataTf(catatanTf(` dua kali — ia mengunci BENTUK
+  bug, bukan perilakunya. Kait `src/data/*.ts` tanpa JSX dan tanpa impor RN
+  bisa ditembak begini; taruh keputusan layar di situ.
+- Teks build Play dipindai dari pohon sintaks TypeScript dengan `TOKO_PLAY`
+  ditetapkan (`teksTercetak`), bukan cuma dari `tanyaPlus(true)`.
+- Keluar akun = `keluarAkun(tokenPerangkat)`: cabut perangkat push selagi
+  Bearer sah, baru buang sesi; maksimal 5 detik, gagal tidak menahan keluar.
