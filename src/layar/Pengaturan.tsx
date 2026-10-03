@@ -40,7 +40,13 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
     try {
       if (!mau) {
         const t = await tokenPerangkat();
-        if (t !== null) await cabutPerangkat(t);
+        /* Jawaban cabut DIBACA. Kalau server menolak, HP ini masih terdaftar
+           dan kabar tetap datang — saklar yang berkata "mati" sementara
+           notifikasi terus masuk adalah saklar yang berbohong. */
+        if (t !== null) {
+          const j = await cabutPerangkat(t);
+          if (!j.ok) { setSebabPush(`Notifikasi belum berhenti: ${j.kalimat}`); return; }
+        }
         simpan({ ...setelan, pushNyala: false });
         return;
       }

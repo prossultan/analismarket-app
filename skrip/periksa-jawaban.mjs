@@ -74,6 +74,52 @@ for (const nama of layar) {
   }
 }
 
+/* ── JAWABAN TULIS YANG DITELAN ──────────────────────────────────────────
+   Bentuk kedua dari bug yang sama, dan yang ini lolos aturan `.ok` di atas
+   karena tidak ada `.ok` sama sekali: `tambahPantauan(...).then(() => muat())`.
+   Pemanggilannya terlihat menangani jawabannya — ada `.then` — padahal
+   jawabannya tidak pernah dibaca. Sampai 3 Okt lima tempat di layar akun
+   berbentuk begini, termasuk "+ pantau": 409 "sudah aktif dengan SNR" dan
+   400 "timeframe tidak tersedia" lenyap, chipnya berputar lalu diam.
+
+   Yang dilarang tiga bentuk: `.then(() =>`, `.then(namaFungsi)` (jawabannya
+   jadi argumen yang diabaikan), dan pernyataan `await f(...)` / `void f(...)`
+   yang hasilnya tidak ditampung. Diteruskan ke pembantu (`tulis(f(...))`)
+   atau ditampung (`const j = await f(...)`) boleh — sisanya dijaga aturan
+   `.ok` di atas. */
+const TULIS = [
+  'tambahPantauan', 'matikanPantauan', 'setelJamKabar', 'setelKabarOtomatis', 'cekBanyak',
+  'hapusAkun', 'daftarkanPerangkat', 'cabutPerangkat', 'tandaiKabarDibaca', 'mintaTautanTelegram',
+];
+let tulisDiperiksa = 0;
+for (const nama of layar) {
+  /* Komentar dibuang TAPI barisnya dipertahankan, supaya nomor baris di
+     pesan menunjuk baris yang benar di berkas aslinya. */
+  const kode = readFileSync(`src/layar/${nama}`, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, (k) => k.replace(/[^\n]/g, ' '))
+    .replace(/^[ \t]*\/\/.*$/gm, '');
+  for (const f of TULIS) {
+    for (const m of kode.matchAll(new RegExp(String.raw`\b${f}\(`, 'g'))) {
+      /* Bukan pemanggilan: definisi impor/ekspor tidak diikuti kurung buka. */
+      tulisDiperiksa += 1;
+      let k = m.index + f.length;
+      for (let d = 0; k < kode.length; k += 1) {
+        if (kode[k] === '(') d += 1;
+        else if (kode[k] === ')') { d -= 1; if (d === 0) break; }
+      }
+      const sesudah = kode.slice(k + 1, k + 60);
+      const sebelum = kode.slice(Math.max(0, m.index - 60), m.index);
+      const baris = kode.slice(0, m.index).split('\n').length;
+      if (/^\s*\.then\(\s*(\(\s*\)\s*=>|[A-Za-z_$][\w$]*\s*\))/.test(sesudah)) {
+        masalah.push(`${nama}:${baris} — jawaban ${f}() dibaca .then tanpa parameter; penolakan server ditelan`);
+      } else if (/(^|[;{}\n()]|\belse)\s*(await|void)\s*$/.test(sebelum) && !/^\s*\.then\(/.test(sesudah)) {
+        masalah.push(`${nama}:${baris} — hasil ${f}() tidak ditampung; penolakan server ditelan`);
+      }
+    }
+  }
+}
+if (tulisDiperiksa < 8) masalah.push(`cuma ${tulisDiperiksa} pemanggilan fungsi tulis ditemukan — polanya berubah, aturan jawaban-tulis tidak menembak apa pun`);
+
 if (diperiksa === 0 && masalah.length === 0) {
   masalah.push('nol pemeriksaan `.ok` ditemukan di seluruh layar — polanya berubah, penjaga ini sudah tidak menembak apa pun');
 }
@@ -83,4 +129,4 @@ if (masalah.length > 0) {
   for (const m of masalah) process.stdout.write(`  - ${m}\n`);
   process.exit(1);
 }
-process.stdout.write(`  ${layar.length} layar dipindai · ${diperiksa} pemeriksaan jawaban · tiap sebab punya suara\n`);
+process.stdout.write(`  ${layar.length} layar dipindai · ${diperiksa} pemeriksaan jawaban · ${tulisDiperiksa} pemanggilan tulis · tiap sebab punya suara\n`);

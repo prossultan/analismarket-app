@@ -41,7 +41,7 @@ async function panggil<T>(jalur: string, metode: 'GET' | 'POST', badan?: unknown
       await hapusSesi();
       return { ok: false, jenis: 'sesi', kalimat: 'Sesi sudah habis. Sambungkan ulang lewat bot.' };
     }
-    const isi = (await res.json().catch(() => ({}))) as T & { galat?: string; pesan?: string };
+    const isi = (await res.json().catch(() => ({}))) as T & { galat?: string; pesan?: string; maks?: unknown };
     /* KONTRAKNYA `galat`, BUKAN kode status. `perlu-telegram` berarti akun
        ini (mis. masuk lewat Google) belum ditautkan ke bot — BUKAN soal
        langganan — dan server mengirimnya sebagai 409 (`PERLU_TELEGRAM` di
@@ -53,14 +53,18 @@ async function panggil<T>(jalur: string, metode: 'GET' | 'POST', badan?: unknown
     if (isi.galat === 'perlu-telegram') {
       return { ok: false, jenis: 'telegram', kalimat: isi.pesan ?? 'Fitur ini butuh akun Telegram yang tersambung ke bot.' };
     }
-    if (res.status === 402) {
+    /* `poin-kurang` juga datang sebagai 402, dan itu BUKAN soal langganan —
+       menjawabnya "bagian dari AnalisMarket+" menyuruh orang membeli hal
+       yang tidak akan membukanya. Selama `KREDIT_AKTIF` mati server tidak
+       pernah mengirimnya; cabangnya tetap jujur kalau saklar itu menyala. */
+    if (res.status === 402 && isi.galat !== 'poin-kurang') {
       return { ok: false, jenis: 'plus', kalimat: isi.pesan ?? 'Fitur ini bagian dari AnalisMarket+.' };
     }
     if (res.status === 429) {
       return { ok: false, jenis: 'batas', kalimat: isi.pesan ?? 'Jatah hari ini sudah habis.' };
     }
     if (!res.ok) {
-      return { ok: false, jenis: 'lain', kalimat: isi.pesan ?? isi.galat ?? 'Permintaan ditolak.' };
+      return { ok: false, jenis: 'lain', kalimat: isi.pesan ?? kalimatTanpaPesan(isi) ?? isi.galat ?? 'Permintaan ditolak.' };
     }
     return { ok: true, isi: isi as T };
   } catch {
@@ -68,6 +72,20 @@ async function panggil<T>(jalur: string, metode: 'GET' | 'POST', badan?: unknown
   } finally {
     clearTimeout(jam);
   }
+}
+
+/**
+ * Galat yang server kirim TANPA `pesan`. Tanpa peta ini layar mencetak kode
+ * mentahnya — "penuh" — sebagai kalimat. Kodenya dibaca dari
+ * `tambahPantauan` di `src/lib/api-saya.ts` bot, bukan ditebak dari nama.
+ */
+function kalimatTanpaPesan(isi: { galat?: string; maks?: unknown }): string | null {
+  if (isi.galat === 'penuh') {
+    const maks = typeof isi.maks === 'number' ? `${String(isi.maks)} ` : '';
+    return `Batas ${maks}pantauan sudah terisi. Matikan satu pantauan dulu.`;
+  }
+  if (isi.galat === 'poin-kurang') return 'Pantauan belum bisa dipasang untuk akun ini.';
+  return null;
 }
 
 /* ── Bentuk jawaban, disalin dari `src/lib/api-saya.ts` di bot ─────────── */
@@ -113,8 +131,21 @@ export const ambilRingkas = (): Promise<JawabanSaya<Ringkas>> => panggil('/api/s
 export const ambilPantauan = (): Promise<JawabanSaya<DaftarPantauan>> => panggil('/api/saya/pantauan', 'GET');
 export const ambilKabarOtomatis = (): Promise<JawabanSaya<KabarOtomatis>> => panggil('/api/saya/kabar-otomatis', 'GET');
 
-export const tambahPantauan = (b: { pair: string; tf: string; strategi?: string }): Promise<JawabanSaya<unknown>> =>
-  panggil('/api/saya/pantauan/tambah', 'POST', b);
+/**
+ * KUNCINYA `mesin`, BUKAN `strategi` — `tambahPantauan` di
+ * `src/lib/api-saya.ts` bot membaca `b.mesin`. App mengirim `strategi` sampai
+ * 3 Okt, jadi server tidak pernah melihat pilihannya dan memasang mesin dari
+ * setelan akun: orang menekan "+ pantau" di baris SMC dan mendapat pantauan
+ * SnR, atau 409 `strategi-berbeda` yang kalimatnya dibuang layar.
+ *
+ * Mesin kosong TIDAK dikirim sama sekali: tanpa kunci, server memakai mesin
+ * aktif akun (perilaku yang memang diminta "otomatis"); dengan `''`, server
+ * mencari mesin bernama kosong dan menjawab 400.
+ */
+export const tambahPantauan = (b: { pair: string; tf: string; mesin?: string }): Promise<JawabanSaya<unknown>> =>
+  panggil('/api/saya/pantauan/tambah', 'POST', {
+    pair: b.pair, tf: b.tf, ...(b.mesin === undefined || b.mesin === '' ? {} : { mesin: b.mesin }),
+  });
 export const matikanPantauan = (id: number): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/pantauan/matikan', 'POST', { id });
 export const setelJamKabar = (mulai: number, selesai: number): Promise<JawabanSaya<unknown>> =>

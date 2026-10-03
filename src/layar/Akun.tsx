@@ -274,11 +274,26 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
     });
   }, [pasar, tf]);
 
+  /* KALIMAT SERVER TIDAK DIBUANG. `.then(() => muat())` dulu menelan setiap
+     penolakan — 409 "sudah aktif dengan SNR", 400 "timeframe tidak tersedia",
+     batas penuh — jadi chip "+ pantau" berputar sebentar lalu diam, dan
+     orangnya tidak pernah tahu pantauannya tidak terpasang. */
+  const [galatTulis, setGalatTulis] = useState<string | null>(null);
   const pasang = (p: string, t: string, kode: string | undefined): void => {
     const kunci = `${p}${t}${kode ?? ''}`;
-    setSibuk(kunci);
-    void tambahPantauan({ pair: p, tf: t, ...(kode === undefined ? {} : { strategi: kode }) })
-      .then(() => { setSibuk(''); muat(); });
+    setSibuk(kunci); setGalatTulis(null);
+    void tambahPantauan({ pair: p, tf: t, mesin: kode }).then((j) => {
+      setSibuk('');
+      if (!j.ok) setGalatTulis(j.kalimat);
+      muat();
+    });
+  };
+  const matikan = (id: number): void => {
+    setGalatTulis(null);
+    void matikanPantauan(id).then((j) => {
+      if (!j.ok) setGalatTulis(j.kalimat);
+      muat();
+    });
   };
 
   /**
@@ -300,6 +315,7 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
   return (
     <Wadah>
       {(sebab ?? sebabPasar) !== null && <PitaBasi kalimat={(sebab ?? sebabPasar) ?? ''} />}
+      {galatTulis !== null && <Text style={g.galat}>{galatTulis}</Text>}
       <View style={g.chips}>
         <Chip teks={`Aktif ${String(aktif.length)}`} on={saring === 'aktif'} onPress={() => { setSaring('aktif'); }} />
         <Chip teks={`Dimatikan ${String(mati.length)}`} on={saring === 'mati'} onPress={() => { setSaring('mati'); }} />
@@ -330,7 +346,7 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
                 </Text>
                 <Lbl polos>Kabari saat syarat wajib lolos semua</Lbl>
               </View>
-              {w.aktif && <Chip teks="matikan" onPress={() => { void matikanPantauan(w.id).then(muat); }} />}
+              {w.aktif && <Chip teks="matikan" onPress={() => { matikan(w.id); }} />}
             </View>
           ))}
         </Blok>
@@ -412,7 +428,7 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
   const simpan = (): void => {
     if (sesi === null) { bukaSambung(); return; }
     setSibuk(true); setGalat('');
-    void tambahPantauan({ pair: pasar, tf, ...(mesin === '' ? {} : { strategi: mesin }) }).then((j) => {
+    void tambahPantauan({ pair: pasar, tf, mesin }).then((j) => {
       setSibuk(false);
       if (j.ok) { selesai(); return; }
       setGalat(j.kalimat);
@@ -465,6 +481,16 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
   const sesi = useSesi();
   const { isi: d, sebab, gagal, jenis, ulangi: muat } = useAkun(ambilKabarOtomatis, sesi);
   const [sibuk, setSibuk] = useState('');
+  /* Penolakan server dicetak, bukan ditelan — lihat `galatTulis` di Pantauan. */
+  const [galatTulis, setGalatTulis] = useState<string | null>(null);
+  const tulis = (janji: Promise<JawabanSaya<unknown>>, kunci = ''): void => {
+    setSibuk(kunci); setGalatTulis(null);
+    void janji.then((j) => {
+      setSibuk('');
+      if (!j.ok) setGalatTulis(j.kalimat);
+      muat();
+    });
+  };
 
   /* Akun gratis: server menjawab 402 `perlu-plus`. Itu bukan galat, itu
      harga — jadi layarnya ajakan, bukan rangka yang gagal dimuat. */
@@ -484,6 +510,7 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
   return (
     <Wadah>
       {sebab !== null && <PitaBasi kalimat={sebab} />}
+      {galatTulis !== null && <Text style={g.galat}>{galatTulis}</Text>}
       {sesi === null && <PerluSesi apa="Kabar otomatis" buka={bukaSambung} />}
 
       <Blok>
@@ -501,7 +528,7 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
               dicetak sebagai lencana, dan mematikan semua jadi tindakan yang
               disebut namanya. */}
           {d !== null && d.dipilih.length > 0
-            ? <Chip teks="Matikan semua" onPress={() => { void setelKabarOtomatis({ semua: false }).then(muat); }} />
+            ? <Chip teks="Matikan semua" onPress={() => { tulis(setelKabarOtomatis({ semua: false })); }} />
             : <Chip teks={d === null ? (gagal ? 'Tidak terbaca' : 'Memuat…') : d.plus ? 'AM+ aktif' : 'Butuh AM+'} emas={d?.plus === true} lencana />}
         </View>
       </Blok>
@@ -515,7 +542,7 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
         <View style={[g.chips, { flexWrap: 'wrap' }]}>
           {d.pilihanJam.map((h) => (
             <Chip key={h} teks={`${String(h)}.00`} mono on={d.jam?.mulai === h}
-              onPress={() => { void setelJamKabar(h, d.jam?.selesai ?? 6).then(muat); }} />
+              onPress={() => { tulis(setelJamKabar(h, d.jam?.selesai ?? 6)); }} />
           ))}
         </View>
       )}
@@ -548,9 +575,7 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
                          bisa ditekan alih-alih ditekan lalu ditolak server. */
                       ganti={d.plus ? () => {
                         if (sibuk !== '') return;
-                        setSibuk(kunci);
-                        void setelKabarOtomatis({ tf: x.tf, mesin: x.kode, aktif: !nyala })
-                          .then(() => { setSibuk(''); muat(); });
+                        tulis(setelKabarOtomatis({ tf: x.tf, mesin: x.kode, aktif: !nyala }), kunci);
                       } : undefined} />
                   )} />
               );
