@@ -20,3 +20,24 @@ export function tfNaik(ada: readonly string[], tf: string): string | undefined {
 export function catatanTf(simbol: string, diminta: string, dibuka: string): string | null {
   return diminta === dibuka ? null : `${diminta} tidak tersedia untuk ${simbol} — dibuka ${dibuka}.`;
 }
+
+/**
+ * TF YANG DIBUKA DIHITUNG, TIDAK DISIMPAN — dari pasar dan tf yang DIMINTA.
+ *
+ * `diminta` adalah `setelan.tf`: pilihan orangnya sendiri, atau tf kabar yang
+ * baru diketuk. Penggantinya (d1 untuk EURUSDT yang diminta h1) tidak pernah
+ * ditulis balik ke setelan, jadi pasar berikutnya kembali ke h1. Dan karena
+ * dihitung tiap render, kalimatnya tidak bisa dihapus efek yang selesai
+ * belakangan: sampai 3 Okt keduanya salinan lokal di layar Pasar, catatannya
+ * hilang begitu `/api/pasar` menjawab, d1 terwariskan diam-diam ke pasar
+ * berikutnya, dan ketukan kabar m15 membuka tf lama.
+ */
+export function bukaTf(
+  pasar: { simbol: string; timeframes: readonly string[] } | null,
+  diminta: string,
+): { tf: string; kataTf: string } {
+  const minta = diminta.toLowerCase();
+  if (pasar === null) return { tf: minta, kataTf: '' };
+  const tf = tfNaik(pasar.timeframes.map((t) => t.toLowerCase()), minta) ?? 'h1';
+  return { tf, kataTf: catatanTf(pasar.simbol, minta, tf) ?? '' };
+}

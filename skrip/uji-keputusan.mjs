@@ -85,6 +85,7 @@ const sesiChart = await muat('src/data/sesiChart.ts');
 const amplus = await muat('src/data/amplus.ts');
 const tampil = await muat('src/data/tampil.ts');
 const tfPengganti = await muat('src/data/tfPengganti.ts');
+const layarPasar = await muat('src/data/layarPasar.ts');
 
 /* ── pembantu uji ───────────────────────────────────────────────────────── */
 let jumlah = 0;
@@ -444,13 +445,112 @@ await uji('tf pengganti, cabang lawan: tf yang ada tidak diganti dan tidak berka
   tegas(tfPengganti.tfNaik(['m1', 'm5', 'h1'], 'd1') === 'h1', 'di atas semua wajib yang tertinggi (h1)');
   tegas(tfPengganti.tfNaik([], 'h1') === undefined, 'daftar kosong wajib undefined');
 });
-await uji('tf pengganti dipakai KEDUA jalan layar Pasar (muat daftar & pilih pasar), tanpa punya[0]', async () => {
-  const kode = tanpaKomentar(readFileSync(join(AKAR, 'src/layar/Analisis.tsx'), 'utf8'));
-  const pakai = (kode.match(/tfNaik\(/g) ?? []).length;
-  tegas(pakai >= 2, `tfNaik dipanggil ${pakai}x di Analisis.tsx, seharusnya di kedua jalan (muat daftar, pilih pasar)`);
-  tegas(!/punya\[0\]/.test(kode), 'Analisis.tsx masih memakai punya[0] — penggantian diam-diam ke tf terendah');
-  tegas((kode.match(/setKataTf\(catatanTf\(/g) ?? []).length >= 2, 'kedua jalan wajib menyimpan kalimat penggantian (setKataTf(catatanTf(...)))');
+
+process.stdout.write('\n── K16 · layar Pasar di React sungguhan ──\n');
+
+/**
+ * Layar `.tsx` tidak bisa diimpor di sini (JSX), tapi KAIT-nya bisa, dan bug
+ * layar Pasar 3 Okt hidup di urutan render dan efek — yang tidak terlihat
+ * dari fungsi murni. Kaitnya dijalankan di React 19 + react-dom sungguhan
+ * (versi yang sama dengan app) dengan wadah tiruan: komponen uji merender
+ * `null`, jadi DOM tidak pernah disentuh.
+ */
+const React = await import('react');
+const { createRoot } = await import('react-dom/client');
+const { act, createElement: h, useState } = React;
+const globalSebelum = { window: globalThis.window, document: globalThis.document, HTMLIFrameElement: globalThis.HTMLIFrameElement };
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+globalThis.window = globalThis;
+globalThis.HTMLIFrameElement = class {};
+globalThis.document = { activeElement: null, body: null, addEventListener() {}, removeEventListener() {} };
+async function pasang(elemen) {
+  const doc = { addEventListener() {}, removeEventListener() {} };
+  const akar = createRoot({ nodeType: 1, nodeName: 'DIV', tagName: 'DIV', ownerDocument: doc, addEventListener() {}, removeEventListener() {} });
+  await act(async () => { akar.render(elemen); });
+  return {
+    ganti: async (e) => { await act(async () => { akar.render(e); }); },
+    lakukan: async (f) => { await act(async () => { await f(); }); },
+    lepas: async () => { await act(async () => { akar.unmount(); }); },
+  };
+}
+
+const SETELAN_UJI = { pasar: 'BTCUSDT', tf: 'h1', mesin: '', layarMenyala: false, pushNyala: false, tema: 'gelap' };
+const P_BTC = { simbol: 'BTCUSDT', timeframes: ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1'] };
+const P_EUR = { simbol: 'EURUSDT', timeframes: ['M1', 'M5', 'D1'] };
+const P_XAU = { simbol: 'XAU/USD', timeframes: ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1'] };
+const KATA_EUR = 'h1 tidak tersedia untuk EURUSDT — dibuka d1.';
+
+/** Pemilik setelan seperti App.tsx (`simpan` = setSetelan), daftar seperti efek `/api/pasar`. */
+async function layarPasarUji(daftarAwal) {
+  const l = {};
+  function Pemilik() {
+    const [setelan, setSetelan] = useState(SETELAN_UJI);
+    const [daftar, setDaftar] = useState(daftarAwal);
+    l.setelan = setelan; l.simpan = setSetelan; l.setDaftar = setDaftar;
+    l.layar = layarPasar.usePasarTf(setelan, setSetelan, daftar);
+    return null;
+  }
+  l.akar = await pasang(h(Pemilik));
+  return l;
+}
+
+await uji('KEPUTUSAN: ganti pasar menyimpan tf yang DIMINTA (h1), bukan penggantinya (d1) — kalimat penggantian bertahan sesudah /api/pasar menjawab', async () => {
+  const l = await layarPasarUji([P_BTC, P_EUR]);
+  tegas(l.layar.pasar?.simbol === 'BTCUSDT' && l.layar.tf === 'h1' && l.layar.kataTf === '', `awal: ${JSON.stringify({ p: l.layar.pasar?.simbol, tf: l.layar.tf, kata: l.layar.kataTf })}`);
+  await l.akar.lakukan(() => { l.layar.pilihPasar(P_EUR); });
+  tegas(l.layar.pasar?.simbol === 'EURUSDT' && l.layar.tf === 'd1', `EURUSDT (m1 m5 d1) yang diminta h1 terbuka ${l.layar.tf}, seharusnya d1`);
+  tegas(l.layar.kataTf === KATA_EUR, `kalimat sesudah pilih EURUSDT: "${l.layar.kataTf}"`);
+  tegas(l.setelan.tf === 'h1', `setelan.tf tersimpan "${l.setelan.tf}" — pengganti d1 ditulis sebagai pilihan user, jadi BTCUSDT berikutnya (dan buka app berikutnya) terbuka d1 tanpa satu kalimat pun`);
+  /* Efek muat daftar di layar menyegarkan /api/pasar tiap ganti pasar — objek baru, isi sama. */
+  await l.akar.lakukan(() => { l.setDaftar([{ ...P_BTC }, { ...P_EUR }]); });
+  tegas(l.layar.kataTf === KATA_EUR, `sesudah /api/pasar menjawab kalimatnya "${l.layar.kataTf}" — dulu terhapus 0-500 ms sesudah pilihan pasar`);
+  await l.akar.lakukan(() => { l.layar.pilihPasar(P_BTC); });
+  tegas(l.layar.tf === 'h1' && l.layar.kataTf === '', `kembali ke BTCUSDT: tf ${l.layar.tf}, kalimat "${l.layar.kataTf}" — h1 pilihan user wajib kembali, tanpa kalimat`);
+  await l.akar.lepas();
 });
+
+await uji('tf pengganti, cabang lawan: tf yang dipilih SENDIRI disimpan dan tidak berkalimat', async () => {
+  const l = await layarPasarUji([P_BTC, P_EUR]);
+  await l.akar.lakukan(() => { l.layar.pilihPasar(P_EUR); });
+  const pengganti = l.layar.kataTf;
+  await l.akar.lakukan(() => { l.layar.pilihTf('d1'); });
+  tegas(l.setelan.tf === 'd1' && l.setelan.pasar === 'EURUSDT', `pilihan d1 tersimpan sebagai ${l.setelan.pasar} ${l.setelan.tf}`);
+  tegas(l.layar.tf === 'd1' && l.layar.kataTf === '', `d1 yang dipilih sendiri masih berkalimat "${l.layar.kataTf}"`);
+  tegas(pengganti !== l.layar.kataTf, 'kalimat pengganti dan pilihan sendiri identik — salah satu cabang diam-diam disamakan');
+  await l.akar.lakukan(() => { l.layar.pilihPasar(P_BTC); });
+  tegas(l.layar.tf === 'd1' && l.layar.kataTf === '', `d1 pilihan sendiri tidak ikut ke BTCUSDT: ${l.layar.tf} "${l.layar.kataTf}"`);
+  await l.akar.lepas();
+});
+
+await uji('KEPUTUSAN: ketukan kabar XAU/USD m15 membuka m15 — juga saat layar Pasar sudah terbuka di h1', async () => {
+  const l = await layarPasarUji([P_BTC, P_XAU, P_EUR]);
+  /* App.tsx, ketukan notifikasi DAN layar Kabar: simpan({ ...setelan, pasar, tf }) lalu pindah tab. */
+  await l.akar.lakukan(() => { l.simpan({ ...l.setelan, pasar: 'XAU/USD', tf: 'm15' }); });
+  tegas(l.layar.pasar?.simbol === 'XAU/USD' && l.layar.tf === 'm15' && l.layar.kataTf === '', `kabar XAU/USD m15 membuka ${l.layar.pasar?.simbol} ${l.layar.tf} "${l.layar.kataTf}" — tf lokal lama menang atas tf kabar`);
+  /* Pasar sama, tf lain: dulu efek muat daftar tidak jalan sama sekali. */
+  await l.akar.lakukan(() => { l.simpan({ ...l.setelan, tf: 'h4' }); });
+  tegas(l.layar.tf === 'h4', `kabar XAU/USD h4 di pasar yang sudah terbuka membuka ${l.layar.tf}`);
+  await l.akar.lepas();
+});
+
+await uji('ketukan kabar, cabang lawan: tf kabar yang tidak dimiliki pasarnya tetap lewat tfNaik + kalimat', async () => {
+  const l = await layarPasarUji([P_BTC, P_EUR]);
+  await l.akar.lakukan(() => { l.simpan({ ...l.setelan, pasar: 'EURUSDT', tf: 'H1' }); });
+  tegas(l.layar.tf === 'd1' && l.layar.kataTf === KATA_EUR, `kabar EURUSDT H1 membuka ${l.layar.tf} "${l.layar.kataTf}" — wajib d1 dan disebut`);
+  await l.akar.lepas();
+});
+
+await uji('layar Pasar lewat usePasarTf — tanpa salinan tf lokal, tanpa simpan sendiri, tanpa punya[0]', async () => {
+  const kode = tanpaKomentar(readFileSync(join(AKAR, 'src/layar/Analisis.tsx'), 'utf8'));
+  tegas(/usePasarTf\(setelan, simpan, daftarPasar\)/.test(kode), 'Analisis.tsx tidak memakai usePasarTf(setelan, simpan, daftarPasar) — uji React di atas menembak kait yang tidak dipakai layar');
+  tegas(!/useState\(setelan\.tf\)/.test(kode), 'Analisis.tsx menyalin setelan.tf ke keadaan lokal — ketukan kabar membuka tf lama');
+  tegas(!/\bsetTf\(|\bsetKataTf\(/.test(kode), 'Analisis.tsx menulis tf/kalimat sendiri — kalimat bisa dihapus efek yang selesai belakangan');
+  tegas(!/\bsimpan\(\{/.test(kode), 'Analisis.tsx menyimpan setelan sendiri — tf pengganti bisa tertulis sebagai pilihan user lagi');
+  tegas(/pilih=\{\(k\) => \{ pilihTf\(k\);/.test(kode) && /pilih=\{\(p\) => \{ pilihPasar\(p\);/.test(kode), 'pil tf / lembar pasar tidak memanggil pilihTf / pilihPasar');
+  tegas(!/punya\[0\]/.test(kode), 'Analisis.tsx masih memakai punya[0] — penggantian diam-diam ke tf terendah');
+});
+
+for (const [k, v] of Object.entries(globalSebelum)) { if (v === undefined) delete globalThis[k]; else globalThis[k] = v; }
 
 process.stdout.write(`\n  ${jumlah} uji · ${terkirim.length} permintaan tiruan · nol jaringan\n`);
 if (jumlah < 20) { process.stderr.write(`GAGAL — cuma ${jumlah} uji yang jalan\n`); process.exit(1); }

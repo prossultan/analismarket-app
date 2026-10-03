@@ -39,7 +39,7 @@ import { useSesi } from './Akun';
 import { tokenSesi } from '../data/sesi';
 import { kunciSesi } from '../data/statusPlus';
 import { gagalBacaan, isiLembarGagal, type GagalBacaan } from '../data/gagalBacaan';
-import { catatanTf, tfNaik } from '../data/tfPengganti';
+import { usePasarTf } from '../data/layarPasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -87,13 +87,9 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
     return () => { void deactivateKeepAwake('chart'); };
   }, [setelan.layarMenyala]);
   const [daftarPasar, setDaftarPasar] = useState<Pasar[]>([]);
-  const [pasar, setPasar] = useState<Pasar | null>(null);
-  const [tf, setTf] = useState(setelan.tf);
-  /** Penggantian timeframe yang WAJIB disebut (tfPengganti.ts) — kosong = tidak ada yang diganti. */
-  const [kataTf, setKataTf] = useState('');
-  /** tf TERBARU untuk callback yang selesai sesudah fetch — bukan tf saat efeknya dibuat. */
-  const tfTerbaru = useRef(tf);
-  tfTerbaru.current = tf;
+  /* Pasar dan tf DIHITUNG dari setelan, bukan disalin ke keadaan lokal —
+     lihat `layarPasar.ts`. `kataTf` = penggantian yang WAJIB disebut. */
+  const { pasar, tf, kataTf, pilihTf, pilihPasar } = usePasarTf(setelan, simpan, daftarPasar);
   const [mesin, setMesin] = useState(setelan.mesin);
   const [alat, setAlat] = useState<ReadonlySet<string>>(() => new Set(['volume', 'zona', 'struktur', 'level']));
   const [bacaan, setBacaan] = useState<Bacaan | null>(null);
@@ -122,7 +118,10 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
      adalah akar layar ini — tanpa ia, tidak ada pasar, tidak ada bacaan, dan
      tidak ada chart. Sebelum ini kegagalannya `return` diam-diam, jadi
      `gagal` tetap kosong dan cabang di baris bawah SELALU memilih "Menyiapkan…".
-     Layar galatnya sudah ditulis; ia cuma tidak pernah bisa dicapai. */
+     Layar galatnya sudah ditulis; ia cuma tidak pernah bisa dicapai.
+     `setelan.pasar` ikut di daftar ketergantungan supaya daftar (dan harga
+     di kepala) disegarkan tiap ganti pasar — pasarnya sendiri sudah dihitung
+     `usePasarTf` dari daftar yang ada, tanpa menunggu jawaban ini. */
   const [ulang, setUlang] = useState(0);
   useEffect(() => {
     let batal = false;
@@ -131,15 +130,6 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
       if (!j.ok) { setGagal(j.kalimat); return; }
       setGagal('');
       setDaftarPasar(j.isi.pasar);
-      const p = j.isi.pasar.find((x) => x.simbol === setelan.pasar) ?? j.isi.pasar[0] ?? null;
-      setPasar(p);
-      if (p !== null) {
-        const punya = p.timeframes.map((t) => t.toLowerCase());
-        const diminta = tfTerbaru.current;
-        const dibuka = tfNaik(punya, diminta) ?? 'h1';
-        setKataTf(catatanTf(p.simbol, diminta, dibuka) ?? '');
-        setTf(dibuka);
-      }
     });
     return () => { batal = true; };
   }, [setelan.pasar, ulang]);
@@ -152,13 +142,16 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
     if (!dariChart.current && j.isi.harga > 0) setHarga(j.isi.harga);
   }, []);
 
+  /* Diikat ke SIMBOL, bukan objek pasar: daftar yang disegarkan membuat
+     objek baru untuk pasar yang sama, dan itu bukan alasan membaca ulang. */
+  const simbol = pasar?.simbol ?? null;
   useEffect(() => {
-    if (pasar === null) return;
+    if (simbol === null) return;
     dariChart.current = false;
     setHarga(null);
     setBacaan(null);
-    void muatBacaan(pasar.simbol, tf);
-  }, [pasar, tf, muatBacaan]);
+    void muatBacaan(simbol, tf);
+  }, [simbol, tf, muatBacaan]);
 
   /* Chart IKUT TEMA: `?tema=terang` memilih palet terang di chart-embed.
 
@@ -235,7 +228,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
         <PilTf
           daftar={pasar.timeframes.map((t) => t.toLowerCase())}
           aktif={tf}
-          pilih={(k) => { setTf(k); setKataTf(''); simpan({ ...setelan, pasar: pasar.simbol, tf: k }); setMemuatChart(true); }}
+          pilih={(k) => { pilihTf(k); setMemuatChart(true); }}
         />
         {kataTf !== '' && <Text style={g.kataTf} accessibilityLiveRegion="polite">{kataTf}</Text>}
 
@@ -392,15 +385,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
           terbuka={lembarPasar}
           daftar={daftarPasar}
           terpilih={pasar.simbol}
-          pilih={(p) => {
-            setPasar(p);
-            const punya = p.timeframes.map((t) => t.toLowerCase());
-            const t = tfNaik(punya, tf) ?? 'h1';
-            setKataTf(catatanTf(p.simbol, tf, t) ?? '');
-            setTf(t);
-            simpan({ ...setelan, pasar: p.simbol, tf: t });
-            setMemuatChart(true);
-          }}
+          pilih={(p) => { pilihPasar(p); setMemuatChart(true); }}
           tutup={() => { setLembarPasar(false); }}
         />
 
