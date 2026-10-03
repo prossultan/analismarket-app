@@ -14,20 +14,18 @@ import { gayaTema } from '../gaya/tema';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
-import { FITUR_GRATIS, FITUR_PLUS, hargaPlus, TOKO_PLAY } from '../data/amplus';
+import { FITUR_GRATIS, FITUR_PLUS, JUDUL_PLUS, hargaPlus, tanyaPlus, TOKO_PLAY } from '../data/amplus';
 import { Blok, Istilah, Lbl, Mikro, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
 import { ambilRingkas, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
 import { useSesi } from './Akun';
 import { W, H, J, R, TALANG } from '../gaya/token';
 
-const TANYA: ReadonlyArray<{ t: string; j: string }> = [
-  { t: 'Bisa berhenti kapan saja?', j: 'Bisa. Langganan ditagih bulanan dan berhenti di akhir periode berjalan.' },
-  { t: 'Apa bedanya dengan bot Telegram?', j: 'Sama mesinnya, sama angkanya. AM+ menambah pantauan otomatis dan cek banyak pasar.' },
-  { t: 'Apakah ini memprediksi harga?', j: 'Tidak. Ini alat baca chart. Ia menilai kondisi sekarang, bukan meramal yang berikutnya.' },
-  { t: 'Lewat mana kabarnya dikirim?', j: 'Ke HP ini lewat notifikasi. Kalau HP tidak terdaftar dan Telegram tersambung, lewat Telegram.' },
-  { t: 'Pantauan gratis tetap ada?', j: 'Ada. Tiga pantauan pertama gratis; AM+ membuka sisanya dan kabar otomatisnya.' },
-];
+/* FAQ di `amplus.ts` (`tanyaPlus`), bukan di sini: dua jawabannya sempat
+   bohong — "ditagih bulanan" untuk produk sekali bayar, dan "tiga pantauan
+   pertama gratis" untuk batas yang sudah 10 untuk semua akun sejak 4 Sep —
+   dan di berkas data keduanya bisa dijaga uji. */
+const TANYA = tanyaPlus(TOKO_PLAY);
 
 /* Paket bawaan = yang dipakai saat harga disebut tanpa konteks paket,
    sama seperti `PAKET_BAWAAN` di bot. */
@@ -81,7 +79,7 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
           </>
         ) : (
           <>
-            <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
+            <Text style={g.judul}>{JUDUL_PLUS}</Text>
             {h !== null && <Text style={g.harga}>{h.harga} <Text style={g.perBulan}>/ {h.hari} hari</Text></Text>}
           </>
         )}
@@ -101,7 +99,9 @@ export function LayarAmPlus({ bukaLangganan }: { bukaLangganan?: () => void }) {
             teks={bukaLangganan === undefined ? 'Berlangganan lewat web' : plus ? 'Kelola langganan' : 'Lihat cara berlangganan'}
             jenis={plus ? 'kedua' : 'emas'} mati={bukaLangganan === undefined || menunggu} onPress={bukaLangganan} />
         )}
-        <Mikro tengah>{plus ? 'Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis.' : TOKO_PLAY ? 'AnalisMarket+ belum aktif di akun ini.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
+        {/* Pelanggan: tidak ada yang perlu "dihentikan" — sekali bayar, tanpa
+            potong otomatis. Kalimat lamanya berbicara seperti langganan berulang. */}
+        <Mikro tengah>{plus ? 'Berakhir sendiri di tanggalnya. Tidak ada potong otomatis.' : TOKO_PLAY ? 'AnalisMarket+ belum aktif di akun ini.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
       </View>
 
       <Blok>

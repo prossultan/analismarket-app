@@ -7,7 +7,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { gayaTema } from '../gaya/tema';
 import { LinearGradient } from 'expo-linear-gradient';
-import { hargaPlus, TOKO_PLAY } from '../data/amplus';
+import { JUDUL_PLUS, MANFAAT_KARTU_PLUS, hargaPlus, TOKO_PLAY } from '../data/amplus';
 import { Ikon } from './Ikon';
 import { Tombol } from './mockup';
 import { W, H, R } from '../gaya/token';
@@ -30,10 +30,13 @@ export function KartuPlus({ plus, sisaHari, onPress }: { plus: boolean; sisaHari
         </>
       ) : (
         <>
-          <Text style={g.judul}>Pantauan otomatis, tanpa membuka app</Text>
+          <Text style={g.judul}>{JUDUL_PLUS}</Text>
           {h !== null && <Text style={g.harga}>{h.harga} <Text style={g.per}>/ {h.hari} hari</Text></Text>}
           <View style={g.manfaat}>
-            {['Kabar ke HP saat syarat setup lolos', 'Cek 12 pasar sekaligus', 'm5 untuk emas & forex'].map((m) => (
+            {/* Dari `FITUR_PLUS`, bukan diketik: kartu ini sempat menjual "Kabar
+                ke HP saat syarat setup lolos" sebagai manfaat AM+, padahal push
+                untuk pantauan biasa gratis. */}
+            {MANFAAT_KARTU_PLUS.map((m) => (
               <View key={m} style={g.baris}><Text style={g.centang}>✓</Text><Text style={g.manfaatTeks}>{m}</Text></View>
             ))}
           </View>

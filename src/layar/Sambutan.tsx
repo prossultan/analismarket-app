@@ -28,6 +28,7 @@ import { TombolGoogle } from '../komponen/TombolGoogle';
 import { FormulirSambung } from '../komponen/FormulirSambung';
 import { ChartTertanam } from '../komponen/ChartTertanam';
 import { ASAL } from '../data/antrian';
+import { kalimatCakupan } from '../data/tampil';
 import { W, H, R, TALANG } from '../gaya/token';
 
 const LOGO = require('../../assets/merek-mark.png') as number;
@@ -80,7 +81,10 @@ export function LayarSambutan() {
       <View style={[g.akar, g.tengah]}>
         <Image source={LOGO} style={g.logoBesar} accessibilityIgnoresInvertColors />
         <Text style={g.nama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
-        <Text style={g.tagline}>Analisa teknikal otomatis untuk 131 pasar.{'\n'}Angka mentah, dan kamu yang memutuskan.</Text>
+        {/* Tanpa angka pasar: layar ini tampil SEBELUM masuk dan tidak memuat
+            /api/pasar, jadi angka di sini cuma bisa diketik — dan yang
+            diketik ("131") sudah basi saat daftar hidupnya 155 (3 Okt). */}
+        <Text style={g.tagline}>{kalimatCakupan(null)}{'\n'}Angka mentah, dan kamu yang memutuskan.</Text>
         {lama && <ActivityIndicator color={W.teksSamar} style={{ marginTop: 22 }} />}
         <Text style={[g.kaki, { bottom: bottom + 24 }]}>BUKAN NASIHAT INVESTASI</Text>
       </View>
@@ -113,7 +117,7 @@ export function LayarSambutan() {
             <Text style={g.merekNama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
           </View>
           <Text style={g.judul}>Masuk untuk membaca{'\n'}analisa lengkapnya</Text>
-          <Text style={g.ajak}>131 pasar · 5 mesin dibaca sekaligus · 7 timeframe. Semuanya angka mentah, dan kamu yang memutuskan.</Text>
+          <Text style={g.ajak}>Kripto, emas, dan forex · 5 mesin dibaca sekaligus. Semuanya angka mentah, dan kamu yang memutuskan.</Text>
           {tahap !== 'telegram' && <View style={g.untung}>
             {UNTUNG.map((u) => (
               <View key={u.judul} style={g.untungSel}>

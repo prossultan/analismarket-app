@@ -112,3 +112,15 @@ export function biayaLebar(porsi: number): number {
 
 /** Wajar di bawah 50% risiko — ambang yang sama dengan syarat BIAYA di bot. */
 export const BIAYA_WAJAR_PERSEN = 50;
+
+/**
+ * Kalimat cakupan produk. Angka pasar HANYA kalau dihitung dari `/api/pasar`
+ * yang benar-benar terbaca — `null` berarti kalimat tanpa angka, bukan angka
+ * karangan. "131 pasar" diketik di empat tempat dan masih tercetak saat
+ * daftar hidupnya sudah 155 (3 Okt).
+ */
+export function kalimatCakupan(jumlahPasar: number | null): string {
+  return jumlahPasar === null || jumlahPasar <= 0
+    ? 'Analisa teknikal otomatis untuk kripto, emas, dan forex.'
+    : `Analisa teknikal otomatis untuk ${String(jumlahPasar)} pasar.`;
+}

@@ -508,7 +508,11 @@ function Isi() {
           name="home"
           options={({ navigation }) => ({
             title: 'Home', headerShown: true, ...opsiKepala(),
-            headerTitle: () => <Merek sub={`${tanggalPendek()} · 131 pasar hidup`} />,
+            /* Tanpa angka pasar: angka yang diketik di sini basi diam-diam
+               (131 tertulis saat daftar hidupnya sudah 155, 3 Okt), dan
+               menghitungnya berarti satu permintaan /api/pasar lagi tiap
+               Home dibuka, di zona laju yang dibagi banyak orang. */
+            headerTitle: () => <Merek sub={`${tanggalPendek()} · kripto, emas & forex`} />,
             headerTitleAlign: 'left' as const,
             headerRight: () => (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>

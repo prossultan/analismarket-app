@@ -11,6 +11,7 @@ import { ambilPasar } from '../data/api';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Chip, Lbl, Menu, PitaBasi } from '../komponen/mockup';
 import { capBuild } from '../data/versi';
+import { kalimatCakupan } from '../data/tampil';
 import { W, H, TALANG } from '../gaya/token';
 
 const LOGO = require('../../assets/merek-mark.png') as number;
@@ -38,7 +39,9 @@ export function LayarTentang({ versi }: { versi: string }) {
         <Image source={LOGO} style={g.logo} accessibilityIgnoresInvertColors />
         <Text style={g.nama}>Analis<Text style={{ color: W.plusTeks }}>Market</Text></Text>
         <Lbl polos gaya={{ marginTop: 3, fontVariant: ['tabular-nums'] }}>{capBuild()}</Lbl>
-        <Text style={g.ket}>Analisa teknikal otomatis untuk 131 pasar. Bukan nasihat investasi, dan tidak menjanjikan hasil apa pun.</Text>
+        {/* Angka pasar dari daftar yang terbaca di atas, bukan diketik — "131"
+            masih tercetak di sini saat daftarnya sudah 155 (3 Okt). */}
+        <Text style={g.ket}>{kalimatCakupan(jumlahPasar === null ? null : jumlahPasar.binance + jumlahPasar.twelve)} Bukan nasihat investasi, dan tidak menjanjikan hasil apa pun.</Text>
       </Blok>
 
       <Lbl>Sumber data</Lbl>

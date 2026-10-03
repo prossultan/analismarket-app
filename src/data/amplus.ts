@@ -14,21 +14,113 @@
  */
 export type Fitur = { nama: string; keterangan: string };
 
+/**
+ * PANTAUAN PER AKUN — sama untuk SEMUA akun, berlangganan atau tidak.
+ *
+ * Disalin dari `MAKS_WATCH` di `src/db/notif.ts` bot (dinaikkan 3 -> 10 pada
+ * 4 Sep, dan AM+ tidak menambahnya). FAQ app masih berbunyi "Tiga pantauan
+ * pertama gratis; AM+ membuka sisanya" sampai 3 Okt — dua kebohongan dalam
+ * satu kalimat. `skrip/uji-keputusan.mjs` mencocokkan angka ini dengan bot.
+ */
+export const MAKS_PANTAUAN = 10;
+
+/**
+ * Yang TETAP gratis. Layar AM+ mencetak `nama` saja, jadi `nama` sendiri
+ * harus benar tanpa keterangannya.
+ *
+ * Dua baris dikoreksi 3 Okt, diukur dari `/api/pasar` produksi (155 pasar):
+ * - "Semua pasar m15 ke atas" — cuma 31 dari 155 pasar yang punya m15;
+ *   56 mulai dari h1 dan 68 dari h4 (tujuh forex: h4 ke atas, selain
+ *   m1/m5). Tiap pasar terbuka di timeframe yang ia punya.
+ * - "Cek token DEX" — hanya ada di bot Telegram, tidak ada di app.
+ */
 export const FITUR_GRATIS: readonly Fitur[] = [
-  { nama: 'Semua pasar m15 ke atas', keterangan: 'termasuk emas dan forex' },
+  { nama: 'Semua pasar, di timeframe yang tersedia', keterangan: 'termasuk emas dan forex' },
   { nama: 'm1 dan m5 kripto', keterangan: 'tanpa batas' },
-  { nama: '10 pantauan', keterangan: 'tetap 10' },
-  { nama: 'Cek token DEX', keterangan: 'dan kelima mesin' },
+  { nama: `${String(MAKS_PANTAUAN)} pantauan`, keterangan: 'sama untuk semua akun' },
+  { nama: 'Kelima mesin analisa', keterangan: 'snr, smc, ema200, ichimoku, fibonacci' },
+  { nama: 'Cek token DEX di bot Telegram', keterangan: 'belum ada di app' },
 ];
 
+/**
+ * Isi AM+. Harga, isi paket, "termasuk m5", dan "antrean prioritas" adalah
+ * keputusan pemilik — tidak disentuh di sini.
+ *
+ * Dua baris dikoreksi 3 Okt:
+ * - Cek Banyak memeriksa 12 SLOT pasangan pasar × timeframe
+ *   (`MAKS_SLOT_CEK_BANYAK` di bot), bukan 12 pasar di segala timeframe.
+ * - Irama kabar cuma bisa diatur dari bot; app hanya punya jam sunyi.
+ */
 export const FITUR_PLUS: readonly Fitur[] = [
   { nama: 'Kabar Otomatis', keterangan: 'pasar dipantau otomatis, termasuk m5' },
-  { nama: 'Cek Banyak', keterangan: '12 pasar sekali tekan, satu tabel' },
+  { nama: 'Cek Banyak', keterangan: 'sampai 12 pasar × timeframe sekali tekan, satu tabel' },
   { nama: 'm1 & m5 emas/forex', keterangan: '20 analisa sehari' },
   { nama: 'Antrean prioritas', keterangan: 'kartumu duluan kalau bot lagi ramai' },
-  { nama: 'Jam sunyi & irama kabar', keterangan: 'diatur sendiri' },
+  { nama: 'Jam sunyi kabar otomatis', keterangan: 'diatur sendiri; irama kabar diatur di bot Telegram' },
   { nama: 'Rangkuman pagi', keterangan: 'semalam apa saja yang bunyi, satu pesan' },
 ];
+
+/**
+ * Judul kartu AM+ untuk yang belum berlangganan. BUKAN "Pantauan otomatis,
+ * tanpa membuka app": pantauan biasa sudah mengabari HP tanpa membuka app,
+ * gratis. Yang dibeli AM+ adalah cakupan — pasar dipantau tanpa dipasang.
+ */
+export const JUDUL_PLUS = 'Pasar dipantau otomatis, tanpa memasang satu-satu';
+
+/**
+ * Tiga manfaat di kartu AM+ Home — DITURUNKAN dari `FITUR_PLUS`, bukan
+ * diketik. Kartu itu sempat menjual "Kabar ke HP saat syarat setup lolos"
+ * sebagai manfaat berbayar, padahal push untuk pantauan biasa gratis; daftar
+ * yang diketik di layar tidak punya satu pun tempat yang menahannya.
+ */
+export const MANFAAT_KARTU_PLUS: readonly string[] = FITUR_PLUS.slice(0, 3).map((f) => `${f.nama} — ${f.keterangan}`);
+
+export type Tanya = { t: string; j: string };
+
+/**
+ * FAQ layar AM+. Bercabang pada build:
+ *
+ * - tautan unduhan: termasuk cara bayarnya — sekali di muka, TANPA potong
+ *   otomatis (S&K app `dokumen.ts`, web, dan `plusHalaman` bot berkata sama).
+ *   FAQ app sempat berbunyi "ditagih bulanan dan berhenti di akhir periode",
+ *   menjanjikan langganan berulang yang tidak pernah ada.
+ * - build Play: tanpa satu kalimat pun soal pembayaran (kebijakan Play).
+ */
+export function tanyaPlus(tokoPlay: boolean): readonly Tanya[] {
+  const bayar: Tanya = {
+    t: 'Apakah diperpanjang otomatis?',
+    j: 'Tidak. AnalisMarket+ dibayar sekali di muka untuk masa aktifnya, tanpa potong otomatis. Sesudah habis, akun kembali ke paket gratis dan setelanmu tetap tersimpan.',
+  };
+  const umum: Tanya[] = [
+    { t: 'Apa bedanya dengan bot Telegram?', j: 'Sama mesinnya, sama angkanya. AM+ menambah kabar otomatis dan cek banyak pasar.' },
+    { t: 'Apakah ini memprediksi harga?', j: 'Tidak. Ini alat baca chart. Ia menilai kondisi sekarang, bukan meramal yang berikutnya.' },
+    { t: 'Lewat mana kabarnya dikirim?', j: 'Ke HP ini lewat notifikasi. Kalau HP tidak terdaftar dan Telegram tersambung, lewat Telegram.' },
+    {
+      t: 'Pantauan gratis tetap ada?',
+      j: `Ada. Tiap akun dapat ${String(MAKS_PANTAUAN)} pantauan, berlangganan atau tidak. AM+ menambah kabar otomatis: pasar dipantau tanpa dipasang satu-satu.`,
+    },
+  ];
+  return tokoPlay ? umum : [bayar, ...umum];
+}
+
+/**
+ * "Yang terbuka sekarang" di layar akun sesudah masuk. Bercabang pada status:
+ * kabar otomatis HANYA disebut untuk pelanggan — baris lamanya "Pantauan dan
+ * kabar otomatis" menjanjikannya ke semua akun. Status `null` (belum
+ * diketahui) diperlakukan seperti bukan pelanggan: yang tidak diketahui
+ * tidak dijanjikan.
+ */
+export function terbukaSekarang(status: 'plus' | 'gratis' | null): ReadonlyArray<readonly [string, string]> {
+  const daftar: Array<readonly [string, string]> = [
+    ['Pantauan', `${String(MAKS_PANTAUAN)} pantauan, dikabari ke HP ini saat syarat setup lolos, tanpa membuka app.`],
+    /* Setelan bawaan app disimpan DI PERANGKAT (`simpan.ts`), bukan di akun —
+       kalimat lamanya "sama di app dan web" tidak pernah benar. */
+    ['Setelan bawaan', 'Pasar, timeframe, dan mesin bawaan tersimpan di HP ini, tidak ikut ke web atau HP lain.'],
+    ['Status AM+', 'Terbaca di Home dan Profil.'],
+  ];
+  if (status === 'plus') daftar.splice(1, 0, ['Kabar otomatis', 'Bagian dari AnalisMarket+, terbuka di akunmu.']);
+  return daftar;
+}
 
 /** Ambang yang dipakai bar biaya, sama dengan web. */
 export const AMBANG_MUTU = 0.5;

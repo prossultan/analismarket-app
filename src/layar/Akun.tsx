@@ -25,7 +25,7 @@ import { useMuat, type Hasil, type Jenis } from '../data/muat';
 import { volumeRingkas } from '../data/tampil';
 /* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
-import { PAKET_PLUS, hargaPlus, rupiah, TOKO_PLAY } from '../data/amplus';
+import { PAKET_PLUS, hargaPlus, rupiah, terbukaSekarang, TOKO_PLAY } from '../data/amplus';
 import { KALIMAT_JAM_SUNYI, bacaJendela, bacaPilihanJam, labelKirim, labelSunyi, samaJendela, tanpaSunyi } from '../data/jamSunyi';
 import { labelStatus, statusTampil } from '../data/statusPlus';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
@@ -219,11 +219,7 @@ export function LayarSambung() {
         <Blok gaya={{ flex: 1 }}>
           <Lbl>Yang terbuka sekarang</Lbl>
           <View style={{ marginTop: 8, gap: 8 }}>
-            {[
-              ['Pantauan dan kabar otomatis', 'Dikabari ke HP ini saat syarat setup lolos, tanpa membuka app.'],
-              ['Setelan bawaan', 'Pasar, timeframe, dan mesin yang sama di app dan web.'],
-              ['Status AM+', 'Terbaca di Home dan Profil.'],
-            ].map(([j, k]) => (
+            {terbukaSekarang(status).map(([j, k]) => (
               <View key={j} style={g.centangBaris}>
                 <Text style={[g.centang, { color: W.naik }]}>✓</Text>
                 <View style={{ flex: 1 }}>
@@ -769,7 +765,10 @@ export function LayarBerlangganan() {
         <View style={g.kartuEmas}>
           <Text style={g.cap}>AnalisMarket+</Text>
           <Text style={g.harga}>{hargaPlus()?.harga} <Text style={g.dari}>/ {hargaPlus()?.hari} hari</Text></Text>
-          <Lbl polos gaya={{ marginTop: 3 }}>Ditagih tiap 30 hari · berhenti kapan saja</Lbl>
+          {/* SEKALI BAYAR. "Ditagih tiap 30 hari · berhenti kapan saja"
+              menjanjikan langganan berulang yang tidak pernah ada — S&K app,
+              web, dan bot sama-sama berkata tanpa potong otomatis. */}
+          <Lbl polos gaya={{ marginTop: 3 }}>Sekali bayar · tanpa potong otomatis</Lbl>
         </View>
       )}
 
@@ -811,7 +810,7 @@ export function LayarBerlangganan() {
             <BarisPakai kiri="PPN" kanan="Termasuk" />
             <BarisPakai kiri="Total" kanan={rupiah(SATU_BULAN.hargaRp)} tebal />
           </View>
-          <Mikro>Berhenti sebelum tanggal berakhir berarti tetap aktif sampai habis, tanpa tagihan berikutnya.</Mikro>
+          <Mikro>Dibayar sekali di muka untuk {String(SATU_BULAN.bulan * 30)} hari. Tidak ada potong otomatis: sesudah tanggal berakhir, akun kembali ke paket gratis dan setelanmu tetap tersimpan.</Mikro>
         </Blok>
   
         {/* Emas terisi — dan ini memang halaman AM+. Mati: pembayaran di bot. */}
