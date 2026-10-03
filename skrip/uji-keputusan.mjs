@@ -448,7 +448,7 @@ function teksTercetak(jalur, { toko, fungsi }) {
     }
     return undefined;
   };
-  /** Nilai pengenal yang PASTI berlaku kalau `e` bernilai `benar`. */
+  /** Nilai pengenal yang berlaku TANPA KECUALI kalau `e` bernilai `benar`. */
   const asumsikan = (e, benar, a) => {
     if (ts.isParenthesizedExpression(e)) return asumsikan(e.expression, benar, a);
     if (ts.isIdentifier(e)) return e.text === 'TOKO_PLAY' ? a : new Map([...a, [e.text, benar]]);
@@ -758,6 +758,81 @@ await uji('layar Pasar lewat usePasarTf — tanpa salinan tf lokal, tanpa simpan
   tegas(!/\bsimpan\(\{/.test(kode), 'Analisis.tsx menyimpan setelan sendiri — tf pengganti bisa tertulis sebagai pilihan user lagi');
   tegas(/pilih=\{\(k\) => \{ pilihTf\(k\);/.test(kode) && /pilih=\{\(p\) => \{ pilihPasar\(p\);/.test(kode), 'pil tf / lembar pasar tidak memanggil pilihTf / pilihPasar');
   tegas(!/punya\[0\]/.test(kode), 'Analisis.tsx masih memakai punya[0] — penggantian diam-diam ke tf terendah');
+});
+
+process.stdout.write('\n── K17 · keluar akun mencabut HP ini ──\n');
+
+const GOOGLE_UJI = {
+  getToken: async () => 'jwt-clerk-uji',
+  signOut: async () => {},
+  akun: { akunId: 0, email: 'uji@contoh.id', nama: 'Uji', telegramTersambung: false, langganan: null },
+};
+/** Sesudah keluar, sesi Google dipasang lagi untuk uji berikutnya — seperti JembatanClerk sesudah masuk ulang. */
+function pulihkanGoogle() { sesi.pasangClerk(GOOGLE_UJI); tegas(sesi.sesiSekarang()?.jenis === 'clerk', 'sesi Google uji tidak pulih'); }
+const permintaanCabut = (dari) => terkirim.slice(dari).filter((r) => r.url.endsWith('/api/saya/perangkat/cabut'));
+/** Janji yang tidak boleh menggantung uji: merah sesudah `ms`, bukan diam selamanya. */
+const dalamBatas = (janji, ms, apa) => Promise.race([janji, new Promise((_, tolak) => { setTimeout(() => { tolak(new Error(`${apa} tidak selesai dalam ${ms} ms`)); }, ms); })]);
+const TOKEN_HP = 'ExponentPushToken[uji-keluar]';
+
+await uji('KEPUTUSAN: keluar mencabut HP ini sebagai penerima kabar SEBELUM sesinya dibuang — Bearer masih ikut', async () => {
+  pulihkanGoogle();
+  const dari = terkirim.length;
+  jawab(200, { status: 'dicabut' });
+  const h = await saya.keluarAkun(async () => TOKEN_HP);
+  const [cabut] = permintaanCabut(dari);
+  tegas(cabut !== undefined, 'keluar tanpa POST /api/saya/perangkat/cabut — perangkat_push tetap aktif, pilihSaluran terus memilih push, kabar akun ini masuk ke HP yang sudah keluar');
+  tegas(cabut.metode === 'POST' && cabut.badan?.token === TOKEN_HP, `badan cabut ${JSON.stringify(cabut.badan)}`);
+  tegas(cabut.header.authorization === 'Bearer jwt-clerk-uji', `cabut berangkat tanpa sesi (${JSON.stringify(cabut.header)}) — sesudah sesi dibuang tidak ada yang bisa mencabut`);
+  tegas(h.perangkat === 'dicabut', `hasil keluar ${JSON.stringify(h)}`);
+  tegas(sesi.sesiSekarang() === null, 'sesi Google tidak dibuang sesudah keluar');
+  /* Sesi mini (Telegram) juga: dicabut dengan token mini, lalu Google yang masih masuk tetap tampil. */
+  pulihkanGoogle();
+  jawab(200, { sesi: 'sesi-mini-uji', akun: { akunId: 9, email: null, nama: 'M', telegramTersambung: true, langganan: 'gratis' } });
+  const s = await sesi.sambungkan(`${ASAL_APP}/?masuk=${'a'.repeat(32)}`);
+  tegas(s.ok && sesi.sesiSekarang()?.jenis === 'mini', 'sesi mini uji tidak terpasang');
+  const dari2 = terkirim.length;
+  jawab(200, { status: 'dicabut' });
+  await saya.keluarAkun(async () => TOKEN_HP);
+  tegas(permintaanCabut(dari2)[0]?.header.authorization === 'Bearer sesi-mini-uji', 'sesi mini keluar tanpa mencabut dengan token mini');
+  tegas(sesi.sesiSekarang()?.jenis === 'clerk', `sesudah sesi mini dicabut yang tampil ${String(sesi.sesiSekarang()?.jenis)} — Google yang masih masuk wajib tetap`);
+});
+
+await uji('keluar, cabang lawan: jaringan putus, batas waktu, atau tanpa token push TIDAK menahan keluar', async () => {
+  pulihkanGoogle();
+  putus();
+  const a = await saya.keluarAkun(async () => TOKEN_HP);
+  tegas(a.perangkat === 'gagal' && typeof a.kalimat === 'string' && a.kalimat !== '', `jaringan putus: ${JSON.stringify(a)}`);
+  tegas(sesi.sesiSekarang() === null, 'jaringan putus menahan keluar — orang yang menekan Keluar tetap masuk');
+  pulihkanGoogle();
+  const mulai = Date.now();
+  const b = await dalamBatas(saya.keluarAkun(() => new Promise(() => {}), 50), 3000, 'keluar dengan token Expo yang menggantung');
+  tegas(b.perangkat === 'gagal' && sesi.sesiSekarang() === null && Date.now() - mulai < 2000, `token menggantung: ${JSON.stringify(b)} sesudah ${Date.now() - mulai} ms`);
+  pulihkanGoogle();
+  const dari = terkirim.length;
+  const c = await saya.keluarAkun(async () => null);
+  tegas(c.perangkat === 'tanpa-token' && permintaanCabut(dari).length === 0 && sesi.sesiSekarang() === null, `tanpa token push: ${JSON.stringify(c)}, ${permintaanCabut(dari).length} permintaan cabut`);
+  pulihkanGoogle();
+});
+
+await uji('keluar, cabang lawan: 401 membuang sesi TANPA mencabut; cabut yang dijawab 401 tidak ikut mengeluarkan Google', async () => {
+  pulihkanGoogle();
+  const dari = terkirim.length;
+  jawab(401, {});
+  await saya.ambilRingkas();
+  tegas(permintaanCabut(dari).length === 0, 'jalur 401 memanggil cabut — sesi yang sudah mati tidak bisa mencabut apa pun');
+  tegas(sesi.sesiSekarang() === null, '401 tidak membuang sesi');
+  pulihkanGoogle();
+  jawab(200, { sesi: 'sesi-mini-mati', akun: { akunId: 9, email: null, nama: 'M', telegramTersambung: true, langganan: 'gratis' } });
+  await sesi.sambungkan(`${ASAL_APP}/?masuk=${'b'.repeat(32)}`);
+  jawab(401, {});
+  await saya.keluarAkun(async () => TOKEN_HP);
+  tegas(sesi.sesiSekarang()?.jenis === 'clerk', `cabut sesi mini dijawab 401 lalu sesi dibuang DUA kali: yang tersisa ${String(sesi.sesiSekarang()?.jenis ?? null)} — Google ikut keluar`);
+  pulihkanGoogle();
+  for (const f of ['src/layar/Profil.tsx', 'src/layar/Akun.tsx']) {
+    const kode = tanpaKomentar(readFileSync(f, 'utf8'));
+    tegas(/await keluarAkun\(tokenPerangkat\)/.test(kode), `${f}: tombol keluar tidak lewat keluarAkun(tokenPerangkat)`);
+    tegas(!/void hapusSesi\(\)/.test(kode), `${f}: tombol keluar masih memanggil hapusSesi langsung — HP ini tetap menerima kabar akun yang sudah keluar`);
+  }
 });
 
 for (const [k, v] of Object.entries(globalSebelum)) { if (v === undefined) delete globalThis[k]; else globalThis[k] = v; }

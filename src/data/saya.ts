@@ -208,6 +208,69 @@ export const daftarkanPerangkat = (token: string, platform: 'android' | 'ios'): 
 export const cabutPerangkat = (token: string): Promise<JawabanSaya<unknown>> =>
   panggil('/api/saya/perangkat/cabut', 'POST', { token });
 
+/* ── KELUAR AKUN ───────────────────────────────────────────────────────── */
+
+export type HasilKeluar = {
+  /**
+   * `dicabut`     server berhenti mengirim push ke HP ini
+   * `tanpa-token` HP ini tidak memberi token push (emulator, web, tanpa jaringan)
+   * `gagal`       server menolak, tidak terjangkau, atau tidak menjawab dalam batasnya
+   * `tanpa-sesi`  tidak ada yang perlu dikeluarkan
+   * Sesinya DIBUANG di semua cabang kecuali `tanpa-sesi`.
+   */
+  perangkat: 'dicabut' | 'tanpa-token' | 'gagal' | 'tanpa-sesi';
+  kalimat: string | null;
+};
+
+/**
+ * Batas menunggu pencabutan. Keluar tidak pernah menunggu jaringan lama:
+ * fetch React Native tidak punya batas waktu bawaan, dan token Expo pun
+ * diminta lewat jaringan — tanpa batas ini jaringan yang lemah bisa
+ * menahan "Keluar" tanpa ujung.
+ */
+const BATAS_CABUT_MS = 5_000;
+
+async function cabutHpIni(tokenHp: () => Promise<string | null>): Promise<HasilKeluar> {
+  let token: string | null;
+  try { token = await tokenHp(); } catch { token = null; }
+  if (token === null) return { perangkat: 'tanpa-token', kalimat: null };
+  const j = await cabutPerangkat(token);
+  return j.ok ? { perangkat: 'dicabut', kalimat: null } : { perangkat: 'gagal', kalimat: j.kalimat };
+}
+
+/**
+ * KELUAR AKUN — cabut HP ini sebagai penerima kabar SELAGI token sesi masih
+ * sah, baru buang sesinya.
+ *
+ * Sampai 3 Okt "Keluar"/"Putuskan sambungan" cuma `hapusSesi()`. Baris
+ * `perangkat_push` tetap aktif, `pilihSaluran` di bot terus memilih push,
+ * dan kabar pantauan akun itu terus muncul di HP yang sudah keluar — dibaca
+ * siapa pun yang memegangnya, dan TIDAK jatuh ke Telegram. Urutannya wajib
+ * begini: sesudah sesi dibuang, permintaan cabut tidak punya Bearer lagi.
+ *
+ * Kegagalan cabut TIDAK menahan keluar: orang yang menekan Keluar harus
+ * keluar. Hasilnya dikembalikan dan dicetak layar kalau layarnya masih ada
+ * (sesi mini dicabut sementara Google tetap masuk).
+ *
+ * Bukan untuk jalur 401 (`panggil`): sesi yang sudah mati tidak bisa
+ * mencabut apa pun. Bukan untuk hapus akun: server menghapus perangkatnya.
+ */
+export async function keluarAkun(tokenHp: () => Promise<string | null>, batasMs = BATAS_CABUT_MS): Promise<HasilKeluar> {
+  const awal = sesiSekarang();
+  if (awal === null) return { perangkat: 'tanpa-sesi', kalimat: null };
+  let jam: ReturnType<typeof setTimeout> | undefined;
+  const habis = new Promise<HasilKeluar>((r) => {
+    jam = setTimeout(() => { r({ perangkat: 'gagal', kalimat: `Server tidak menjawab dalam ${String(batasMs / 1000)} detik.` }); }, batasMs);
+  });
+  const hasil = await Promise.race([cabutHpIni(tokenHp), habis]);
+  clearTimeout(jam);
+  /* 401 dari cabut sudah membuang sesinya di `panggil()`. Membuang lagi akan
+     ikut mengeluarkan Google yang masih masuk sesudah sesi mini dicabut. */
+  const kini = sesiSekarang();
+  if (kini !== null && kini.jenis === awal.jenis && kini.sesi === awal.sesi) await hapusSesi();
+  return hasil;
+}
+
 /**
  * HAPUS AKUN — syarat Google Play dan App Store untuk app yang punya akun.
  * Server menghapus akun, sambungan, pantauan, kabar, perangkat, dan setelan

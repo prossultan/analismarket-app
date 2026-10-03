@@ -19,8 +19,10 @@ import {
   ambilKabarOtomatis, ambilPantauan, ambilRingkas,
   cekBanyak, matikanPantauan, setelJamKabar, setelKabarOtomatis, tambahPantauan, MAKS_SLOT_CEK_BANYAK,
   type BarisCekBanyak, type DaftarPantauan, type HasilCekBanyak, type JawabanSaya, type KabarOtomatis, type Ringkas, mintaTautanTelegram,
+  keluarAkun,
 } from '../data/saya';
-import { bacaSesi, dengarSesi, hapusSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
+import { tokenPerangkat } from '../data/push';
+import { bacaSesi, dengarSesi, sambungkan, sesiSekarang, type Sesi } from '../data/sesi';
 import { useMuat, type Hasil, type Jenis } from '../data/muat';
 import { volumeRingkas } from '../data/tampil';
 /* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
@@ -160,6 +162,16 @@ export function LayarSambung() {
   const { isi: r, ulangi } = useAkun(ambilRingkas, sesi);
   const [galatTaut, setGalatTaut] = useState<string | null>(null);
   const [sibukTaut, setSibukTaut] = useState(false);
+  /* Keluar mencabut HP ini sebagai penerima kabar dulu — lihat `keluarAkun`. */
+  const [sibukKeluar, setSibukKeluar] = useState(false);
+  const [galatKeluar, setGalatKeluar] = useState<string | null>(null);
+  async function keluar(): Promise<void> {
+    setSibukKeluar(true); setGalatKeluar(null);
+    try {
+      const h = await keluarAkun(tokenPerangkat);
+      if (h.perangkat === 'gagal') setGalatKeluar(`Notifikasi HP ini belum dicabut: ${h.kalimat ?? 'server tidak menjawab'}`);
+    } finally { setSibukKeluar(false); }
+  }
 
   /* Kembali dari Telegram → baca ulang: bot mungkin sudah menautkan. */
   useEffect(() => {
@@ -230,7 +242,9 @@ export function LayarSambung() {
             ))}
           </View>
         </Blok>
-        <Tombol teks={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan'} jenis="kedua" onPress={() => { void hapusSesi(); }} />
+        <Tombol teks={sibukKeluar ? 'Keluar…' : sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan'} jenis="kedua"
+          mati={sibukKeluar} onPress={() => { void keluar(); }} />
+        {galatKeluar !== null && <Mikro tengah>{galatKeluar}</Mikro>}
         {sesi.jenis === 'mini' && <Mikro tengah>Sesi berlaku 12 jam, lalu perlu disambung ulang lewat bot.</Mikro>}
       </Wadah>
     );

@@ -90,6 +90,7 @@ for (const nama of layar) {
 const TULIS = [
   'tambahPantauan', 'matikanPantauan', 'setelJamKabar', 'setelKabarOtomatis', 'cekBanyak',
   'hapusAkun', 'daftarkanPerangkat', 'cabutPerangkat', 'tandaiKabarDibaca', 'mintaTautanTelegram',
+  'keluarAkun',
 ];
 let tulisDiperiksa = 0;
 for (const nama of layar) {

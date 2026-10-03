@@ -12,7 +12,8 @@ import { useCallback, useState } from 'react';
 import { gayaTema } from '../gaya/tema';
 import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilBacaan, ambilJadwal, syaratWajib, type Mesin, type Rilis } from '../data/api';
-import { ambilRingkas, hapusAkun, type Ringkas } from '../data/saya';
+import { ambilRingkas, hapusAkun, keluarAkun, type Ringkas } from '../data/saya';
+import { tokenPerangkat } from '../data/push';
 import { TOKO_PLAY } from '../data/amplus';
 import { useMuat, type Hasil } from '../data/muat';
 import { hapusSesi } from '../data/sesi';
@@ -49,6 +50,20 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
       { text: 'Batal', style: 'cancel' },
       { text: 'Hapus akun', style: 'destructive', onPress: () => { void jalankanHapus(); } },
     ]);
+  };
+  /* KELUAR mencabut HP ini sebagai penerima kabar dulu (`keluarAkun`), selagi
+     sesinya masih sah — tanpa itu kabar akun ini terus masuk ke HP yang sudah
+     keluar. Paling lama 5 detik; sesudah itu keluar tetap jalan. Layar ini
+     biasanya hilang begitu sesinya dibuang; kalau sesi mini yang dicabut
+     sementara Google tetap masuk, ia bertahan dan sebab gagalnya dicetak. */
+  const [sibukKeluar, setSibukKeluar] = useState(false);
+  const [galatKeluar, setGalatKeluar] = useState('');
+  const keluar = async (): Promise<void> => {
+    setSibukKeluar(true); setGalatKeluar('');
+    try {
+      const h = await keluarAkun(tokenPerangkat);
+      if (h.perangkat === 'gagal') setGalatKeluar(`Notifikasi HP ini belum dicabut: ${h.kalimat ?? 'server tidak menjawab'}`);
+    } finally { setSibukKeluar(false); }
   };
   const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
@@ -146,8 +161,8 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
         <Butir ikon="plus" nama="Kelola langganan" ket={status === null ? '—' : plus ? 'aktif' : TOKO_PLAY ? 'belum aktif' : 'lewat bot'} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
         <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? 'masuk dulu' : plus ? 'siap' : 'butuh AM+'} onPress={() => { buka('CekBanyak'); }} />
         {sesi !== null && (
-          <Butir ikon="lainnya" nama={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
-            onPress={() => { void hapusSesi(); }} />
+          <Butir ikon="lainnya" nama={sibukKeluar ? 'Keluar…' : sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
+            onPress={sibukKeluar ? undefined : () => { void keluar(); }} />
         )}
         {sesi !== null && (
           <Butir ikon="lainnya" nama={sibukHapus ? 'Menghapus akun…' : 'Hapus akun'} ket="permanen"
@@ -155,6 +170,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
         )}
       </Menu>
       {galatHapus !== '' && <Mikro>{galatHapus}</Mikro>}
+      {galatKeluar !== '' && <Mikro>{galatKeluar}</Mikro>}
 
       <View style={{ flex: 1 }} />
       <Mikro>{sesi === null
