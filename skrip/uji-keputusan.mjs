@@ -255,14 +255,14 @@ async function bacaanGagal(susun, pasar) {
   susun();
   const j = await api.ambilBacaan(pasar, 'm5', true);
   tegas(j.ok === false, `bacaan ${pasar} tidak gagal`);
-  return gagalBacaan.gagalBacaan({ jenis: j.jenis, kalimat: j.kalimat, galat: j.galat });
+  return gagalBacaan.gagalBacaan({ jenis: j.jenis, kalimat: j.kalimat, galat: j.galat }, { pasar, tf: 'm5' });
 }
 
 await uji('KEPUTUSAN: 402 perlu-plus di bacaan adalah ajakan AM+, bukan "Mesin tidak menjawab · Coba lagi"', async () => {
   const pesan = 'M5 untuk XAU/USD bagian AnalisMarket+. Data emas dan forex dibeli dengan jatah harian, dan M1/M5 yang paling banyak menagih. XAU/USD tetap terbuka di timeframe lain.';
   const g = await bacaanGagal(() => { jawab(402, { galat: 'perlu-plus', pesan }); }, 'XAU/USD');
   tegas(terakhir().header.authorization === 'Bearer jwt-clerk-uji', `bacaan berangkat tanpa sesi Google: ${JSON.stringify(terakhir().header)}`);
-  const isi = gagalBacaan.isiLembarGagal(g, 'XAU/USD', 'm5');
+  const isi = gagalBacaan.isiLembarGagal(g);
   tegas(g.jenis === 'plus' && isi.aksi === 'plus', `402 perlu-plus menjadi jenis "${g.jenis}", aksi "${String(isi.aksi)}"`);
   tegas(!/tidak menjawab|tersambung/i.test(`${isi.label} ${isi.judul} ${isi.ket}`), `lembar AM+ berbunyi gangguan: ${JSON.stringify(isi)}`);
   tegas(/AnalisMarket\+/.test(isi.judul), `judul lembar tidak menyebut AnalisMarket+: "${isi.judul}"`);
@@ -273,18 +273,19 @@ await uji('KEPUTUSAN: 402 perlu-plus di bacaan adalah ajakan AM+, bukan "Mesin t
 
 await uji('KEPUTUSAN: "Coba lagi" HANYA untuk kegagalan jaringan (cabang lawan)', async () => {
   const jar = await bacaanGagal(() => { putus(); }, 'EUR/USD');
-  const isiJar = gagalBacaan.isiLembarGagal(jar, 'EUR/USD', 'm5');
+  const isiJar = gagalBacaan.isiLembarGagal(jar);
   tegas(jar.jenis === 'jaringan' && isiJar.aksi === 'coba' && isiJar.judul === 'Mesin tidak menjawab', `jaringan putus menjadi ${JSON.stringify(isiJar)}`);
   const bts = await bacaanGagal(() => { jawab(429, { galat: 'batas-harian', pesan: 'Jatah AnalisMarket+ untuk M1/M5 emas-forex hari ini sudah terpakai: 20 dari 20.' }); }, 'GBP/USD');
-  const isiBts = gagalBacaan.isiLembarGagal(bts, 'GBP/USD', 'm5');
+  const isiBts = gagalBacaan.isiLembarGagal(bts);
   tegas(bts.jenis === 'batas' && isiBts.aksi === null, `batas harian (20 dari 20) menjadi ${JSON.stringify(isiBts)} — mengulang cuma menagih jatah untuk jawaban yang sama`);
   const tlk = await bacaanGagal(() => { jawab(400, { galat: 'badan-salah', pesan: 'timeframe tidak berlaku' }); }, 'USD/JPY');
-  tegas(gagalBacaan.isiLembarGagal(tlk, 'USD/JPY', 'm5').aksi === null, '400 ditolak menawarkan "Coba lagi"');
-  const plus = gagalBacaan.isiLembarGagal({ jenis: 'plus', kalimat: 'x' }, 'XAU/USD', 'm5');
+  tegas(gagalBacaan.isiLembarGagal(tlk).aksi === null, '400 ditolak menawarkan "Coba lagi"');
+  const plus = gagalBacaan.isiLembarGagal({ jenis: 'plus', kalimat: 'x', pasar: 'XAU/USD', tf: 'm5' });
   tegas(plus.judul !== isiJar.judul && plus.aksi !== isiJar.aksi, 'lembar AM+ dan lembar jaringan identik — salah satu cabang diam-diam disamakan');
   /* Layar Pasar wajib lewat keputusan ini, bukan menulis kalimat gangguannya sendiri lagi. */
   const layar = tanpaKomentar(readFileSync('src/layar/Analisis.tsx', 'utf8'));
-  tegas(/isiLembarGagal\(/.test(layar) && /gagalBacaan\(/.test(layar), 'layar Pasar tidak memakai gagalBacaan/isiLembarGagal');
+  const kait = tanpaKomentar(readFileSync('src/data/layarPasar.ts', 'utf8'));
+  tegas(/isiLembarGagal\(gagalBaca\)/.test(layar) && /useBacaanPasar\(/.test(layar) && /gagalBacaan\(/.test(kait), 'layar Pasar tidak memakai useBacaanPasar (gagalBacaan) + isiLembarGagal');
   tegas(!/Mesin tidak menjawab/.test(layar), 'layar Pasar mengetik "Mesin tidak menjawab" sendiri — kalimat yang dulu tercetak untuk 402 AM+');
 });
 
@@ -537,6 +538,76 @@ await uji('ketukan kabar, cabang lawan: tf kabar yang tidak dimiliki pasarnya te
   const l = await layarPasarUji([P_BTC, P_EUR]);
   await l.akar.lakukan(() => { l.simpan({ ...l.setelan, pasar: 'EURUSDT', tf: 'H1' }); });
   tegas(l.layar.tf === 'd1' && l.layar.kataTf === KATA_EUR, `kabar EURUSDT H1 membuka ${l.layar.tf} "${l.layar.kataTf}" — wajib d1 dan disebut`);
+  await l.akar.lepas();
+});
+
+/* ── bacaan layar Pasar: jawaban milik tf lain dibuang ─────────────────── */
+/** `ambil` tiruan yang menjawab dalam urutan yang dipilih uji — antrean JARAK_MS + simpanan 20 dtk membuat urutan itu nyata. */
+function bacaanTiruan() {
+  const tunda = [];
+  const ambil = (pasar, tf, segarkan = false) => new Promise((selesai) => { tunda.push({ pasar, tf, segarkan, selesai }); });
+  async function jawabDi(akar, pasar, tf, jawaban) {
+    const i = tunda.findIndex((x) => x.pasar === pasar && x.tf === tf);
+    tegas(i >= 0, `tidak ada permintaan ${pasar} ${tf} yang menunggu (${tunda.map((x) => `${x.pasar} ${x.tf}`).join(', ')})`);
+    const [x] = tunda.splice(i, 1);
+    await akar.lakukan(async () => { x.selesai(jawaban); await new Promise((r) => { setTimeout(r, 0); }); });
+  }
+  return { ambil, tunda, jawabDi };
+}
+const BACAAN_OK = (pasar, tf) => ({ ok: true, isi: { pasar, tf, harga: 1, mesin: [] }, dariSimpanan: false, cacheNginx: null });
+const TOLAK_PLUS = { ok: false, jenis: 'ditolak', kalimat: 'M5 untuk XAU/USD bagian AnalisMarket+.', galat: 'perlu-plus' };
+async function pembacaUji(ambil, simbol, tf) {
+  const l = {};
+  function Pembaca(p) { l.baca = layarPasar.useBacaanPasar(p.simbol, p.tf, p.ambil); return null; }
+  l.akar = await pasang(h(Pembaca, { simbol, tf, ambil }));
+  l.ke = (simbol2, tf2) => l.akar.ganti(h(Pembaca, { simbol: simbol2, tf: tf2, ambil }));
+  /** Yang dicetak lembar bawah layar Pasar (`isiLembarGagal(gagalBaca)`), atau null. */
+  l.lembar = () => (l.baca.gagalBaca === null ? null : gagalBacaan.isiLembarGagal(l.baca.gagalBaca));
+  return l;
+}
+
+await uji('KEPUTUSAN: 402 milik tf lain tidak pernah tercetak di tf yang sedang dibuka — ganti tf/pasar mengosongkan lembar', async () => {
+  const t = bacaanTiruan();
+  const l = await pembacaUji(t.ambil, 'XAU/USD', 'm5');
+  await t.jawabDi(l.akar, 'XAU/USD', 'm5', TOLAK_PLUS);
+  tegas(l.lembar()?.aksi === 'plus' && l.lembar()?.judul === 'm5 XAU/USD bagian dari AnalisMarket+', `402 m5 untuk tf yang terbuka: ${JSON.stringify(l.lembar())}`);
+  await l.ke('XAU/USD', 'h1');
+  tegas(l.lembar() === null, `selama h1 antre (JARAK_MS 1.100 + jaringan) lembar mencetak ${JSON.stringify(l.lembar()?.judul)} — 402 milik m5 di tf gratis, tanpa Coba lagi`);
+  await t.jawabDi(l.akar, 'XAU/USD', 'h1', BACAAN_OK('XAU/USD', 'h1'));
+  tegas(l.baca.bacaan?.tf === 'h1' && l.lembar() === null, `bacaan h1 sesudah dijawab: ${JSON.stringify({ tf: l.baca.bacaan?.tf, lembar: l.lembar() })}`);
+  /* Pasar lain, tf sama: m5 kripto gratis tidak boleh mewarisi tembok emas. */
+  await l.ke('XAU/USD', 'm5');
+  await t.jawabDi(l.akar, 'XAU/USD', 'm5', TOLAK_PLUS);
+  await l.ke('BTCUSDT', 'm5');
+  tegas(l.lembar() === null, `pindah ke BTCUSDT m5 mencetak ${JSON.stringify(l.lembar()?.judul)} — m5 kripto gratis`);
+  await l.akar.lepas();
+});
+
+await uji('KEPUTUSAN: jawaban yang tiba tidak berurutan dibuang — 402 m5 yang telat tidak menimpa bacaan h1', async () => {
+  const t = bacaanTiruan();
+  const l = await pembacaUji(t.ambil, 'XAU/USD', 'h1');
+  await t.jawabDi(l.akar, 'XAU/USD', 'h1', BACAAN_OK('XAU/USD', 'h1'));
+  await l.ke('XAU/USD', 'm5');                                           // m5 menunggu giliran antrean
+  await l.ke('XAU/USD', 'h1');                                           // kembali sebelum giliran m5 tiba
+  await t.jawabDi(l.akar, 'XAU/USD', 'h1', BACAAN_OK('XAU/USD', 'h1')); // h1 dari simpanan, seketika
+  await t.jawabDi(l.akar, 'XAU/USD', 'm5', TOLAK_PLUS);                  // 402 m5 tiba belakangan
+  tegas(l.baca.bacaan?.tf === 'h1', `402 m5 yang telat menghapus bacaan h1 (bacaan: ${JSON.stringify(l.baca.bacaan?.tf ?? null)})`);
+  tegas(l.lembar() === null, `402 m5 yang telat tercetak di layar h1: ${JSON.stringify(l.lembar()?.judul)}`);
+  await l.akar.lepas();
+});
+
+await uji('jawaban basi, cabang lawan: penolakan permintaan TERAKHIR tetap tercetak dari tf yang ditolak; Coba lagi = permintaan segar', async () => {
+  const t = bacaanTiruan();
+  const l = await pembacaUji(t.ambil, 'XAU/USD', 'h1');
+  await t.jawabDi(l.akar, 'XAU/USD', 'h1', { ok: false, jenis: 'jaringan', kalimat: 'Tidak bisa menghubungi server.' });
+  tegas(l.lembar()?.aksi === 'coba', `jaringan putus di tf yang terbuka: ${JSON.stringify(l.lembar())}`);
+  await l.akar.lakukan(() => { l.baca.muatUlang(); });
+  const ulang = t.tunda.find((x) => x.pasar === 'XAU/USD' && x.tf === 'h1');
+  tegas(ulang?.segarkan === true, `Coba lagi tidak meminta XAU/USD h1 segar: ${JSON.stringify(t.tunda.map((x) => [x.pasar, x.tf, x.segarkan]))}`);
+  await t.jawabDi(l.akar, 'XAU/USD', 'h1', BACAAN_OK('XAU/USD', 'h1'));
+  tegas(l.baca.bacaan !== null && l.lembar() === null, 'Coba lagi yang berhasil tidak mengganti lembar gagal dengan bacaan');
+  const g = gagalBacaan.gagalBacaan({ jenis: 'ditolak', kalimat: 'x', galat: 'perlu-plus' }, { pasar: 'XAU/USD', tf: 'M5' });
+  tegas(gagalBacaan.isiLembarGagal(g).judul === 'm5 XAU/USD bagian dari AnalisMarket+', `judul dari permintaan yang ditolak: "${gagalBacaan.isiLembarGagal(g).judul}"`);
   await l.akar.lepas();
 });
 

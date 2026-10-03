@@ -20,7 +20,7 @@
  * harga, timeframe, dan mesin tetap terlihat DAN tetap hidup, jadi mengetuk
  * mesin lain saat membaca menukar bacaannya di tempat.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gayaTema, useTema } from '../gaya/tema';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View,
@@ -28,7 +28,7 @@ import {
 import type { WebViewMessageEvent } from 'react-native-webview';
 import { ChartTertanam } from '../komponen/ChartTertanam';
 import { ASAL } from '../data/antrian';
-import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
+import { ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
 import { angka, ubah, biayaPersen } from '../data/tampil';
 import { LembarPasar } from '../komponen/LembarPasar';
 import { Lembar } from '../komponen/Lembar';
@@ -38,8 +38,8 @@ import { Kosong, Memuat } from '../komponen/dasar';
 import { useSesi } from './Akun';
 import { tokenSesi } from '../data/sesi';
 import { kunciSesi } from '../data/statusPlus';
-import { gagalBacaan, isiLembarGagal, type GagalBacaan } from '../data/gagalBacaan';
-import { usePasarTf } from '../data/layarPasar';
+import { isiLembarGagal } from '../data/gagalBacaan';
+import { useBacaanPasar, usePasarTf } from '../data/layarPasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -92,14 +92,16 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
   const { pasar, tf, kataTf, pilihTf, pilihPasar } = usePasarTf(setelan, simpan, daftarPasar);
   const [mesin, setMesin] = useState(setelan.mesin);
   const [alat, setAlat] = useState<ReadonlySet<string>>(() => new Set(['volume', 'zona', 'struktur', 'level']));
-  const [bacaan, setBacaan] = useState<Bacaan | null>(null);
   /* DUA kegagalan, DUA keadaan. Daftar pasar yang gagal mengosongkan layar;
      bacaan yang gagal cuma mengisi lembar bawah — dan bacaan yang DITOLAK
      (402 butuh AM+, 429 jatah habis) bukan "mesin tidak menjawab". Dulu
      keduanya satu string, jadi m5 emas akun gratis tercetak "tidak
-     tersambung · Coba lagi" untuk jawaban yang tidak akan pernah berubah. */
+     tersambung · Coba lagi" untuk jawaban yang tidak akan pernah berubah.
+     Bacaannya sendiri — termasuk membuang jawaban milik tf sebelumnya —
+     diurus `useBacaanPasar` (layarPasar.ts). */
   const [gagal, setGagal] = useState('');
-  const [gagalBaca, setGagalBaca] = useState<GagalBacaan | null>(null);
+  const simbol = pasar?.simbol ?? null;
+  const { bacaan, gagalBaca, muatUlang } = useBacaanPasar(simbol, tf);
   const [harga, setHarga] = useState<number | null>(null);
   const [memuatChart, setMemuatChart] = useState(true);
   const [lembarPasar, setLembarPasar] = useState(false);
@@ -134,24 +136,16 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
     return () => { batal = true; };
   }, [setelan.pasar, ulang]);
 
-  const muatBacaan = useCallback(async (simbol: string, t: string, segarkan = false): Promise<void> => {
-    const j = await ambilBacaan(simbol, t, segarkan);
-    if (!j.ok) { setGagalBaca(gagalBacaan({ jenis: j.jenis, kalimat: j.kalimat, galat: j.galat })); setBacaan(null); return; }
-    setGagalBaca(null);
-    setBacaan(j.isi);
-    if (!dariChart.current && j.isi.harga > 0) setHarga(j.isi.harga);
-  }, []);
-
-  /* Diikat ke SIMBOL, bukan objek pasar: daftar yang disegarkan membuat
-     objek baru untuk pasar yang sama, dan itu bukan alasan membaca ulang. */
-  const simbol = pasar?.simbol ?? null;
+  /* Harga kepala: dikosongkan tiap ganti pasar/tf, diisi bacaan sampai
+     chart mengirim harganya sendiri. Diikat ke SIMBOL, bukan objek pasar:
+     daftar yang disegarkan membuat objek baru untuk pasar yang sama. */
   useEffect(() => {
-    if (simbol === null) return;
     dariChart.current = false;
     setHarga(null);
-    setBacaan(null);
-    void muatBacaan(simbol, tf);
-  }, [simbol, tf, muatBacaan]);
+  }, [simbol, tf]);
+  useEffect(() => {
+    if (bacaan !== null && !dariChart.current && bacaan.harga > 0) setHarga(bacaan.harga);
+  }, [bacaan]);
 
   /* Chart IKUT TEMA: `?tema=terang` memilih palet terang di chart-embed.
 
@@ -291,7 +285,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
                jaringan; butuh AM+ jadi ajakan ke tab PLUS+, tanpa harga dan
                tanpa cara beli di build mana pun — tab itulah yang tunduk
                pada TOKO_PLAY. */
-            const isi = isiLembarGagal(gagalBaca, pasar.simbol, tf);
+            const isi = isiLembarGagal(gagalBaca);
             return (
               <View style={g.lembarBaris}>
                 <View style={{ flex: 1, minWidth: 0 }}>
@@ -299,7 +293,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
                   <Text style={g.lembarStatus} numberOfLines={1}>{isi.judul}</Text>
                   <Text style={g.ditahanKet} numberOfLines={2}>{isi.ket}</Text>
                 </View>
-                {isi.aksi === 'coba' && <Chip teks="Coba lagi" onPress={() => { void muatBacaan(pasar.simbol, tf, true); }} />}
+                {isi.aksi === 'coba' && <Chip teks="Coba lagi" onPress={muatUlang} />}
                 {isi.aksi === 'plus' && <Chip teks="Lihat AnalisMarket+" emas onPress={bukaPlus} />}
               </View>
             );

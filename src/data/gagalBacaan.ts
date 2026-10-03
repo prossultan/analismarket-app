@@ -21,19 +21,26 @@
  */
 
 export type JenisGagalBacaan = 'plus' | 'batas' | 'ditolak' | 'jaringan';
-export type GagalBacaan = { jenis: JenisGagalBacaan; kalimat: string };
+/**
+ * `pasar` dan `tf` = permintaan yang DITOLAK, dibawa bersama jawabannya.
+ * Judul lembar dicetak dari sini, bukan dari tf yang sedang terbuka saat
+ * render: sampai 3 Okt 402 m5 yang tiba sesudah orangnya kembali ke h1
+ * tercetak "h1 XAU/USD bagian dari AnalisMarket+" — untuk tf gratis.
+ */
+export type GagalBacaan = { jenis: JenisGagalBacaan; kalimat: string; pasar: string; tf: string };
 
 /** Bentuk kegagalan `ambil()` di `antrian.ts`, disalin tanpa impor. */
 type GagalAntrian = { jenis: 'jaringan' | 'ditolak' | 'batas'; kalimat: string; galat?: string };
 
-export function gagalBacaan(j: GagalAntrian): GagalBacaan {
+export function gagalBacaan(j: GagalAntrian, diminta: { pasar: string; tf: string }): GagalBacaan {
+  const { pasar, tf } = diminta;
   /* `galat` dulu, BUKAN kode status — pelajaran yang sama dengan
      `perlu-telegram` (409) di `saya.ts`: kode status bisa dipakai bersama
      oleh dua arti, `galat` tidak. */
-  if (j.galat === 'perlu-plus') return { jenis: 'plus', kalimat: j.kalimat };
-  if (j.jenis === 'batas') return { jenis: 'batas', kalimat: j.kalimat };
-  if (j.jenis === 'ditolak') return { jenis: 'ditolak', kalimat: j.kalimat };
-  return { jenis: 'jaringan', kalimat: j.kalimat };
+  if (j.galat === 'perlu-plus') return { jenis: 'plus', kalimat: j.kalimat, pasar, tf };
+  if (j.jenis === 'batas') return { jenis: 'batas', kalimat: j.kalimat, pasar, tf };
+  if (j.jenis === 'ditolak') return { jenis: 'ditolak', kalimat: j.kalimat, pasar, tf };
+  return { jenis: 'jaringan', kalimat: j.kalimat, pasar, tf };
 }
 
 export type IsiLembarGagal = {
@@ -50,12 +57,12 @@ export type IsiLembarGagal = {
  * untuk kegagalan jaringan: mengulang permintaan yang sudah dijawab "butuh
  * AM+" atau "jatah habis" cuma menagih jatah laju untuk jawaban yang sama.
  */
-export function isiLembarGagal(g: GagalBacaan, pasar: string, tf: string): IsiLembarGagal {
+export function isiLembarGagal(g: GagalBacaan): IsiLembarGagal {
   switch (g.jenis) {
     case 'plus':
       return {
         label: 'AnalisMarket+',
-        judul: `${tf.toLowerCase()} ${pasar} bagian dari AnalisMarket+`,
+        judul: `${g.tf.toLowerCase()} ${g.pasar} bagian dari AnalisMarket+`,
         ket: 'Timeframe lain untuk pasar ini tetap terbuka.',
         aksi: 'plus',
         emas: true,
