@@ -40,8 +40,14 @@ export type Akun = {
    * `langganan.aktif` — selalu `undefined` — dan mencetak "Gratis" untuk
    * pelanggan AM+ tepat sesudah ia berhasil menyambung. Diuji pemilik di HP,
    * 19 Sep: "AM+ tidak terbawa".
+   *
+   * `null` = TIDAK DIKETAHUI, dan itu nilai sesi Clerk: Google tidak tahu
+   * apa-apa soal langganan. Sampai 3 Okt sesi Clerk diisi `'gratis'`, dan
+   * pelanggan yang masuk lewat Google dibaca gratis di tiga permukaan.
+   * Jangan dicetak langsung — lewat `statusTampil` di `statusPlus.ts`, yang
+   * memenangkan jawaban `/api/saya`.
    */
-  langganan: 'plus' | 'gratis';
+  langganan: 'plus' | 'gratis' | null;
 };
 
 /**

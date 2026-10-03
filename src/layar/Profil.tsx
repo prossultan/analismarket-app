@@ -17,6 +17,7 @@ import { TOKO_PLAY } from '../data/amplus';
 import { useMuat, type Hasil } from '../data/muat';
 import { hapusSesi } from '../data/sesi';
 import { useSesi } from './Akun';
+import { labelStatus, useStatusPlus } from '../data/statusPlus';
 import { jamWib, tanggalWib } from '../data/tampil';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Chip, Kosong, Lbl, Menu, Mikro, Nil, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
@@ -65,7 +66,12 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
   const r = keadaan.fase === 'ada' ? keadaan.isi : null;
   const sebab = keadaan.fase === 'gagal' ? keadaan.kalimat : (keadaan.fase === 'ada' ? keadaan.basi : null);
   const nama = sesi?.akun.nama ?? null;
-  const plus = r?.langganan === 'plus';
+  /* "Gratis" HANYA kalau server berkata gratis. Dulu `r === null` — masih
+     memuat, atau /api/saya gagal — ikut tercetak "Gratis", termasuk untuk
+     pelanggan yang masuk lewat Google. Tidak diketahui dicetak "—". */
+  const statusSimpan = useStatusPlus();
+  const status = r?.langganan ?? statusSimpan;
+  const plus = status === 'plus';
   const angka = (n: number | undefined): string => (n === undefined ? '—' : String(n));
   return (
     <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
@@ -99,7 +105,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
             <Text style={g.nama} numberOfLines={1}>{sesi === null ? 'Belum tersambung' : nama ?? 'Akun Telegram'}</Text>
             <Lbl polos>{sesi === null ? 'Identitas datang dari bot Telegram' : sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Tersambung lewat Telegram'}</Lbl>
             <View style={{ marginTop: 5, alignSelf: 'flex-start' }}>
-              <Chip teks={plus ? 'AnalisMarket+ aktif' : 'Gratis'} emas={plus} lencana />
+              <Chip teks={plus ? 'AnalisMarket+ aktif' : labelStatus(status)} emas={plus} lencana />
             </View>
           </View>
         </View>
@@ -110,7 +116,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
             <Lbl polos>Pantauan</Lbl>
           </View>
           {/* Akun gratis: kata, bukan garis. "— Hari AM+" terbaca sebagai angka yang gagal dimuat (audit 20 Sep). */}
-          <View style={g.sel}><Nil besar>{plus ? angka(r?.sisaHariPlus) : 'Gratis'}</Nil><Lbl polos>{plus ? 'Hari AM+' : 'Paket'}</Lbl></View>
+          <View style={g.sel}><Nil besar>{plus ? angka(r?.sisaHariPlus) : labelStatus(status)}</Nil><Lbl polos>{plus ? 'Hari AM+' : 'Paket'}</Lbl></View>
         </View>
         {/* Mockup: tombol sambung hanya saat BELUM masuk; putus sambungan
             adalah baris di bagian Akun, bukan tombol besar di kartu. */}
@@ -137,7 +143,7 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
 
       <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
       <Menu>
-        <Butir ikon="plus" nama="Kelola langganan" ket={plus ? 'aktif' : TOKO_PLAY ? 'belum aktif' : 'lewat bot'} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
+        <Butir ikon="plus" nama="Kelola langganan" ket={status === null ? '—' : plus ? 'aktif' : TOKO_PLAY ? 'belum aktif' : 'lewat bot'} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
         <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? 'masuk dulu' : plus ? 'siap' : 'butuh AM+'} onPress={() => { buka('CekBanyak'); }} />
         {sesi !== null && (
           <Butir ikon="lainnya" nama={sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}

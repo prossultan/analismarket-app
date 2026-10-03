@@ -6,6 +6,7 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { gayaTema } from '../gaya/tema';
 import { useSesi } from '../layar/Akun';
+import { useStatusPlus } from '../data/statusPlus';
 import { W } from '../gaya/token';
 
 export function AvatarKepala({ onPress }: { onPress: () => void }) {
@@ -14,7 +15,9 @@ export function AvatarKepala({ onPress }: { onPress: () => void }) {
   /* 'A' dari AnalisMarket, bukan '·': titik terbaca seperti avatar yang
      gagal dimuat. Nama tampilan Telegram boleh kosong, dan itu sah. */
   const huruf = nama.trim().charAt(0).toUpperCase() || 'A';
-  const plus = sesi?.akun.langganan === 'plus';
+  /* Cincin emas dari jawaban /api/saya, bukan dari sesi: sesi Google tidak
+     tahu status langganan, dan pelanggan Google dulu tampil tanpa cincin. */
+  const plus = useStatusPlus() === 'plus';
   return (
     <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel="Profil"
       style={({ pressed }) => [g.akar, plus && g.plus, pressed && { transform: [{ scale: 0.94 }] }]}>

@@ -14,6 +14,7 @@
  */
 import { ASAL } from './antrian';
 import { hapusSesi, headerSesi, sesiSekarang } from './sesi';
+import { catatStatusPlus, kunciSesi } from './statusPlus';
 import type { JendelaJam } from './jamSunyi';
 
 export type JawabanSaya<T> =
@@ -135,7 +136,16 @@ export type KabarOtomatis = {
    `telegramTersambung`, dan `paket[]`. Tipe yang salah atas fungsi yang tidak
    pernah dipanggil tidak bisa ditemukan siapa pun; dibuang, bukan ditambal.
    Status AM+ datang dari `ambilRingkas().langganan`, satu sumber. */
-export const ambilRingkas = (): Promise<JawabanSaya<Ringkas>> => panggil('/api/saya', 'GET');
+export async function ambilRingkas(): Promise<JawabanSaya<Ringkas>> {
+  /* Kunci sesi diambil SEBELUM berangkat: jawaban yang tiba sesudah orangnya
+     berganti akun tidak boleh tercatat sebagai status akun baru. */
+  const kunci = kunciSesi(sesiSekarang());
+  const j = await panggil<Ringkas>('/api/saya', 'GET');
+  /* Satu-satunya sumber status AM+ untuk permukaan yang tidak memuat
+     /api/saya sendiri (avatar, Lainnya) — lihat `statusPlus.ts`. */
+  if (j.ok) catatStatusPlus(kunci, j.isi.langganan);
+  return j;
+}
 export const ambilPantauan = (): Promise<JawabanSaya<DaftarPantauan>> => panggil('/api/saya/pantauan', 'GET');
 export const ambilKabarOtomatis = (): Promise<JawabanSaya<KabarOtomatis>> => panggil('/api/saya/kabar-otomatis', 'GET');
 

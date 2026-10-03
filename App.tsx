@@ -326,7 +326,10 @@ function JembatanClerk() {
           email: user.primaryEmailAddress?.emailAddress ?? null,
           nama: user.fullName ?? user.firstName ?? user.primaryEmailAddress?.emailAddress ?? null,
           telegramTersambung: false,
-          langganan: 'gratis',
+          /* TIDAK DIKETAHUI, bukan 'gratis'. Google tidak membawa status
+             langganan; yang tahu cuma `/api/saya`. Nilai 'gratis' di sini
+             dulu tercetak apa adanya untuk pelanggan yang masuk lewat Google. */
+          langganan: null,
         }
         : null,
     });

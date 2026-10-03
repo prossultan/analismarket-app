@@ -27,6 +27,7 @@ import { volumeRingkas } from '../data/tampil';
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
 import { PAKET_PLUS, hargaPlus, rupiah, TOKO_PLAY } from '../data/amplus';
 import { KALIMAT_JAM_SUNYI, bacaJendela, bacaPilihanJam, labelKirim, labelSunyi, samaJendela, tanpaSunyi } from '../data/jamSunyi';
+import { labelStatus, statusTampil } from '../data/statusPlus';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -182,13 +183,16 @@ export function LayarSambung() {
 
   if (sesi !== null) {
     const tersambung = r?.telegramTersambung === true || sesi.jenis === 'mini';
+    /* Status dari /api/saya, bukan dari sesi: sesi Google tidak tahu apa-apa
+       soal langganan, dan dulu tercetak "Gratis" untuk pelanggan. */
+    const status = statusTampil(sesi, r?.langganan ?? null);
     return (
       <Wadah>
         <Blok gaya={{ alignItems: 'center', paddingVertical: 16 }}>
           <Ikon nama="profil" warna={W.naik} ukuran={28} />
           <Text style={g.judulTengah}>{sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Tersambung lewat Telegram'}</Text>
           <Text style={g.ketTengah}>
-            {sesi.akun.nama ?? (sesi.jenis === 'clerk' ? 'Akun Google' : 'Akun Telegram')} · {sesi.akun.langganan === 'plus' ? 'AnalisMarket+' : 'Gratis'}
+            {sesi.akun.nama ?? (sesi.jenis === 'clerk' ? 'Akun Google' : 'Akun Telegram')}{status === null ? '' : ` · ${labelStatus(status)}`}
           </Text>
         </Blok>
 

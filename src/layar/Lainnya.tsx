@@ -11,6 +11,7 @@ import { Blok, Butir, Lbl, Menu, Mikro, Nil } from '../komponen/mockup';
 import { capBuild } from '../data/versi';
 import { Merek } from '../komponen/Merek';
 import { useSesi } from './Akun';
+import { useStatusPlus } from '../data/statusPlus';
 import { jamWib } from '../data/tampil';
 import { W, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
@@ -31,6 +32,9 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
      ini tetap bilang belum. Pemilik melihatnya di HP sebagai "AM+ tidak
      terbawa". Keterangan baris harus ikut sesi. */
   const sesi = useSesi();
+  /* Status AM+ dari jawaban /api/saya terakhir, bukan dari sesi — sesi
+     Google diisi "tidak diketahui", dan dulu diisi 'gratis'. */
+  const status = useStatusPlus();
   const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const jam = (d: number | null): string => (d === null ? '—' : jamWib(d));
@@ -45,8 +49,8 @@ export function LayarLainnya({ setelan, bukaDokumen, bukaMenu, versi, umur }: Pr
       <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
       <Menu>
         <Butir ikon="profil" nama="Profil"
-          ket={sesi === null ? 'belum tersambung' : sesi.akun.langganan === 'plus' ? 'AM+' : sesi.akun.nama ?? 'tersambung'}
-          ketEmas={sesi?.akun.langganan === 'plus'} onPress={() => { bukaMenu('profil'); }} pertama />
+          ket={sesi === null ? 'belum tersambung' : status === 'plus' ? 'AM+' : sesi.akun.nama ?? 'tersambung'}
+          ketEmas={status === 'plus'} onPress={() => { bukaMenu('profil'); }} pertama />
         <Butir ikon="kabar" nama="Pantauan" ket={sesi === null ? 'masuk dulu' : 'aktif'} onPress={() => { bukaMenu('pantauan'); }} />
         <Butir ikon="gir" nama="Pengaturan" ket={`${setelan.tf.toLowerCase()} · ${setelan.pasar}`} ketMono onPress={() => { bukaMenu('pengaturan'); }} />
       </Menu>
