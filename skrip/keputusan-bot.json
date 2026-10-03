@@ -1,0 +1,21 @@
+{
+  "maksWatch": 10,
+  "jamSunyiPilihan": [
+    {
+      "mulai": 0,
+      "selesai": 23
+    },
+    {
+      "mulai": 3,
+      "selesai": 23
+    },
+    {
+      "mulai": 5,
+      "selesai": 23
+    },
+    {
+      "mulai": 7,
+      "selesai": 22
+    }
+  ]
+}
