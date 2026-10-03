@@ -416,6 +416,19 @@ await uji('KEPUTUSAN: daftar fitur app tidak menjanjikan yang cuma ada di bot', 
   tegas(cek !== undefined && /×\s*timeframe/.test(cek.keterangan), `Cek Banyak: "${cek?.keterangan}" — batasnya 12 slot pasar × timeframe`);
 });
 
+/* ── ajakan AM+ Kabar otomatis (3 Okt): 402 DAN 200 {plus:false} ─────── */
+await uji('KEPUTUSAN: akun gratis di Kabar otomatis melihat ajakan AM+ — juga saat server menjawab 200 { plus: false } (bentuk yang dikirim bot)', async () => {
+  tegas(statusPlus.layarAjakanPlus(null, { plus: false }) === true, '200 { plus: false } wajib ajakan — bentuk inilah yang dikirim GET /api/saya/kabar-otomatis; tanpanya akun gratis melihat saklar mati');
+  tegas(statusPlus.layarAjakanPlus('plus', null) === true, '402 perlu-plus wajib ajakan');
+});
+await uji('ajakan AM+, cabang lawan: pelanggan dan layar yang masih memuat BUKAN ajakan; layar Kabar otomatis memakai keputusannya', async () => {
+  tegas(statusPlus.layarAjakanPlus(null, { plus: true }) === false, 'plus: true bukan ajakan');
+  tegas(statusPlus.layarAjakanPlus(null, null) === false, 'masih memuat (isi null, tanpa galat) bukan ajakan');
+  tegas(statusPlus.layarAjakanPlus('jaringan', null) === false, 'galat jaringan bukan ajakan — itu "Coba lagi"');
+  const kode = tanpaKomentar(readFileSync(join(AKAR, 'src/layar/Akun.tsx'), 'utf8'));
+  const layar = kode.slice(kode.indexOf('function LayarKabarOtomatis'), kode.indexOf('function LayarKabarOtomatis') + 2500);
+  tegas(/layarAjakanPlus\(jenis, d\)/.test(layar), 'LayarKabarOtomatis wajib memutuskan ajakan lewat layarAjakanPlus(jenis, d), bukan jenis === "plus" saja');
+});
 /* ── tf pengganti (3 Okt): terdekat DI ATAS, disebut — sama dengan web ─── */
 await uji('KEPUTUSAN: EURUSDT (m1 m5 d1) yang diminta h1 dibuka d1 dan DISEBUT — bukan m1 diam-diam (punya[0])', async () => {
   const ada = ['m1', 'm5', 'd1'];

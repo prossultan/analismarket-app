@@ -82,3 +82,18 @@ export function useStatusPlus(): StatusPlus | null {
   }, []);
   return statusTampil(sesi, statusServer(sesi));
 }
+
+/**
+ * LAYAR AJAKAN AM+ untuk layar berbayar (CLAUDE.md app: "Layar berbayar untuk
+ * akun gratis = kartu ajakan, bukan galat"). Dua bentuk jawaban server
+ * diterima, dan keduanya wajib berakhir di ajakan:
+ *  - 402 `perlu-plus` → `jenis === 'plus'`;
+ *  - 200 `{ plus: false }` — bentuk yang SEBENARNYA dikirim GET
+ *    /api/saya/kabar-otomatis bot sampai 3 Okt. Cabang ajakan Kabar otomatis
+ *    menunggu 402 saja, jadi akun gratis tidak pernah melihatnya: yang tampil
+ *    layar penuh dengan saklar mati dan lencana "Butuh AM+".
+ * Selama memuat (`isi` null, tanpa galat) bukan ajakan.
+ */
+export function layarAjakanPlus(jenis: string | null, isi: { plus?: unknown } | null): boolean {
+  return jenis === 'plus' || isi?.plus === false;
+}

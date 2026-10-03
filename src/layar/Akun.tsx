@@ -27,7 +27,7 @@ import { volumeRingkas } from '../data/tampil';
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
 import { PAKET_PLUS, hargaPlus, rupiah, terbukaSekarang, TOKO_PLAY } from '../data/amplus';
 import { KALIMAT_JAM_SUNYI, bacaJendela, bacaPilihanJam, labelKirim, labelSunyi, samaJendela, tanpaSunyi } from '../data/jamSunyi';
-import { labelStatus, statusTampil } from '../data/statusPlus';
+import { labelStatus, statusTampil, layarAjakanPlus } from '../data/statusPlus';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
@@ -496,9 +496,10 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
   const jendela = d === null ? null : bacaJendela(d.jam);
   const pilihanJam = d === null ? [] : bacaPilihanJam(d.pilihanJam);
 
-  /* Akun gratis: server menjawab 402 `perlu-plus`. Itu bukan galat, itu
-     harga — jadi layarnya ajakan, bukan rangka yang gagal dimuat. */
-  if (sesi !== null && jenis === 'plus') {
+  /* Akun gratis: ajakan, bukan rangka yang gagal dimuat dan bukan layar penuh
+     dengan saklar mati. Server menjawab 200 `{ plus: false }` (bukan 402) —
+     `layarAjakanPlus` menerima kedua bentuk. */
+  if (sesi !== null && layarAjakanPlus(jenis, d)) {
     return (
       <Wadah>
         <KartuButuhPlus apa="Kabar otomatis" bukaPlus={bukaPlus} manfaat={[
