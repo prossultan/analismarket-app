@@ -118,16 +118,21 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) 
             renderItem={({ item, index }) => {
               const u = item.ubah24hPersen;
               const warna = u === null ? W.teksSamar : u > 0 ? W.naik : u < 0 ? W.turun : W.teksSamar;
-              const tutupPasar = item.harga === null;
+              /* HARGA KOSONG ≠ PASAR TUTUP. `/api/pasar` SELALU mengirim
+                 `harga: null` untuk emas & forex, dan sejak bot 6d7a4d5 juga
+                 untuk kripto saat bursa tidak menjawab dalam 5 detik. Dulu
+                 baris ini menulis "· tutup" dan meredup — XAU/USD tercetak
+                 tutup di Jumat sore saat pasarnya buka. Yang tidak diketahui
+                 dicetak "—"; buka/tutup tidak ada di data ini. */
+              const tanpaHarga = item.harga === null;
               return (
                 <BarisPasar
                   simbol={item.simbol}
-                  label={tutupPasar ? `${labelJenis(item.jenis)} · tutup` : item.volume24hUsd > 0 ? `${item.label} · vol ${volumeRingkas(item.volume24hUsd)}` : item.label}
-                  harga={tutupPasar ? '—' : angka(item.harga, item.desimal)}
-                  ubah={tutupPasar ? '—' : persen(u)}
+                  label={item.volume24hUsd > 0 ? `${item.label} · vol ${volumeRingkas(item.volume24hUsd)}` : item.label}
+                  harga={tanpaHarga ? '—' : angka(item.harga, item.desimal)}
+                  ubah={tanpaHarga ? '—' : persen(u)}
                   ubahWarna={warna}
                   pertama={index === 0}
-                  redup={tutupPasar}
                   terpilih={item.simbol === terpilih}
                   lencana={item.simbol === terpilih ? 'dibuka' : undefined}
                   onPress={() => { pilih(item); tutup(); }}

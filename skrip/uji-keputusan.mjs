@@ -1016,6 +1016,13 @@ await uji('KEPUTUSAN: bot yang macet (habis waktu) atau dimulai ulang (502/503/5
   tegas(!c.ok && /Periksa sambungan/.test(c.kalimat), `jaringan putus dibaca "${c.ok ? 'ok' : c.kalimat}"`);
 });
 
+await uji('KEPUTUSAN: harga kosong di daftar pasar dicetak "—", BUKAN "tutup" — emas & forex selalu tanpa harga di /api/pasar', async () => {
+  const kode = tanpaKomentar(readFileSync('src/komponen/LembarPasar.tsx', 'utf8'));
+  tegas(!/·\s*tutup/.test(kode), 'LembarPasar menulis "· tutup" — XAU/USD tercetak tutup saat pasarnya buka, dan saat bursa lambat semua kripto ikut "tutup"');
+  tegas(!/redup=\{[^}]*harga/.test(kode) && !/redup=\{tanpaHarga|redup=\{tutupPasar/.test(kode), 'baris tanpa harga diredupkan — terbaca sebagai pasar yang tidak bisa dibuka');
+  tegas(/harga=\{tanpaHarga \? '—'/.test(kode), 'harga yang tidak diketahui tidak dicetak "—"');
+});
+
 for (const [k, v] of Object.entries(globalSebelum)) { if (v === undefined) delete globalThis[k]; else globalThis[k] = v; }
 
 process.stdout.write(`\n  ${jumlah} uji · ${terkirim.length} permintaan tiruan · nol jaringan\n`);
