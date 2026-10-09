@@ -59,15 +59,19 @@ export function Harga({ children, kecil = false }: { children: ReactNode; kecil?
 }
 
 /* ── .chip ─────────────────────────────────────────────────────────────── */
-export function Chip({ teks, on = false, emas = false, mono = false, onPress, gaya, lencana }: {
-  teks: string; on?: boolean; emas?: boolean; mono?: boolean; onPress?: () => void; gaya?: ViewStyle; lencana?: boolean }) {
+export function Chip({ teks, on = false, emas = false, mono = false, halus = false, onPress, gaya, lencana }: {
+  teks: string; on?: boolean; emas?: boolean; mono?: boolean;
+  /** Nyala yang TIDAK amber — untuk saklar banyak-pilih (lapisan chart).
+      Empat chip amber berderet bersaing dengan tombol utama di layar yang sama. */
+  halus?: boolean;
+  onPress?: () => void; gaya?: ViewStyle; lencana?: boolean }) {
   /* `lencana` BUKAN sekadar penanda untuk penjaga. Ia juga yang membuat
      pembaca layar berhenti menyebutnya tombol: chip status yang diumumkan
      sebagai tombol menyuruh orang menekan sesuatu yang tidak menjawab. */
   const isi = (
-    <View style={[g.chip, on && g.chipOn, emas && g.chipEmas, gaya]}
+    <View style={[g.chip, on && (halus ? g.chipHalus : g.chipOn), emas && g.chipEmas, gaya]}
       accessibilityRole={lencana === true ? 'text' : undefined}>
-      <Text style={[g.chipTeks, on && g.chipTeksOn, emas && g.chipTeksEmas, mono && ANGKA]}>{teks}</Text>
+      <Text style={[g.chipTeks, on && (halus ? g.chipTeksHalus : g.chipTeksOn), emas && g.chipTeksEmas, mono && ANGKA]}>{teks}</Text>
     </View>
   );
   if (onPress === undefined) return isi;
@@ -106,14 +110,14 @@ export function PitaMesin({ daftar, aktif, pilih }: {
           <Pressable
             key={m.kode}
             onPress={() => { pilih(m.kode); }}
-            style={[g.mesinSel, i > 0 && g.mesinSelGaris, on && g.mesinSelOn]}
+            style={[g.mesinSel, on && g.mesinSelOn]}
             accessibilityRole="button" accessibilityState={{ selected: on }}
           >
             <Text style={[g.mesinNama, on && g.mesinNamaOn]} numberOfLines={1}>{m.kode}</Text>
             <View style={g.mesinStatus}>
-              <View style={[g.titik, m.titik === 'putih' && { backgroundColor: W.teksKuat }, m.titik === 'hijau' && { backgroundColor: W.naik }]} />
-              <Text style={g.mesinStatusTeks} numberOfLines={1}>
-                {m.kata !== '' ? `${m.kata} ` : ''}{m.angka}
+              <View style={[g.titik, m.kata === 'pantau' && { backgroundColor: '#CDBFA6' }, m.titik === 'putih' && { backgroundColor: W.teksKuat }, m.titik === 'hijau' && { backgroundColor: W.naik }]} />
+              <Text style={[g.mesinStatusTeks, m.titik === 'hijau' && { color: W.naik }]} numberOfLines={1}>
+                {m.kata === 'setup' ? 'setup ' : ''}{m.angka}
               </Text>
             </View>
           </Pressable>
@@ -124,15 +128,21 @@ export function PitaMesin({ daftar, aktif, pilih }: {
 }
 
 /* ── .pasar-baris ──────────────────────────────────────────────────────── */
-export function BarisPasar({ simbol, label, harga, ubah, ubahWarna, onPress, redup = false, pertama = false, kanan }: {
+export function BarisPasar({ simbol, label, harga, ubah, ubahWarna, onPress, redup = false, pertama = false, kanan, lencana, terpilih = false }: {
   simbol: string; label: string; harga: string; ubah: string; ubahWarna?: string;
   onPress?: () => void; redup?: boolean; pertama?: boolean; kanan?: ReactNode;
+  /** Pita kecil di samping simbol ("dibuka") — harga dan perubahannya tetap terlihat. */
+  lencana?: string;
+  terpilih?: boolean;
 }) {
   const isi = (
-    <View style={[g.pasarBaris, !pertama && g.garisAtas, redup && { opacity: 0.45 }]}>
-      <LambangPasar simbol={simbol} ukuran={22} />
+    <View style={[g.pasarBaris, !pertama && !terpilih && g.garisAtas, terpilih && g.pasarTerpilih, redup && { opacity: 0.45 }]}>
+      <LambangPasar simbol={simbol} ukuran={30} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={g.pasarSimbol} numberOfLines={1}>{simbol}</Text>
+        <View style={g.pasarJudul}>
+          <Text style={g.pasarSimbol} numberOfLines={1}>{simbol}</Text>
+          {lencana !== undefined && <Text style={g.pasarLencana}>{lencana}</Text>}
+        </View>
         <Text style={g.pasarLabel} numberOfLines={1}>{label}</Text>
       </View>
       {kanan ?? (
@@ -165,9 +175,14 @@ export function Tarik({ kata, turun = false }: { kata: string; turun?: boolean }
 export function Menu({ children }: { children: ReactNode }) {
   return <View style={g.menu}>{children}</View>;
 }
-export function Butir({ ikon, simbol, nama, ket, ketMono = false, ketEmas = false, onPress, kanan, pertama = false }: {
-  ikon?: NamaIkon; simbol?: string; nama: string; ket?: string; ketMono?: boolean; ketEmas?: boolean;
+export function Butir({ ikon, simbol, nama, sub, ket, ketMono = false, ketEmas = false, onPress, kanan, pertama = false, bahaya = false }: {
+  ikon?: NamaIkon; simbol?: string; nama: string;
+  /** Baris kedua di bawah nama — untuk keterangan yang terlalu panjang untuk sisi kanan. */
+  sub?: string;
+  ket?: string; ketMono?: boolean; ketEmas?: boolean;
   onPress?: () => void; kanan?: ReactNode; pertama?: boolean;
+  /** Merah: tindakan yang tidak bisa dibatalkan. */
+  bahaya?: boolean;
 }) {
   /**
    * PANAH CUMA UNTUK BARIS YANG BENAR-BENAR MEMBUKA SESUATU.
@@ -188,15 +203,19 @@ export function Butir({ ikon, simbol, nama, ket, ketMono = false, ketEmas = fals
       accessibilityRole={bisaDitekan ? 'button' : 'none'}
       gaya={[g.butir, !pertama && g.garisAtas]}>
       {simbol !== undefined
-        ? <LambangPasar simbol={simbol} ukuran={18} />
-        : ikon !== undefined && <Ikon nama={ikon} warna={W.teksSamar} ukuran={15} />}
-      <Text style={g.butirNama} numberOfLines={1}>{nama}</Text>
-      <View style={{ flex: 1 }} />
-      {kanan ?? (ket === undefined && !bisaDitekan ? null : (
-        <Text style={[g.butirKet, ketMono && ANGKA, ketEmas && { color: W.plusTeks }]} numberOfLines={1}>
-          {`${ket ?? ''}${bisaDitekan ? (ket === undefined ? '›' : ' ›') : ''}`}
-        </Text>
+        ? <LambangPasar simbol={simbol} ukuran={26} />
+        : ikon !== undefined && <View style={[g.butirIkon, bahaya && g.butirIkonBahaya]}><Ikon nama={ikon} warna={bahaya ? W.turun : W.plus} ukuran={16} /></View>}
+      {/* Nama MENGISI sisa baris, bukan menyusut di depan pendorong: dengan
+          saklar di kanan, "Tetap menyala saat chart terbuka" terpotong di
+          potret 9 Okt padahal ruangnya ada. Dua baris lebih baik daripada elipsis. */}
+      <View style={g.butirTengah}>
+        <Text style={[g.butirNama, bahaya && { color: W.turun }]} numberOfLines={2}>{nama}</Text>
+        {sub !== undefined && <Text style={g.butirSub} numberOfLines={2}>{sub}</Text>}
+      </View>
+      {kanan ?? (ket === undefined ? null : (
+        <Text style={[g.butirKet, ketMono && ANGKA, ketEmas && { color: W.plusTeks, fontWeight: '600' }]} numberOfLines={1}>{ket}</Text>
       ))}
+      {bisaDitekan && <Text style={g.butirPanah}>›</Text>}
     </Tekan>
   );
 }
@@ -248,7 +267,9 @@ export function Rangka({ lebar = '100%', tinggi = 10, gaya }: { lebar?: number |
 
 /* ── .tombol-utama / .tombol-masuk / .tombol-kedua ─────────────────────── */
 export function Tombol({ teks, jenis = 'utama', mati = false, onPress, ikon }: {
-  teks: string; jenis?: 'utama' | 'emas' | 'kedua'; mati?: boolean; onPress?: () => void; ikon?: ReactNode;
+  teks: string;
+  /** `bahaya` HANYA untuk tindakan yang tidak bisa dibatalkan (hapus akun). */
+  jenis?: 'utama' | 'emas' | 'kedua' | 'bahaya'; mati?: boolean; onPress?: () => void; ikon?: ReactNode;
 }) {
   return (
     <Tekan onPress={onPress} disabled={mati || onPress === undefined}
@@ -257,10 +278,11 @@ export function Tombol({ teks, jenis = 'utama', mati = false, onPress, ikon }: {
         g.tombol,
         jenis === 'emas' && g.tombolEmas,
         jenis === 'kedua' && g.tombolKedua,
+        jenis === 'bahaya' && g.tombolBahaya,
         mati && (jenis === 'emas' ? g.tombolEmasMati : g.tombolMati),
       ]}>
       {ikon}
-      <Text style={[g.tombolTeks, jenis === 'emas' && g.tombolEmasTeks, jenis === 'kedua' && g.tombolKeduaTeks, mati && g.tombolTeksMati]}>
+      <Text style={[g.tombolTeks, jenis === 'emas' && g.tombolEmasTeks, jenis === 'kedua' && g.tombolKeduaTeks, jenis === 'bahaya' && g.tombolBahayaTeks, mati && g.tombolTeksMati]}>
         {teks}
       </Text>
     </Tekan>
@@ -278,7 +300,7 @@ export function Kosong({ ikon, judul, kalimat, aksi, labelAksi, catatan }: {
 }) {
   return (
     <View style={g.kosong}>
-      {ikon !== undefined && <Ikon nama={ikon} warna={W.plus} ukuran={30} />}
+      {ikon !== undefined && <View style={g.kosongIkon}><Ikon nama={ikon} warna={W.plus} ukuran={26} /></View>}
       <Text style={g.kosongJudul}>{judul}</Text>
       <Text style={g.kosongKalimat}>{kalimat}</Text>
       {aksi !== undefined && (
@@ -300,7 +322,7 @@ export function Kosong({ ikon, judul, kalimat, aksi, labelAksi, catatan }: {
 export function PitaBasi({ kalimat }: { kalimat: string }) {
   return (
     <View style={g.basi}>
-      <View style={g.basiTitik} />
+      <Ikon nama="info" warna={W.plus} ukuran={16} />
       <Text style={g.basiTeks}>{kalimat}</Text>
     </View>
   );
@@ -330,7 +352,9 @@ export function Istilah({ judul, isi, pertama = false }: { judul: string; isi: s
 export function BarisSyarat({ lolos, judul, ket }: { lolos: boolean; judul: string; ket?: string }) {
   return (
     <View style={g.syarat}>
-      <Text style={[g.syaratTanda, { color: lolos ? W.naik : W.turun }]}>{lolos ? '✓' : '✕'}</Text>
+      <View style={[g.syaratBulat, { backgroundColor: lolos ? 'rgba(16,185,129,0.16)' : 'rgba(244,63,94,0.14)' }]}>
+        <Text style={[g.syaratTanda, { color: lolos ? '#6FE3B7' : '#FF8FA2' }]}>{lolos ? '✓' : '✕'}</Text>
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={[g.syaratJudul, !lolos && { color: W.teksKuat }]}>{judul}</Text>
         {ket !== undefined && ket !== '' && <Text style={g.syaratKet}>{ket}</Text>}
@@ -376,125 +400,163 @@ export function BarIsi({ porsi, warna = W.plus }: { porsi: number; warna?: strin
 }
 
 const g = gayaTema((W) => StyleSheet.create({
-  blok: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu, padding: 10 },
-  blokRapat: { padding: 8 },
-  blokEmas: { borderColor: 'rgba(201,169,97,0.32)', backgroundColor: 'rgba(201,169,97,0.07)' },
-  garisAtas: { borderTopWidth: 1, borderTopColor: W.garisSamar },
+  /* KACA ISI: tembus tipis + garis rambut + tepi atas yang lebih terang.
+     Tanpa blur — kartu isi duduk di atas latar bercahaya (Latar.tsx), dan
+     cahaya itulah yang membuatnya terbaca sebagai kaca. Nol kerja per frame. */
+  blok: {
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+    borderRadius: R.kartu, padding: 14,
+  },
+  blokRapat: { padding: 11 },
+  blokEmas: { borderColor: W.amberTepi, borderTopColor: 'rgba(240,191,107,0.62)', backgroundColor: W.amberLatar },
+  garisAtas: { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: W.garisSamar },
 
-  lbl: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.0, textTransform: 'uppercase' },
-  lblPolos: { letterSpacing: 0, textTransform: 'none' },
-  nil: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500', ...ANGKA },
-  nilBesar: { fontSize: 14 },
-  harga: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.3, ...ANGKA },
-  hargaKecil: { fontSize: 14 },
+  lbl: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: '500' },
+  lblPolos: { letterSpacing: 0, textTransform: 'none', fontSize: H.alat, fontWeight: '400', lineHeight: 16 },
+  nil: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '600', ...ANGKA },
+  nilBesar: { fontSize: 16 },
+  harga: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4, ...ANGKA },
+  hargaKecil: { fontSize: 17 },
 
   chip: {
-    minHeight: 22, paddingHorizontal: 8, borderRadius: R.bulat, justifyContent: 'center',
-    borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartuTerang,
+    minHeight: 30, paddingHorizontal: 12, borderRadius: R.bulat, justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, backgroundColor: W.isiSamar,
   },
-  chipOn: { backgroundColor: W.teksKuat, borderColor: 'transparent' },
-  chipEmas: { borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.plusRedup },
-  chipTeks: { fontSize: H.label, color: W.teksRedup },
-  chipTeksOn: { color: W.latar, fontWeight: '600' },
+  chipOn: { backgroundColor: W.utama, borderColor: W.utamaTerang },
+  chipHalus: { backgroundColor: W.tinta(0.12), borderColor: W.tinta(0.26) },
+  chipTeksHalus: { color: W.teksKuat, fontWeight: '700' },
+  chipEmas: { borderColor: W.amberTepi, backgroundColor: W.amberLatar },
+  chipTeks: { fontSize: 12, fontWeight: '600', color: W.teksRedup },
+  chipTeksOn: { color: W.utamaTeks, fontWeight: '700' },
   chipTeksEmas: { color: W.plusTeks },
 
-  pilTf: { flexDirection: 'row', gap: 2, padding: 2, borderRadius: R.bulat, backgroundColor: W.tinta(0.05) },
-  pilSel: { flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: R.bulat },
-  pilSelOn: { backgroundColor: W.tinta(0.12) },
-  pilTeks: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
+  pilTf: { flexDirection: 'row', gap: 3, padding: 4, borderRadius: R.besar, backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi },
+  pilSel: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: R.sedang },
+  pilSelOn: { backgroundColor: W.tinta(0.13) },
+  pilTeks: { fontSize: 12.5, fontWeight: '600', color: W.teksSamar, ...ANGKA },
   pilTeksOn: { color: W.teksKuat },
 
-  mesin: { flexDirection: 'row', borderWidth: 1, borderColor: W.garis, borderRadius: R.sedang + 3, overflow: 'hidden', backgroundColor: W.latar900 },
-  mesinSel: { flex: 1, paddingVertical: 6, paddingHorizontal: 4, minWidth: 0 },
-  mesinSelGaris: { borderLeftWidth: 1, borderLeftColor: W.garisSamar },
-  mesinSelOn: { backgroundColor: W.kartuTerang, borderBottomWidth: 2, borderBottomColor: W.teksKuat },
-  mesinNama: { fontSize: H.label, color: W.teksRedup, fontWeight: '500' },
+  mesin: { flexDirection: 'row', gap: 5 },
+  mesinSel: {
+    flex: 1, paddingVertical: 7, paddingHorizontal: 7, minWidth: 0, borderRadius: R.sedang + 2,
+    backgroundColor: W.isiSamar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi,
+  },
+  mesinSelOn: { backgroundColor: W.amberLatar, borderColor: W.amberTepi, borderBottomWidth: 2, borderBottomColor: W.plus },
+  mesinNama: { fontSize: 11, color: W.teksRedup, fontWeight: '700' },
   mesinNamaOn: { color: W.teksKuat },
-  mesinStatus: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
-  titik: { width: 4, height: 4, borderRadius: 2, backgroundColor: W.teksSamar },
-  mesinStatusTeks: { fontSize: 8, color: W.teksSamar, ...ANGKA },
+  mesinStatus: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  titik: { width: 6, height: 6, borderRadius: 3, backgroundColor: W.teksSamar },
+  mesinStatusTeks: { fontSize: 10.5, color: W.teksSamar, ...ANGKA },
 
-  pasarBaris: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7, minHeight: SENTUH },
-  pasarSimbol: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.1 },
-  pasarLabel: { fontSize: H.label, color: W.teksSamar },
-  pasarHarga: { fontSize: H.nilai, color: W.teksKuat, ...ANGKA },
-  pasarUbah: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
+  pasarBaris: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 10, minHeight: 54 },
+  pasarTerpilih: {
+    backgroundColor: W.amberLatar, borderRadius: R.besar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.amberTepi,
+    paddingHorizontal: 10, marginHorizontal: -10, marginVertical: 2,
+  },
+  pasarJudul: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pasarSimbol: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.1, flexShrink: 1 },
+  pasarLencana: {
+    fontSize: 9, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase', color: W.utamaTeks,
+    backgroundColor: W.utama, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: 'hidden',
+  },
+  pasarLabel: { fontSize: H.alat, color: W.teksSamar, marginTop: 1 },
+  pasarHarga: { fontSize: 13.5, fontWeight: '600', color: W.teksKuat, ...ANGKA },
+  pasarUbah: { fontSize: H.alat, fontWeight: '600', color: W.teksSamar, ...ANGKA, marginTop: 1 },
 
-  tarik: { alignItems: 'center', gap: 2, marginBottom: 7 },
-  gagang: { width: 32, height: 4, borderRadius: 2, backgroundColor: W.tinta(0.28) },
+  tarik: { alignItems: 'center', gap: 3, marginBottom: 8 },
+  gagang: { width: 40, height: 5, borderRadius: 3, backgroundColor: W.tinta(0.25) },
   tarikKata: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   panah: { color: W.plusTeks, fontSize: 10, fontWeight: '700', lineHeight: 12 },
-  tarikTeks: { fontSize: 8, color: W.teksSamar, letterSpacing: 0.8, textTransform: 'uppercase' },
+  tarikTeks: { fontSize: 9.5, color: W.teksSamar, letterSpacing: 1.1, textTransform: 'uppercase' },
 
-  menu: { borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu, overflow: 'hidden', backgroundColor: W.kartu },
-  butir: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 11, minHeight: SENTUH },
-  butirNama: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500', flexShrink: 1 },
-  butirKet: { fontSize: H.label, color: W.teksSamar },
+  menu: {
+    borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+    borderRadius: R.kartu, overflow: 'hidden', backgroundColor: W.kacaIsi,
+  },
+  butir: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 54 },
+  butirIkon: {
+    width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: W.amberLatar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(229,173,81,0.20)',
+  },
+  butirIkonBahaya: { backgroundColor: W.turunLatar, borderColor: W.turunTepi },
+  butirTengah: { flex: 1, minWidth: 0, paddingVertical: 9, gap: 2 },
+  butirNama: { fontSize: 13.5, color: W.teksKuat, fontWeight: '600' },
+  butirSub: { fontSize: 12, color: W.teksSamar, lineHeight: 16 },
+  butirKet: { fontSize: 12.5, color: W.teksRedup, flexShrink: 1, maxWidth: '55%' },
+  butirPanah: { fontSize: 20, color: W.teksSamar, marginLeft: 2, marginTop: -2 },
 
-  saklar: { width: 28, height: 16, borderRadius: R.bulat, backgroundColor: W.tinta(0.10), borderWidth: 1, borderColor: W.garis, justifyContent: 'center' },
-  saklarOn: { backgroundColor: W.plusRedup, borderColor: 'rgba(201,169,97,0.38)' },
-  saklarBulat: { width: 12, height: 12, borderRadius: 6, backgroundColor: W.teksRedup, marginLeft: 1 },
-  saklarBulatOn: { backgroundColor: W.plus, transform: [{ translateX: 12 }] },
+  saklar: { width: 44, height: 26, borderRadius: 13, backgroundColor: W.tinta(0.12), borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, justifyContent: 'center' },
+  saklarOn: { backgroundColor: W.utama, borderColor: W.utamaTerang },
+  saklarBulat: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#CFC6B8', marginLeft: 2 },
+  saklarBulatOn: { backgroundColor: '#FFFFFF', transform: [{ translateX: 18 }] },
 
-  radio: { width: 13, height: 13, borderRadius: 7, borderWidth: 1.4, borderColor: W.garis, marginTop: 1 },
-  radioOn: { borderColor: W.plus, borderWidth: 4 },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: W.tinta(0.30), marginTop: 1 },
+  radioOn: { borderColor: W.plus, borderWidth: 6 },
 
-  langkah: { flexDirection: 'row', gap: 9, alignItems: 'flex-start', paddingVertical: 7 },
-  langkahNo: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.plusRedup },
-  langkahNoTeks: { fontSize: 9, fontWeight: '700', color: W.plusTeks, ...ANGKA },
-  langkahJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat },
-  langkahKet: { fontSize: H.label, color: W.teksSamar, marginTop: 1, lineHeight: 13 },
+  langkah: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 11 },
+  langkahNo: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: W.utama },
+  langkahNoTeks: { fontSize: 12, fontWeight: '700', color: W.utamaTeks, ...ANGKA },
+  langkahJudul: { fontSize: 13.5, fontWeight: '600', color: W.teksKuat, lineHeight: 19 },
+  langkahKet: { fontSize: H.alat, color: W.teksSamar, marginTop: 2, lineHeight: 16 },
 
-  rangka: { borderRadius: 4, backgroundColor: W.tinta(0.07) },
+  rangka: { borderRadius: 6, backgroundColor: W.tinta(0.07) },
 
-  tombol: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, paddingHorizontal: 18, borderRadius: R.besar + 3, backgroundColor: W.teksKuat },
-  tombolTeks: { fontSize: H.nilai, fontWeight: '700', color: '#14130F', letterSpacing: -0.1 },
-  tombolEmas: { backgroundColor: W.plus },
-  tombolEmasTeks: { color: '#1A1508' },
-  tombolEmasMati: { backgroundColor: 'rgba(201,169,97,0.22)' },
-  tombolKedua: { backgroundColor: W.tinta(0.07), borderWidth: 1, borderColor: W.tinta(0.16) },
-  tombolKeduaTeks: { color: W.teksKuat, fontWeight: '500' },
-  tombolMati: { backgroundColor: W.tinta(0.10) },
-  tombolTeksMati: { color: 'rgba(232,231,229,0.45)' },
+  tombol: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48,
+    paddingVertical: 12, paddingHorizontal: 18, borderRadius: R.besar, backgroundColor: W.utama,
+    borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: 'rgba(255,245,220,0.55)',
+  },
+  tombolTeks: { fontSize: 14.5, fontWeight: '700', color: W.utamaTeks, letterSpacing: -0.1 },
+  tombolEmas: { backgroundColor: W.utama },
+  tombolEmasTeks: { color: W.utamaTeks },
+  tombolEmasMati: { backgroundColor: 'rgba(229,173,81,0.22)', borderTopColor: 'transparent' },
+  tombolKedua: { backgroundColor: W.tinta(0.07), borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.tinta(0.14), borderTopColor: W.kacaKilau },
+  tombolKeduaTeks: { color: W.teksKuat, fontWeight: '600' },
+  tombolBahaya: { backgroundColor: W.turun, borderTopColor: 'rgba(255,220,226,0.45)' },
+  tombolBahayaTeks: { color: '#FFFFFF' },
+  tombolMati: { backgroundColor: W.tinta(0.07), borderTopColor: 'transparent' },
+  tombolTeksMati: { color: W.teksSamar },
 
-  mikro: { fontSize: 9, color: W.teksSamar, lineHeight: 13 },
+  mikro: { fontSize: H.alat, color: W.teksSamar, lineHeight: 17 },
 
-  kosong: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 9, paddingHorizontal: 26, paddingVertical: 26 },
-  kosongJudul: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, textAlign: 'center' },
-  kosongKalimat: { fontSize: H.alat, color: W.teksSamar, textAlign: 'center', lineHeight: 15, maxWidth: 240 },
+  kosong: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 26, paddingVertical: 26 },
+  kosongIkon: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: W.amberLatar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.amberTepi },
+  kosongJudul: { fontSize: 16, fontWeight: '600', color: W.teksKuat, textAlign: 'center' },
+  kosongKalimat: { fontSize: 13, color: W.teksSamar, textAlign: 'center', lineHeight: 19, maxWidth: 280 },
 
   basi: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingVertical: 6, paddingHorizontal: 9,
-    backgroundColor: 'rgba(253,152,41,0.10)',
-    borderWidth: 1, borderColor: 'rgba(253,152,41,0.22)', borderRadius: R.besar,
+    flexDirection: 'row', alignItems: 'center', gap: 9,
+    paddingVertical: 10, paddingHorizontal: 12,
+    backgroundColor: 'rgba(229,173,81,0.12)',
+    borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(229,173,81,0.36)', borderRadius: R.besar,
   },
-  basiTitik: { width: 5, height: 5, borderRadius: R.bulat, backgroundColor: W.tanda },
-  basiTeks: { flex: 1, color: W.teksRedup, fontSize: H.alat, lineHeight: H.alat * 1.45 },
+  basiTitik: { width: 6, height: 6, borderRadius: R.bulat, backgroundColor: W.plus },
+  basiTeks: { flex: 1, color: W.teks, fontSize: 12.5, lineHeight: 18 },
 
-  dampak: { width: 3, borderRadius: 2, alignSelf: 'stretch', backgroundColor: W.teksSamar },
-  hari: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.0, textTransform: 'uppercase', marginTop: J.x2, marginBottom: J.x1 },
+  dampak: { width: 4, borderRadius: 2, alignSelf: 'stretch', backgroundColor: W.teksSamar },
+  hari: { fontSize: H.label, color: W.teksSamar, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: J.x3, marginBottom: J.x2, marginLeft: 4 },
 
-  istilah: { paddingVertical: 7 },
-  istilahJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.1 },
-  istilahIsi: { fontSize: H.alat, color: W.teksRedup, lineHeight: 14, marginTop: 2 },
+  istilah: { paddingVertical: 12 },
+  istilahJudul: { fontSize: 14, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.1 },
+  istilahIsi: { fontSize: 12.5, color: W.teksRedup, lineHeight: 19, marginTop: 4 },
 
-  syarat: { flexDirection: 'row', gap: 7, alignItems: 'flex-start', paddingVertical: 5 },
-  syaratTanda: { fontSize: 9, marginTop: 2 },
-  syaratJudul: { fontSize: H.alat, fontWeight: '600', color: W.teksRedup },
-  syaratKet: { fontSize: H.label, color: W.teksSamar, lineHeight: 13, marginTop: 1 },
+  syarat: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingVertical: 8 },
+  syaratBulat: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  syaratTanda: { fontSize: 11, fontWeight: '800' },
+  syaratJudul: { fontSize: 13, fontWeight: '600', color: W.teks },
+  syaratKet: { fontSize: H.alat, color: W.teksSamar, lineHeight: 16, marginTop: 2 },
 
-  lvl: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
-  lvlPita: { width: 3, borderRadius: 2, alignSelf: 'stretch', backgroundColor: W.garis },
-  lvlJudul: { fontSize: H.alat, fontWeight: '600', color: W.teksKuat },
-  lvlKet: { fontSize: H.label, color: W.teksSamar, ...ANGKA },
+  lvl: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 },
+  lvlPita: { width: 4, borderRadius: 2, alignSelf: 'stretch', backgroundColor: W.garis },
+  lvlJudul: { fontSize: 13, fontWeight: '600', color: W.teksKuat },
+  lvlKet: { fontSize: H.alat, color: W.teksSamar, ...ANGKA, marginTop: 1 },
 
-  pakai: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 5 },
-  pakaiKiri: { fontSize: H.alat, color: W.teksRedup },
-  pakaiKanan: { fontSize: H.alat, color: W.teksRedup, ...ANGKA },
+  pakai: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  pakaiKiri: { fontSize: 12.5, color: W.teksRedup },
+  pakaiKanan: { fontSize: 12.5, color: W.teksKuat, fontWeight: '600', ...ANGKA },
 
-  barLuar: { height: 5, borderRadius: 3, backgroundColor: W.tinta(0.07), overflow: 'hidden' },
-  barDalam: { height: '100%' },
+  barLuar: { height: 6, borderRadius: 3, backgroundColor: W.tinta(0.08), overflow: 'hidden' },
+  barDalam: { height: '100%', borderRadius: 3 },
 }));
 
 /** Jarak tepi layar mockup (11px) — dipakai layar-layar baru. */

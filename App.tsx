@@ -1,7 +1,10 @@
 /**
  * Analis Market — app native.
  *
- * Tab bawah lima: Home · Pasar · Kabar · PLUS+ · Lainnya.
+ * Tab bawah lima: Home · Pasar · Akademi · Kabar · PLUS+ (redesain Okt 2026).
+ * "Lainnya" BUKAN tab lagi: isinya pindah ke layar Menu yang dibuka dari
+ * avatar di kepala Home — keputusan pemilik 9 Okt, supaya Akademi dapat
+ * slotnya sendiri.
  *
  * PASAR DAN CHART SATU TUJUAN. Dulu keduanya dua tab yang memuat layar yang
  * sama; dua tab untuk satu layar berarti satu slot terbuang, dan slot itu
@@ -16,7 +19,8 @@
  * diisi keadaan jujurnya, dan semuanya menunjuk ke satu layar yang sama:
  * Sambungkan Telegram.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { ISTILAH } from './src/data/istilah';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, StatusBar, Text, View, useColorScheme } from 'react-native';
 import { NavigationContainer, DarkTheme, createNavigationContainerRef, type NavigationState, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -41,19 +45,18 @@ import { LayarKabar } from './src/layar/KotakMasuk';
 import { pasangPenyegarLencana, setBelumDibaca, useBelumDibaca } from './src/data/kotakMasuk';
 import { LayarKalender } from './src/layar/Kalender';
 import { LayarAmPlus } from './src/layar/AmPlus';
-import { LayarLainnya, type KunciMenu } from './src/layar/Lainnya';
+import { LayarMenu, type KunciMenu } from './src/layar/Lainnya';
+import { LayarAkademi, LayarBab, LayarPelajaran } from './src/layar/Akademi';
+import { SplashBergerak } from './src/komponen/SplashBergerak';
 import { LayarDokumen } from './src/layar/Dokumen';
 import { LayarTentang } from './src/layar/Tentang';
-import { LayarSambutan } from './src/layar/Sambutan';
+import { LayarSambutan, sudahDisambut, tandaiDisambut } from './src/layar/Sambutan';
 import { TANPA_TEMBOK } from './src/data/uji';
 import {
   useSesi,
   LayarSambung, LayarPantauan, LayarPantauanBaru, LayarKabarOtomatis, LayarCekBanyak, LayarBerlangganan,
 } from './src/layar/Akun';
-import { Ikon, type NamaIkon } from './src/komponen/Ikon';
 import { Kaca } from './src/komponen/Kaca';
-import { Merek } from './src/komponen/Merek';
-import { AvatarKepala } from './src/komponen/AvatarKepala';
 import { LinearGradient } from 'expo-linear-gradient';
 import { JudulKepala } from './src/komponen/JudulKepala';
 import { bacaSetelan, simpanSetelan, SETELAN_BAWAAN, type Setelan } from './src/data/simpan';
@@ -96,14 +99,13 @@ const VERSI: string = konfigApp.expo.version;
  */
 const navRef = createNavigationContainerRef();
 
-/** "Jumat, 19 September" — tanggal hari ini, dalam bahasa produk. */
-function tanggalPendek(): string {
-  return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
-}
-
-/** Rute tumpukan yang dibagi Lainnya, Kabar, dan PLUS+. */
+/** Rute tumpukan yang dibagi Home, Akademi, Kabar, dan PLUS+. */
 export type DaftarTumpukan = {
-  Lainnya: undefined;
+  Beranda: undefined;
+  Menu: undefined;
+  Akademi: undefined;
+  Bab: { n: number };
+  Pelajaran: { id: string };
   Kabar: undefined;
   AmPlus: undefined;
   Dokumen: { kunci: 'syarat' | 'privasi' };
@@ -121,7 +123,7 @@ export type DaftarTumpukan = {
 };
 type Nav = NativeStackNavigationProp<DaftarTumpukan>;
 /** Dari layar bertumpuk ke TAB: nama rute yang tidak dikenal tumpukan naik ke navigator induknya. */
-function keTab(navigation: unknown, tab: 'amplus' | 'kabar' | 'lainnya' | 'pasar' | 'home'): void {
+function keTab(navigation: unknown, tab: 'amplus' | 'kabar' | 'akademi' | 'pasar' | 'home'): void {
   (navigation as { navigate: (nama: string) => void }).navigate(tab);
 }
 
@@ -149,7 +151,7 @@ const opsiKepala = () => ({
   /* Kilau emas samar dari kiri atas — ambient, terasa lebih dulu daripada
      terlihat. Ini yang membedakan kaca 2026 dari panel gelap datar. */
   headerBackground: () => <Kaca tepi="bawah" gaya={{ flex: 1 }}>
-      <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.13)', 'rgba(201,169,97,0.0)']}
+      <LinearGradient pointerEvents="none" colors={['rgba(229,173,81,0.12)', 'rgba(229,173,81,0.0)']}
         start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} style={{ position: 'absolute', left: 0, top: 0, width: '55%', height: '100%' }} />
     </Kaca>,
   headerStyle: { backgroundColor: 'transparent' },
@@ -180,7 +182,7 @@ type IsiTumpukan = { setelan: Setelan; simpan: (s: Setelan) => void };
 function LayarBersama({ setelan, simpan }: IsiTumpukan) {
   return (
     <>
-      <Tumpukan.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Belajar', headerTitle: () => <JudulKepala judul="Belajar" sub="16 istilah · cara baca kartu" /> }} />
+      <Tumpukan.Screen name="Belajar" component={LayarBelajar} options={{ title: 'Istilah', headerTitle: () => <JudulKepala judul="Istilah" sub={`${String(ISTILAH.length)} istilah · cara baca kartu`} /> }} />
       <Tumpukan.Screen name="Kalender" component={LayarKalender} options={{ title: 'Kalender berita', headerTitle: () => <JudulKepala judul="Kalender berita" sub="30 hari ke depan" /> }} />
       <Tumpukan.Screen name="Pengaturan" options={{ title: 'Pengaturan' }}>
         {() => <LayarPengaturan setelan={setelan} simpan={simpan} />}
@@ -226,17 +228,68 @@ function LayarBersama({ setelan, simpan }: IsiTumpukan) {
   );
 }
 
-function AlurLain({ setelan, simpan }: IsiTumpukan) {
+/** Pintu-pintu yang dibuka dari Home — milik tumpukan Home sendiri. */
+function AlurHome({ setelan, simpan, bukaBacaan }: IsiTumpukan & { bukaBacaan: () => void }) {
   return (
     <Tumpukan.Navigator screenOptions={opsiTumpukan()}>
-      <Tumpukan.Screen name="Lainnya" options={{ title: 'Lainnya' }}>
+      <Tumpukan.Screen name="Beranda" options={{ title: 'Home', headerShown: false }}>
         {({ navigation }) => (
-          <LayarLainnya
+          <LayarHome
+            setelan={setelan}
+            bukaPasar={() => { keTab(navigation, 'pasar'); }}
+            bukaBacaan={bukaBacaan}
+            buka={(ke) => { (navigation as Nav).navigate(ke); }}
+            bukaTab={(t) => { keTab(navigation, t); }}
+            bukaPelajaran={(id) => { (navigation as unknown as { navigate: (n: string, p: unknown) => void }).navigate('akademi', { screen: 'Pelajaran', params: { id }, initial: false }); }}
+            bukaPasarDi={(simbol) => { simpan({ ...setelan, pasar: simbol }); keTab(navigation, 'pasar'); }}
+          />
+        )}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Menu" options={{ title: 'Menu' }}>
+        {({ navigation }) => (
+          <LayarMenu
             setelan={setelan}
             versi={VERSI}
             bukaDokumen={(k) => { (navigation as Nav).navigate('Dokumen', { kunci: k }); }}
             bukaMenu={(k) => { (navigation as Nav).navigate(KE_LAYAR[k] as never); }}
-            umur={{ harga: umurTerakhir('/api/bacaan'), lilin: umurTerakhir('/api/bacaan'), kalender: umurTerakhir('/api/jadwal-berita') }}
+            umur={{ harga: umurTerakhir('/api/pasar'), lilin: umurTerakhir('/api/bacaan'), kalender: umurTerakhir('/api/jadwal-berita') }}
+          />
+        )}
+      </Tumpukan.Screen>
+      {LayarBersama({ setelan, simpan })}
+    </Tumpukan.Navigator>
+  );
+}
+
+/** Akademi: daftar bab → isi bab → pelajaran. "Coba di chart" pindah ke tab Pasar. */
+function AlurAkademi({ setelan, simpan }: IsiTumpukan) {
+  return (
+    <Tumpukan.Navigator screenOptions={opsiTumpukan()}>
+      <Tumpukan.Screen name="Akademi" options={{ title: 'Akademi', headerShown: false }}>
+        {({ navigation }) => (
+          <LayarAkademi
+            bukaBab={(n) => { (navigation as Nav).navigate('Bab', { n }); }}
+            bukaPelajaran={(id) => { (navigation as Nav).navigate('Pelajaran', { id }); }}
+            bukaIstilah={() => { (navigation as Nav).navigate('Belajar'); }}
+          />
+        )}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Bab" options={({ route }) => ({ title: `Bab ${String(route.params.n)}` })}>
+        {({ navigation, route }) => (
+          <LayarBab n={route.params.n} bukaPelajaran={(id) => { (navigation as Nav).navigate('Pelajaran', { id }); }} />
+        )}
+      </Tumpukan.Screen>
+      <Tumpukan.Screen name="Pelajaran" options={{ title: 'Pelajaran' }}>
+        {({ navigation, route }) => (
+          <LayarPelajaran id={route.params.id}
+            gantiJudul={(judul) => { navigation.setOptions({ title: judul }); }}
+            bukaPelajaran={(id) => { (navigation as Nav).replace('Pelajaran', { id }); }}
+            bukaIstilah={() => { (navigation as Nav).navigate('Belajar'); }}
+            bukaPlus={() => { keTab(navigation, 'amplus'); }}
+            cobaDiChart={(pasar, tf, mesin) => {
+              simpan({ ...setelan, pasar, tf, mesin: mesin ?? setelan.mesin });
+              keTab(navigation, 'pasar');
+            }}
           />
         )}
       </Tumpukan.Screen>
@@ -265,28 +318,14 @@ function AlurPlus({ setelan, simpan }: IsiTumpukan) {
   return (
     <Tumpukan.Navigator screenOptions={opsiTumpukan()}>
       <Tumpukan.Screen name="AmPlus" options={{ title: 'AnalisMarket+' }}>
-        {({ navigation }) => <LayarAmPlus bukaLangganan={() => { (navigation as Nav).navigate('Berlangganan'); }} />}
+        {({ navigation }) => (
+          <LayarAmPlus bukaLangganan={() => { (navigation as Nav).navigate('Berlangganan'); }}
+            buka={(ke) => { (navigation as Nav).navigate(ke); }}
+            bukaAkademi={() => { keTab(navigation, 'akademi'); }} />
+        )}
       </Tumpukan.Screen>
       {LayarBersama({ setelan, simpan })}
     </Tumpukan.Navigator>
-  );
-}
-
-/** Ikon tab — path SVG yang SAMA dengan web. Tab aktif PUTIH, bukan emas. */
-/**
- * Ikon tab PERSIS mockup `kaca`: 19px, dan tab aktif punya garis 15×2 di
- * atasnya (`.tabbar div.on::after`). Garis itu yang membuat bilah terbaca
- * "modern": keadaan aktif ditandai bentuk, bukan cuma warna.
- */
-function ikonTab(nama: NamaIkon) {
-  return ({ color, focused }: { color: string; focused: boolean }) => (
-    <View style={{ alignItems: 'center', paddingTop: 6 }}>
-      <View style={{ position: 'absolute', top: 0, width: 15, height: 2, borderRadius: 2, backgroundColor: focused ? W.teksKuat : 'transparent' }} />
-      {/* Mockup: bintang PLUS+ SELALU terisi emas; ikon lain menebal saat aktif.
-          Mengisi jalur terbuka (grafik Pasar) menghasilkan bidang aneh — dicoba
-          dan terlihat di potret, jadi yang aktif ditebalkan, bukan diisi. */}
-      <Ikon nama={nama} warna={color} ukuran={19} isi={nama === 'plus' ? W.plus : undefined} tebal={focused} />
-    </View>
   );
 }
 
@@ -409,7 +448,32 @@ function Isi() {
   useEffect(() => {
     pasangPenyimpanTema((t) => { if (setelan !== null) simpan({ ...setelan, tema: t }); });
   }, [setelan, simpan]);
-  const [keadaanNav, setKeadaanNav] = useState<NavigationState | undefined>(undefined);
+  /* REF, BUKAN STATE. Dulu `onStateChange` menulis keadaan navigasi ke
+     useState — dan TIAP perpindahan layar merender ulang seluruh pohon app
+     dari akar ini (semua tab, semua tumpukan, karena layarnya fungsi render
+     yang dibuat ulang). Keadaannya cuma dibutuhkan saat tema berganti dan
+     akar di-remount, jadi cukup diingat, tidak perlu memicu render. */
+  const keadaanNav = useRef<NavigationState | undefined>(undefined);
+  /* Tombol "Bacaan" di Home membuka tab Pasar DENGAN lembar bacaannya —
+     angka yang naik, sama dengan ketukan kedua pada tab Pasar. */
+  const [tandaBacaan, setTandaBacaan] = useState(0);
+  const bukaBacaan = useCallback((): void => {
+    setTandaBacaan((n) => n + 1);
+    if (navRef.isReady()) navRef.navigate('pasar' as never);
+  }, []);
+
+  /* SPLASH BERGERAK. `pertama` = pemasangan baru (belum pernah disambut):
+     versi C, sekali seumur pemasangan. Kuncinya SAMA dengan tahap luncur
+     layar masuk, dan ditandai DI AWAL — supaya layar masuk yang terpasang
+     di bawah splash tidak memutar intro kedua. */
+  const [pertama, setPertama] = useState<boolean | null>(null);
+  const [splashAktif, setSplashAktif] = useState(true);
+  useEffect(() => {
+    void sudahDisambut().then((sudah) => {
+      setPertama(!sudah);
+      if (!sudah) void tandaiDisambut();
+    });
+  }, []);
 
   /* LENCANA KOTAK MASUK realtime: push tiba → segarkan; app ke depan → segarkan. */
   const belum = useBelumDibaca();
@@ -444,24 +508,31 @@ function Isi() {
     });
   }, [setelan, sesi, simpan]);
 
-  /* Splash turun tepat saat gerbang terbuka — dan paling lambat 6 detik,
-     supaya kegagalan membaca simpanan tidak mengurung orang di balik logo. */
+  /* Gerbang terbuka saat setelan DAN sesi sama-sama terbaca. Splash native
+     sekarang diturunkan oleh SplashBergerak begitu frame pertamanya (yang
+     identik) tergambar; cadangan 6 detik tetap ada kalau JS tidak pernah
+     sampai menggambar apa pun. */
   const siap = setelan !== null && siapSesi;
   useEffect(() => {
-    if (siap) { void SplashScreen.hideAsync().catch(() => {}); return undefined; }
     const t = setTimeout(() => { void SplashScreen.hideAsync().catch(() => {}); }, 6000);
     return () => { clearTimeout(t); };
-  }, [siap]);
+  }, []);
+  const splash = splashAktif ? (
+    <SplashBergerak siap={siap} pertama={pertama}
+      onTampil={() => { void SplashScreen.hideAsync().catch(() => {}); }}
+      selesai={() => { setSplashAktif(false); }} />
+  ) : null;
 
   /* Menunggu KEDUANYA. Menahan splash sepersekian detik jauh lebih murah
      daripada satu putaran permintaan yang dibuang. */
-  if (!siap) return null;
+  if (!siap) return <View style={{ flex: 1, backgroundColor: '#080706' }}>{splash}</View>;
   /* Build `uji` (emulator CI) melewati tembok: lihat src/data/uji.ts. */
-  if (sesi === null && !TANPA_TEMBOK) return <LayarSambutan />;
+  if (sesi === null && !TANPA_TEMBOK) return <View style={{ flex: 1 }}><LayarSambutan />{splash}</View>;
 
   return (
+    <View style={{ flex: 1, backgroundColor: W.latar }}>
     <NavigationContainer key={tema} theme={temaNav()} ref={navRef}
-      initialState={keadaanNav} onStateChange={(st) => { setKeadaanNav(st); }}>
+      initialState={keadaanNav.current} onStateChange={(st) => { keadaanNav.current = st; }}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
@@ -482,7 +553,7 @@ function Isi() {
               ],
             },
           }),
-          transitionSpec: { animation: 'timing', config: { duration: 240 } },
+          transitionSpec: { animation: 'timing', config: { duration: 200 } },
           /**
            * `position: absolute` BUKAN pilihan gaya — ia syarat supaya kaca
            * terbaca: isi harus lewat di bawah bilah. Tingginya IKUT JARAK AMAN,
@@ -506,32 +577,9 @@ function Isi() {
       >
         <Tab.Screen
           name="home"
-          options={({ navigation }) => ({
-            title: 'Home', headerShown: true, ...opsiKepala(),
-            /* Tanpa angka pasar: angka yang diketik di sini basi diam-diam
-               (131 tertulis saat daftar hidupnya sudah 155, 3 Okt), dan
-               menghitungnya berarti satu permintaan /api/pasar lagi tiap
-               Home dibuka, di zona laju yang dibagi banyak orang. */
-            headerTitle: () => <Merek sub={`${tanggalPendek()} · kripto, emas & forex`} />,
-            headerTitleAlign: 'left' as const,
-            headerRight: () => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                <TombolTema />
-                <AvatarKepala onPress={() => { navigation.navigate('lainnya', { screen: 'Profil' }); }} />
-              </View>
-            ),
-            tabBarButton: (p) => <TombolTab ikon="rumah" label="Home" nama="home" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} />,
-          })}
+          options={{ title: 'Home', tabBarButton: (p) => <TombolTab ikon="rumah" label="Home" nama="home" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}
         >
-          {({ navigation }) => (
-            <LayarHome
-              setelan={setelan}
-              bukaPasar={() => { navigation.navigate('pasar'); }}
-              buka={(ke) => { navigation.navigate('lainnya', { screen: ke }); }}
-              bukaTab={(t) => { navigation.navigate(t); }}
-              bukaPasarDi={(simbol) => { simpan({ ...setelan, pasar: simbol }); navigation.navigate('pasar'); }}
-            />
-          )}
+          {() => <AlurHome setelan={setelan} simpan={simpan} bukaBacaan={bukaBacaan} />}
         </Tab.Screen>
 
         {/* Ketukan kedua saat tab ini SUDAH aktif membuka lembar pasar. */}
@@ -546,7 +594,11 @@ function Isi() {
             },
           })}
         >
-          {({ navigation }) => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} bukaPlus={() => { navigation.navigate('amplus'); }} />}
+          {({ navigation }) => <LayarAnalisis setelan={setelan} simpan={simpan} bukaPasarTanda={tandaPasar} bukaBacaanTanda={tandaBacaan} bukaPlus={() => { navigation.navigate('amplus'); }} />}
+        </Tab.Screen>
+
+        <Tab.Screen name="akademi" options={{ title: 'Akademi', tabBarButton: (p) => <TombolTab ikon="akademi" label="Akademi" nama="akademi" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>
+          {() => <AlurAkademi setelan={setelan} simpan={simpan} />}
         </Tab.Screen>
 
         <Tab.Screen name="kabar" options={{ title: 'Kabar', tabBarButton: (p) => <TombolTab ikon="kabar" label="Kabar" nama="kabar" lencana={belum} aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>
@@ -566,10 +618,9 @@ function Isi() {
           {() => <AlurPlus setelan={setelan} simpan={simpan} />}
         </Tab.Screen>
 
-        <Tab.Screen name="lainnya" options={{ title: 'Lainnya', tabBarButton: (p) => <TombolTab ikon="lainnya" label="Lainnya" nama="lainnya" aktif={p.accessibilityState?.selected === true} onPress={p.onPress} onLongPress={p.onLongPress} /> }}>
-          {() => <AlurLain setelan={setelan} simpan={simpan} />}
-        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
+    {splash}
+    </View>
   );
 }

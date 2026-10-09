@@ -5,12 +5,12 @@
  * kartu bertumpuk membuat daftar bacaan terasa seperti papan kendali.
  */
 import { useState } from 'react';
-import { gayaTema } from '../gaya/tema';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ISTILAH } from '../data/istilah';
-import { Chip, Istilah } from '../komponen/mockup';
-import { W, TALANG } from '../gaya/token';
+import { Blok, Chip, Istilah } from '../komponen/mockup';
+import { Latar } from '../komponen/Latar';
+import { TALANG } from '../gaya/token';
 
 const CARA_BACA: ReadonlyArray<{ nama: string; arti: string }> = [
   { nama: 'Setup · Pantau · Tidak dicetak', arti: 'Setup berarti semua syarat wajib lolos. Pantau berarti sebagian. Tidak dicetak berarti kondisinya belum layak dibaca.' },
@@ -27,19 +27,22 @@ export function LayarBelajar() {
   const [tab, setTab] = useState<'istilah' | 'cara'>('istilah');
   const daftar = tab === 'istilah' ? ISTILAH.map((i) => ({ nama: i.nama, arti: i.arti })) : CARA_BACA;
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG }}>
-      <View style={g.chips}>
-        <Chip teks="Istilah" on={tab === 'istilah'} onPress={() => { setTab('istilah'); }} />
-        <Chip teks="Cara baca kartu" on={tab === 'cara'} onPress={() => { setTab('cara'); }} />
-      </View>
-      <View style={{ marginTop: 6 }}>
-        {daftar.map((d, i) => <Istilah key={d.nama} judul={d.nama} isi={d.arti} pertama={i === 0} />)}
-      </View>
-    </ScrollView>
+    <Latar kuat="redup">
+      <ScrollView contentContainerStyle={{ paddingTop: tinggiKepala + 10, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 12 }}>
+        <View style={g.chips}>
+          <Chip teks="Istilah" on={tab === 'istilah'} onPress={() => { setTab('istilah'); }} />
+          <Chip teks="Cara baca kartu" on={tab === 'cara'} onPress={() => { setTab('cara'); }} />
+        </View>
+        {/* Satu permukaan untuk seluruh daftar, garis rambut di antaranya —
+            bukan kartu per istilah (lihat catatan di atas). */}
+        <Blok rapat gaya={{ paddingHorizontal: 15 }}>
+          {daftar.map((d, i) => <Istilah key={d.nama} judul={d.nama} isi={d.arti} pertama={i === 0} />)}
+        </Blok>
+      </ScrollView>
+    </Latar>
   );
 }
 
-const g = gayaTema((W) => StyleSheet.create({
-  akar: { flex: 1, backgroundColor: W.latar },
-  chips: { flexDirection: 'row', gap: 4 },
-}));
+const g = StyleSheet.create({
+  chips: { flexDirection: 'row', gap: 6 },
+});

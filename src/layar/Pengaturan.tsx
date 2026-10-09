@@ -6,12 +6,13 @@
  * Telegram. Layar ini mengatakannya — bukan membiarkan orang menemukannya
  * sendiri saat ganti HP.
  */
-import { gayaTema } from '../gaya/tema';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Blok, Butir, Chip, Lbl, Menu, Mikro, PilTf, Saklar } from '../komponen/mockup';
-import { W, TALANG } from '../gaya/token';
+import { TALANG } from '../gaya/token';
+import { Latar } from '../komponen/Latar';
+import { ALAT_BAWAAN } from '../data/layarPasar';
 import type { Setelan } from '../data/simpan';
 import { mintaIzinPush, siapkanSaluran, tokenPerangkat } from '../data/push';
 import { cabutPerangkat, daftarkanPerangkat } from '../data/saya';
@@ -64,7 +65,8 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
     }
   }
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
+    <Latar kuat="redup">
+    <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 10, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 8 }}>
       <Lbl>Bawaan saat app dibuka</Lbl>
       <Menu>
         <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono pertama />
@@ -72,7 +74,7 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
       </Menu>
       <Mikro>Keduanya ikut berubah sendiri saat kamu membuka pasar atau mesin lain — tidak perlu diatur dari sini.</Mikro>
 
-      <Lbl gaya={{ marginTop: 2 }}>Timeframe bawaan</Lbl>
+      <Lbl gaya={{ marginTop: 6 }}>Timeframe bawaan</Lbl>
       <Blok>
         <PilTf daftar={TF} aktif={setelan.tf} pilih={(t) => { simpan({ ...setelan, tf: t }); }} />
         {/* Sapuan 1.037 kartu: nol setup m5 lolos sesudah biaya. Keduanya tetap
@@ -80,28 +82,28 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
         <Mikro>m1 dan m5 tidak ditawarkan sebagai bawaan: sesudah biaya dihitung, nyaris tidak ada setup di sana yang layak. Keduanya tetap bisa dibuka sendiri di pasar Binance.</Mikro>
       </Blok>
 
-      <Lbl gaya={{ marginTop: 2 }}>Chart</Lbl>
+      <Lbl gaya={{ marginTop: 6 }}>Chart</Lbl>
       <Menu>
-        <Butir ikon="pasar" nama="Lapisan bawaan" ket="volume · zona · level" pertama />
+        <Butir ikon="lapis" nama="Lapisan bawaan" sub={ALAT_BAWAAN.join(' · ')} pertama />
         {/* Dulu `<Saklar on={false} />` tanpa penangan: saklar yang digambar
             persis seperti saklar hidup, tidak pernah bergerak, dan tidak
             pernah menyalakan apa pun. Sekarang ia menyimpan pilihannya dan
             `LayarAnalisis` yang menahan layarnya. */}
-        <Butir ikon="analisis" nama="Tetap menyala saat chart terbuka"
-          ket={setelan.layarMenyala ? 'nyala' : 'mati'}
+        <Butir ikon="matahari" nama="Tetap menyala saat chart terbuka"
+          sub={setelan.layarMenyala ? 'Nyala · layar tidak padam selama chart terbuka' : 'Mati · layar padam seperti biasa'}
           kanan={<Saklar on={setelan.layarMenyala} ganti={(v) => { simpan({ ...setelan, layarMenyala: v }); }} />} />
       </Menu>
 
-      <Lbl gaya={{ marginTop: 2 }}>Notifikasi</Lbl>
+      <Lbl gaya={{ marginTop: 6 }}>Notifikasi</Lbl>
       <Menu>
         <Butir ikon="kabar" nama="Kabar di HP ini"
-          ket={sibukPush ? 'menyiapkan…' : setelan.pushNyala ? 'nyala' : 'mati'} pertama
+          sub={sibukPush ? 'Menyiapkan…' : setelan.pushNyala ? 'Nyala' : 'Mati'} pertama
           kanan={<Saklar on={setelan.pushNyala} ganti={sibukPush ? undefined : (v) => { void gantiPush(v); }} />} />
       </Menu>
       {sebabPush !== null && <Mikro>{sebabPush}</Mikro>}
       <Mikro>Saat nyala, kabar pantauan datang ke HP ini. Telegram (kalau tersambung) jadi cadangan saat HP tidak terdaftar. Saklar ini cuma berlaku di HP ini.</Mikro>
 
-      <Lbl gaya={{ marginTop: 2 }}>Tampilan</Lbl>
+      <Lbl gaya={{ marginTop: 6 }}>Tampilan</Lbl>
       <Menu>
         <Butir ikon={setelan.tema === 'terang' ? 'matahari' : 'bulan'} nama="Tema" pertama
           kanan={(
@@ -122,7 +124,6 @@ export function LayarPengaturan({ setelan, simpan }: Props) {
         <Mikro>Di perangkat ini saja — termasuk tema dan notifikasi. Pantauan dan langganan ikut akunmu, jadi tetap ada saat ganti HP.</Mikro>
       </Blok>
     </ScrollView>
+    </Latar>
   );
 }
-
-const g = gayaTema((W) => StyleSheet.create({ akar: { flex: 1, backgroundColor: W.latar } }));

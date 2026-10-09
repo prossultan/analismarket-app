@@ -14,17 +14,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { gayaTema } from '../gaya/tema';
 import { ambilKabarMasuk, tandaiKabarDibaca, type JenisKabar, type KabarMasuk } from '../data/saya';
-import { setBelumDibaca } from '../data/kotakMasuk';
+import { setBelumDibaca, useBelumDibaca } from '../data/kotakMasuk';
 import { useSesi } from './Akun';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
 import { Tekan } from '../komponen/Tekan';
 import { Chip, Kosong, Lbl, PitaBasi, Rangka } from '../komponen/mockup';
+import { Latar } from '../komponen/Latar';
 import { W, H, R, TALANG, SENTUH } from '../gaya/token';
 
 type Saring = 'semua' | JenisKabar;
 const SARING: { k: Saring; t: string }[] = [
-  { k: 'semua', t: 'Semua' }, { k: 'pantauan', t: 'Pantauan' }, { k: 'sistem', t: 'Sistem' }, { k: 'promo', t: 'Promo' },
+  /* "Otomatis" ditambahkan Okt 2026: kabar AM+ yang paling sering datang
+     sebelumnya tidak punya saringannya sendiri. */
+  { k: 'semua', t: 'Semua' }, { k: 'pantauan', t: 'Pantauan' }, { k: 'otomatis', t: 'Otomatis' }, { k: 'sistem', t: 'Sistem' }, { k: 'promo', t: 'Promo' },
 ];
 const IKON: Record<JenisKabar, NamaIkon> = { pantauan: 'kabar', otomatis: 'plus', sistem: 'gir', promo: 'plus' };
 const LENCANA: Partial<Record<JenisKabar, string>> = { otomatis: 'AM+', sistem: 'SISTEM', promo: 'PROMO' };
@@ -92,6 +95,8 @@ export function LayarKabar({ bukaPasarDi }: { bukaPasarDi: (pair: string, tf: st
 
   const tampil = (daftar ?? []).filter((k) => saring === 'semua' || k.jenis === saring);
   const adaBelum = (daftar ?? []).some((k) => !k.dibaca);
+  /* Angka server (lencana tab yang sama), bukan hitungan halaman yang termuat. */
+  const belum = useBelumDibaca();
   const sekarang = Date.now();
   const kelompok: { label: string; isi: KabarMasuk[] }[] = [];
   for (const k of tampil) {
@@ -101,17 +106,24 @@ export function LayarKabar({ bukaPasarDi }: { bukaPasarDi: (pair: string, tf: st
   }
 
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}
+    <Latar kuat="redup">
+    <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 10, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 8 }}
       onScroll={diGulir} scrollEventThrottle={200}>
       {sebab !== null && <PitaBasi kalimat={sebab} />}
-      {/* Saringan dan "Tandai semua dibaca" SATU baris: tombol yang sendirian
-          di baris kedua menyisakan 40 px kosong (audit 20 Sep). */}
+      {/* Ringkasan + "Tandai dibaca" SATU baris: tombol yang sendirian di
+          baris kedua menyisakan 40 px kosong (audit 20 Sep). Saringan satu
+          baris yang digeser — lima chip yang membungkus jadi dua baris
+          terbaca sebagai dua kelompok kendali (potret 9 Okt). */}
       <View style={g.atas}>
-        <View style={[g.chips, { flex: 1 }]}>
-          {SARING.map((s) => <Chip key={s.k} teks={s.t} on={saring === s.k} onPress={() => { setSaring(s.k); }} />)}
-        </View>
-        {adaBelum && <Chip teks="Tandai dibaca" emas onPress={() => { void semuaDibaca(); }} />}
+        <Text style={g.ringkas} numberOfLines={1}>
+          {daftar === null ? ' ' : belum > 0 ? `${String(belum)} belum dibaca` : 'Semua sudah dibaca'}
+        </Text>
+        {adaBelum && <Chip teks="✓ Tandai dibaca" emas onPress={() => { void semuaDibaca(); }} />}
       </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -TALANG, flexGrow: 0 }}
+        contentContainerStyle={{ paddingHorizontal: TALANG, gap: 6 }}>
+        {SARING.map((s) => <Chip key={s.k} teks={s.t} on={saring === s.k} onPress={() => { setSaring(s.k); }} />)}
+      </ScrollView>
 
       {daftar === null && (
         <View style={g.kartu}>{[0, 1, 2].map((i) => (
@@ -156,26 +168,29 @@ export function LayarKabar({ bukaPasarDi }: { bukaPasarDi: (pair: string, tf: st
       ))}
       {memuatLagi && <Lbl polos>Memuat…</Lbl>}
     </ScrollView>
+    </Latar>
   );
 }
 
 const g = gayaTema((W) => StyleSheet.create({
-  akar: { flex: 1, backgroundColor: W.latar },
-  atas: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  chips: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  kartu: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, overflow: 'hidden' },
-  baris: { flexDirection: 'row', gap: 11, padding: 12, alignItems: 'flex-start', minHeight: SENTUH + 14 },
-  garisAtas: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  ik: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: W.tinta(0.06) },
-  ikEmas: { backgroundColor: W.plusRedup },
-  judul: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat },
+  atas: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 32 },
+  ringkas: { flex: 1, fontSize: 13, color: W.teksRedup },
+  kartu: {
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+    borderRadius: R.kartu, overflow: 'hidden',
+  },
+  baris: { flexDirection: 'row', gap: 12, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'flex-start', minHeight: SENTUH + 18 },
+  garisAtas: { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: W.garisSamar },
+  ik: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: W.tinta(0.07), borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.tinta(0.08) },
+  ikEmas: { backgroundColor: W.amberLatar, borderColor: 'rgba(229,173,81,0.22)' },
+  judul: { fontSize: 13.5, fontWeight: '600', color: W.teksKuat },
   judulDibaca: { fontWeight: '500', color: W.teks },
-  lencana: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+  lencana: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   lencanaEmas: { color: W.plusTeks },
   lencanaSistem: { color: W.teksSamar },
-  isi: { fontSize: H.nilai, color: W.teksRedup, marginTop: 2, lineHeight: 17 },
-  waktu: { fontSize: H.label, color: W.teksSamar, marginTop: 5, fontVariant: ['tabular-nums'] },
-  kanan: { alignItems: 'flex-end', gap: 6, paddingTop: 2 },
+  isi: { fontSize: 12.5, color: W.teksRedup, marginTop: 3, lineHeight: 18 },
+  waktu: { fontSize: 11, color: W.teksSamar, marginTop: 6, fontVariant: ['tabular-nums'] },
+  kanan: { alignItems: 'flex-end', gap: 8, paddingTop: 2 },
   titik: { width: 8, height: 8, borderRadius: 4, backgroundColor: W.plus },
-  chevron: { fontSize: 18, color: W.teksSamar, lineHeight: 18 },
+  chevron: { fontSize: 20, color: W.teksSamar, lineHeight: 20 },
 }));

@@ -125,11 +125,18 @@ const POTRET = 'skrip/keputusan-bot.json';
 function dariBot() {
   const notif = `${BOT}/src/db/notif.ts`;
   const menu = `${BOT}/src/bot/amplus-menu.ts`;
-  if (!existsSync(notif) || !existsSync(menu)) return null;
+  const push = `${BOT}/src/lib/push.ts`;
+  const penyedia = `${BOT}/src/data/penyedia.ts`;
+  if (![notif, menu, push, penyedia].every((f) => existsSync(f))) return null;
   const maks = /export const MAKS_WATCH\s*=\s*(\d+)/.exec(readFileSync(notif, 'utf8'));
   const blok = /JAM_SUNYI_PILIHAN[^=]*=\s*\[([\s\S]*?)\n\]/.exec(readFileSync(menu, 'utf8'));
   const jam = blok === null ? [] : [...blok[1].matchAll(/\{\s*mulai:\s*(\d+),\s*selesai:\s*(\d+)\s*\}/g)].map((m) => ({ mulai: Number(m[1]), selesai: Number(m[2]) }));
-  return { maksWatch: maks === null ? null : Number(maks[1]), jamSunyiPilihan: jam };
+  /* Templat notifikasi pantauan — contoh di formulir Pantauan baru menyalinnya. */
+  const fPush = /export function pesanKabarPush[\s\S]*?\n\}/.exec(readFileSync(push, 'utf8'))?.[0] ?? '';
+  const pushKabar = { judul: /title:\s*`([^`]*)`/.exec(fPush)?.[1] ?? null, isi: /body:\s*`([^`]*)`/.exec(fPush)?.[1] ?? null };
+  /* Aturan penyedia: simbol bergaris miring → Twelve Data (berkredit). App memakai aturan yang sama untuk tidak membaca m1/m5 emas & forex otomatis. */
+  const garisMiringTwelve = /symbol\.includes\('\/'\)\s*\?\s*'twelvedata'/.test(readFileSync(penyedia, 'utf8'));
+  return { maksWatch: maks === null ? null : Number(maks[1]), jamSunyiPilihan: jam, pushKabar, garisMiringTwelve };
 }
 let bot = dariBot();
 if (bot !== null) {
@@ -833,6 +840,159 @@ await uji('keluar, cabang lawan: 401 membuang sesi TANPA mencabut; cabut yang di
     tegas(/await keluarAkun\(tokenPerangkat\)/.test(kode), `${f}: tombol keluar tidak lewat keluarAkun(tokenPerangkat)`);
     tegas(!/void hapusSesi\(\)/.test(kode), `${f}: tombol keluar masih memanggil hapusSesi langsung — HP ini tetap menerima kabar akun yang sudah keluar`);
   }
+});
+
+/* ── pemutar Akademi (9 Okt): Bunny Stream lewat iframe, jembatan player.js ── */
+process.stdout.write('\n── Pemutar Akademi ──\n');
+const pemutar = await muat('src/data/pemutar.ts');
+const akademi = await muat('src/data/akademi.ts');
+const GUID_UJI = '3f2a9c1e-7b4d-4e2a-9f10-5c6d7e8f9a0b';
+const EMBED_UJI = `${pemutar.ASAL_BUNNY}/embed/12345/${GUID_UJI}?token=${'a1'.repeat(32)}&expires=1791000000&autoplay=true&preload=true&responsive=true`;
+const pj = (event, value) => JSON.stringify({ context: 'player.js', version: '0.0.11', event, value });
+
+/** Skrip jembatan yang SAMA dengan yang tertanam di WebView, dengan jendela dan iframe tiruan. */
+function jalankanJembatan(mulai) {
+  const keApp = []; const kePemutar = []; let dengar = null;
+  const jendelaBunny = { postMessage: (data, target) => { kePemutar.push({ ...JSON.parse(data), target }); } };
+  const jendela = {
+    addEventListener: (jenis, f) => { if (jenis === 'message') dengar = f; },
+    ReactNativeWebView: { postMessage: (t) => { keApp.push(JSON.parse(t)); } },
+  };
+  const dokumen = { getElementById: (id) => (id === 'f' ? { contentWindow: jendelaBunny } : null) };
+  // eslint-disable-next-line no-new-func
+  new Function('window', 'document', pemutar.skripJembatanBunny(mulai))(jendela, dokumen);
+  const pesan = (data, origin = pemutar.ASAL_BUNNY, source = jendelaBunny) => { dengar?.({ data, origin, source }); };
+  return { keApp, kePemutar, pesan };
+}
+
+await uji('KEPUTUSAN: /putar meminta pemutar Bunny (dukung=iframe) dan menerima iframe HANYA dari asal Bunny persis', async () => {
+  const dari = terkirim.length;
+  jawab(200, { jenis: 'iframe', url: EMBED_UJI, kadaluarsa: 1791000000 });
+  const h = await akademi.mintaPutar('dasar-01');
+  tegas(/[?&]dukung=iframe(&|$)/.test(terkirim[dari]?.url ?? ''), `permintaan /putar tanpa dukung=iframe: ${terkirim[dari]?.url} — server menjawab MP4 yang dialirkan lewat VPS`);
+  tegas(h.keadaan === 'ada' && h.jenis === 'iframe' && h.url === EMBED_UJI, `jawaban iframe Bunny yang sah dibaca ${JSON.stringify(h)}`);
+  for (const palsu of [
+    `${pemutar.ASAL_BUNNY}.contoh-lain.net/embed/12345/${GUID_UJI}`,
+    `${alamat('https', 'iframe.mediadelivery.net@contoh-lain.net')}/embed/12345/${GUID_UJI}`,
+    `${pemutar.ASAL_BUNNY}:8443/embed/12345/${GUID_UJI}`,
+    `${alamat('http', 'iframe.mediadelivery.net')}/embed/12345/${GUID_UJI}`,
+    `${pemutar.ASAL_BUNNY}/play/12345/${GUID_UJI}`,
+    `${pemutar.ASAL_BUNNY}/embed/12345/bukan-guid`,
+    `${pemutar.ASAL_BUNNY}/embed/12345/${GUID_UJI}?t="><script>alert(1)</script>`,
+    `${pemutar.ASAL_BUNNY}\\@contoh-lain.net/embed/12345/${GUID_UJI}`,
+    '/api/saya/akademi/video/dasar-01?exp=1&sig=a',
+  ]) {
+    jawab(200, { jenis: 'iframe', url: palsu });
+    const x = await akademi.mintaPutar('dasar-01');
+    tegas(x.keadaan === 'galat', `iframe dari ${palsu} diterima (${JSON.stringify(x)}) — jawaban karangan bisa membingkai halaman lain di layar Akademi`);
+  }
+});
+
+await uji('pemutar Bunny, cabang lawan: jawaban tanpa jenis tetap MP4 satu asal; URL Bunny tanpa jenis bukan MP4', async () => {
+  jawab(200, { url: '/api/saya/akademi/video/dasar-01?exp=1&sig=a', kadaluarsa: 1 });
+  const h = await akademi.mintaPutar('dasar-01');
+  tegas(h.keadaan === 'ada' && h.jenis === 'mp4' && h.url === `${ASAL_APP}/api/saya/akademi/video/dasar-01?exp=1&sig=a`, `MP4 satu asal dibaca ${JSON.stringify(h)}`);
+  jawab(200, { url: EMBED_UJI });
+  tegas((await akademi.mintaPutar('dasar-01')).keadaan === 'galat', 'URL Bunny TANPA jenis iframe diterima sebagai MP4 — halaman pemutar di <video src> adalah layar hitam tanpa galat');
+});
+
+await uji('KEPUTUSAN: kemajuan Bunny cuma dibaca dari iframe Bunny itu sendiri — asal lain atau jendela lain diabaikan', async () => {
+  const j = jalankanJembatan(120);
+  j.pesan(pj('ready'), alamat('https', 'contoh-lain.net'));
+  j.pesan(pj('timeupdate', { seconds: 95, duration: 100 }), alamat('https', 'contoh-lain.net'));
+  j.pesan(pj('ready'), pemutar.ASAL_BUNNY, { postMessage() {} });
+  j.pesan(pj('ended'), pemutar.ASAL_BUNNY, { postMessage() {} });
+  tegas(j.kePemutar.length === 0 && j.keApp.length === 0, `pesan palsu diteruskan: ke pemutar ${JSON.stringify(j.kePemutar)}, ke app ${JSON.stringify(j.keApp)} — halaman lain bisa menandai video selesai`);
+  j.pesan(JSON.stringify({ context: 'lain', event: 'ready' }));
+  j.pesan('bukan json');
+  tegas(j.kePemutar.length === 0, 'pesan tanpa context player.js dianggap ready');
+});
+
+await uji('KEPUTUSAN: sesudah ready, jembatan mendaftar timeupdate/pause/ended dan melanjutkan dari posisi tersimpan SEKALI', async () => {
+  const j = jalankanJembatan(120);
+  j.pesan(pj('ready'));
+  const daftar = j.kePemutar.filter((m) => m.method === 'addEventListener').map((m) => m.value);
+  for (const e of ['timeupdate', 'pause', 'ended']) tegas(daftar.includes(e), `jembatan tidak mendaftar ${e}`);
+  const lompat = j.kePemutar.filter((m) => m.method === 'setCurrentTime');
+  tegas(lompat.length === 1 && lompat[0].value === 120, `posisi tersimpan 120 dtk dipasang sebagai ${JSON.stringify(lompat)}`);
+  tegas(j.kePemutar.every((m) => m.target === pemutar.ASAL_BUNNY && m.context === 'player.js'), `perintah dikirim ke ${JSON.stringify([...new Set(j.kePemutar.map((m) => m.target))])} — wajib asal Bunny persis, bukan "*"`);
+  j.pesan(pj('ready'));
+  tegas(j.kePemutar.filter((m) => m.method === 'setCurrentTime').length === 1, 'ready kedua melompat lagi ke posisi lama — orang yang sudah menggeser waktu ditarik mundur');
+  j.pesan(pj('timeupdate', { seconds: 121.2, duration: 300 }));
+  j.pesan(pj('timeupdate', { seconds: 122.4, duration: 300 }));
+  j.pesan(pj('timeupdate', { seconds: 124.6, duration: 300 }));
+  tegas(j.keApp.length === 2 && j.keApp[0].t === 121.2 && j.keApp[1].t === 124.6 && j.keApp[1].d === 300, `kemajuan ke app: ${JSON.stringify(j.keApp)} — wajib {t, d} tiap ±3 detik`);
+  j.pesan(pj('pause'));
+  tegas(j.keApp.at(-1)?.t === 124.6, `jeda tidak mengirim posisi terakhir: ${JSON.stringify(j.keApp.at(-1))}`);
+  j.pesan(pj('ended'));
+  const akhir = j.keApp.at(-1);
+  tegas(akhir?.t === 300 && akhir?.d === 300, `selesai dikirim ${JSON.stringify(akhir)}`);
+  const p = pemutar.uraiPesanPemutar(JSON.stringify(akhir));
+  tegas(p?.jenis === 'waktu' && p.t / p.d >= akademi.AMBANG_SELESAI, `pesan selesai dibaca ${JSON.stringify(p)} — catatPosisi tidak pernah menandai video selesai`);
+  /* Cabang lawan: 3 detik pertama bukan posisi yang perlu dilanjutkan. */
+  const awal = jalankanJembatan(3);
+  awal.pesan(pj('ready'));
+  tegas(!awal.kePemutar.some((m) => m.method === 'setCurrentTime'), 'posisi 3 dtk dilompati — awal video dipotong');
+});
+
+await uji('KEPUTUSAN: navigasi WebView pemutar cuma ke halaman kita dan Bunny — tidak satu pun diserahkan ke peramban HP', async () => {
+  for (const u of [ASAL_APP, `${ASAL_APP}/`, EMBED_UJI, 'about:blank']) tegas(pemutar.bolehDimuatPemutar(u), `${u} ditolak — pemutar tidak pernah dimuat`);
+  for (const u of [`${pemutar.ASAL_BUNNY}.contoh-lain.net/embed`, alamat('https', 'contoh-lain.net'), ...ASAL_TIRUAN, 'javascript:alert(1)', 'intent://x#Intent;end', alamat('http', 'iframe.mediadelivery.net/embed')]) {
+    tegas(!pemutar.bolehDimuatPemutar(u), `${u} dimuat di WebView pemutar`);
+  }
+  const kode = tanpaKomentar(readFileSync('src/komponen/PemutarVideo.tsx', 'utf8'));
+  tegas(/originWhitelist=\{\['\*'\]\}/.test(kode), 'PemutarVideo memakai originWhitelist sempit — navigasi iframe Bunny di iOS diserahkan ke Safari lewat Linking.openURL');
+  tegas(/onShouldStartLoadWithRequest=\{\(r\) => bolehDimuatPemutar\(r\.url\)\}/.test(kode), 'PemutarVideo tidak menyaring navigasi lewat bolehDimuatPemutar — originWhitelist "*" tanpa saringan meloloskan semua halaman');
+  tegas(/useState\(mulai\)/.test(kode) && !/html(Bunny|Mp4)\(url,\s*mulai\)/.test(kode), 'halaman pemutar dibangun dari prop mulai yang hidup — WebView memuat ulang video tiap kemajuan dicatat (±3 dtk)');
+});
+
+await uji('pemutar: alamat dari server tidak bisa menulis HTML; video yang sudah selesai diputar ulang dari awal', async () => {
+  for (const h of [pemutar.htmlMp4('/api/saya/akademi/video/x?sig="><script>alert(1)</script>', 0), pemutar.htmlBunny(`${EMBED_UJI}"><script>alert(1)</script>`, 0)]) {
+    tegas(!h.includes('<script>alert(1)'), 'tanda kutip dari alamat server membuka tag baru di halaman pembungkus');
+  }
+  tegas(pemutar.detikLanjut(298, true) === 0, 'video selesai dilanjutkan dari ujungnya — layar hitam yang langsung berakhir');
+  tegas(pemutar.detikLanjut(120, false) === 120 && pemutar.detikLanjut(undefined, false) === 0, 'posisi tersimpan tidak dipakai');
+  const layar = tanpaKomentar(readFileSync('src/layar/Akademi.tsx', 'utf8'));
+  tegas(/jenis=\{putar\.jenis\}/.test(layar), 'layar pelajaran tidak meneruskan jenis pemutar — iframe Bunny dimasukkan ke <video src>');
+  tegas(/mulai=\{detikLanjut\(k\.posisi\[x\.v\.id\], k\.selesai\.includes\(x\.v\.id\)\)\}/.test(layar), 'layar pelajaran tidak lewat detikLanjut');
+});
+
+/* ── Pantauan: keadaan sekarang + contoh notifikasi (9 Okt) ──────────────── */
+process.stdout.write('\n── Pantauan: keadaan sekarang & contoh kabar ──\n');
+const kp = await muat('src/data/keadaanPantauan.ts');
+
+await uji('KEPUTUSAN: m1/m5 emas & forex TIDAK dibaca otomatis di layar pantauan — tiap bacaan memakai jatah harian AM+', async () => {
+  tegas(bot.garisMiringTwelve === true, 'bot tidak lagi merutekan simbol bergaris miring ke Twelve Data (src/data/penyedia.ts) — aturan app di keadaanPantauan.ts harus ditinjau ulang');
+  for (const [p, t] of [['XAU/USD', 'M5'], ['EUR/USD', 'm1'], ['XAU/USD', 'm5']]) tegas(!kp.bolehDibacaOtomatis(p, t), `${p} ${t} dibaca otomatis — membuka layar Pantauan menghabiskan jatah harian orangnya`);
+  for (const [p, t] of [['XAU/USD', 'm15'], ['BTCUSDT', 'm5'], ['EUR/USD', 'H1']]) tegas(kp.bolehDibacaOtomatis(p, t), `${p} ${t} tidak dibaca — keadaan pantauan hilang tanpa sebab`);
+});
+
+await uji('keadaan pantauan: mesin yang dipantau dibaca apa adanya; "mesin apa saja" memilih Setup dulu', async () => {
+  const sy = (...l) => l.map((lolos) => ({ wajib: true, lolos }));
+  const b = { mesin: [
+    { mesin: 'snr', status: 'PANTAU', syarat: [...sy(true, true, false), { wajib: false, lolos: false }] },
+    { mesin: 'smc', status: 'SETUP', syarat: sy(true, true, true) },
+    { mesin: 'ema200', status: 'TIDAK', syarat: sy(true, false) },
+  ] };
+  const snr = kp.keadaanPantauan(b, 'snr');
+  tegas(snr?.label === 'Pantau' && snr.lolos === 2 && snr.wajib === 3, `snr dibaca ${JSON.stringify(snr)} — bonus ikut dihitung atau mesinnya tertukar`);
+  const apa = kp.keadaanPantauan(b, null);
+  tegas(apa?.mesin === 'smc' && apa.label === 'Setup', `"mesin apa saja" memilih ${JSON.stringify(apa)} — yang Setup harus menang`);
+  tegas(kp.keadaanPantauan(b, 'fibonacci') === null, 'mesin yang tidak ada di bacaan dikarang keadaannya');
+  /* Sama-sama lolos semua syarat wajib, tapi yang satu angkanya ditahan: Setup tetap yang menang, apa pun urutannya. */
+  const seri = kp.keadaanPantauan({ mesin: [{ mesin: 'fibonacci', status: 'TIDAK', syarat: sy(true, true) }, { mesin: 'smc', status: 'SETUP', syarat: sy(true, true, true) }] }, null);
+  tegas(seri?.mesin === 'smc', `porsi sama: dipilih ${JSON.stringify(seri)} — keadaan Setup tidak didahulukan`);
+});
+
+await uji('KEPUTUSAN: contoh notifikasi di Pantauan baru = templat pesanKabarPush bot — tanpa arah, entry, SL, TP', async () => {
+  tegas(typeof bot.pushKabar?.judul === 'string' && typeof bot.pushKabar?.isi === 'string', 'templat pesanKabarPush tidak terbaca dari bot (src/lib/push.ts)');
+  const isiBot = (t) => t.replaceAll('${a.pair}', 'XAU/USD').replaceAll('${a.tf.toLowerCase()}', 'm15').replaceAll('${a.mesin}', 'smc').replaceAll('${a.berlakuSampaiWib}', kp.JAM_CONTOH);
+  const c = kp.contohKabarPush('XAU/USD', 'M15', 'smc');
+  tegas(c.judul === isiBot(bot.pushKabar.judul), `judul contoh "${c.judul}" ≠ notifikasi bot "${isiBot(bot.pushKabar.judul)}"`);
+  tegas(c.isi === isiBot(bot.pushKabar.isi), `isi contoh "${c.isi}" ≠ notifikasi bot "${isiBot(bot.pushKabar.isi)}"`);
+  tegas(!/\d{2}\.\d{2}/.test(c.isi), `contoh memuat jam karangan: "${c.isi}"`);
+  const layar = tanpaKomentar(readFileSync('src/layar/Akun.tsx', 'utf8'));
+  tegas(/contohKabarPush\(pasar, tf,/.test(layar), 'formulir Pantauan baru tidak lewat contohKabarPush — teks contohnya diketik sendiri');
 });
 
 for (const [k, v] of Object.entries(globalSebelum)) { if (v === undefined) delete globalThis[k]; else globalThis[k] = v; }

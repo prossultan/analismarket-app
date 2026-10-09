@@ -9,37 +9,57 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { gayaTema } from '../gaya/tema';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilDokumen } from '../data/dokumen';
-import { Lbl } from '../komponen/mockup';
-import { W, H, TALANG } from '../gaya/token';
+import { Blok, Lbl } from '../komponen/mockup';
+import { Latar } from '../komponen/Latar';
+import { Ikon } from '../komponen/Ikon';
+import { W, R, TALANG, ANGKA } from '../gaya/token';
 
 export function LayarDokumen({ kunci }: { kunci: 'syarat' | 'privasi' }) {
   const tinggiKepala = useTinggiKepala();
   const sisaBilah = useSisaBilah();
   const d = ambilDokumen(kunci);
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG }}>
-      <Lbl polos gaya={{ fontVariant: ['tabular-nums'] }}>{d.berlaku}</Lbl>
-      {d.bagian.map((b, i) => (
-        <View key={b.judul}>
-          <Text style={g.subjudul}>{i + 1} · {b.judul}</Text>
-          <Text style={g.isi}>{b.isi}</Text>
+    <Latar kuat="redup">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 10, paddingBottom: sisaBilah, paddingHorizontal: TALANG }}>
+        <View style={g.berlaku}>
+          <Ikon nama="dokumen" warna={W.plusTeks} ukuran={14} />
+          <Text style={g.berlakuTeks}>{d.berlaku}</Text>
         </View>
-      ))}
-      <View style={{ flex: 1 }} />
-      <View style={g.catatan}>
-        <Lbl>Berlaku untuk</Lbl>
-        <Text style={g.catatanIsi}>Bot Telegram, situs web, dan app ini — satu dokumen untuk ketiganya. Versi terbaru selalu yang di situs web.</Text>
-        <Lbl gaya={{ marginTop: 8 }}>Pertanyaan</Lbl>
-        <Text style={g.catatanIsi}>Kirim ke bot Telegram @analismarketbot. App ini tidak memasang tautan keluar.</Text>
-      </View>
-    </ScrollView>
+        {d.bagian.map((b, i) => (
+          <View key={b.judul} style={g.bagian}>
+            <View style={g.subBaris}>
+              <View style={g.no}><Text style={g.noTeks}>{i + 1}</Text></View>
+              <Text style={g.subjudul}>{b.judul}</Text>
+            </View>
+            <Text style={g.isi}>{b.isi}</Text>
+          </View>
+        ))}
+        <View style={{ flex: 1 }} />
+        <Blok gaya={{ marginTop: 20 }}>
+          <Lbl>Berlaku untuk</Lbl>
+          <Text style={g.catatanIsi}>Bot Telegram, situs web, dan app ini — satu dokumen untuk ketiganya. Versi terbaru selalu yang di situs web.</Text>
+          <Lbl gaya={{ marginTop: 12 }}>Pertanyaan</Lbl>
+          <Text style={g.catatanIsi}>Kirim ke bot Telegram @analismarketbot. App ini tidak memasang tautan keluar.</Text>
+        </Blok>
+      </ScrollView>
+    </Latar>
   );
 }
 
 const g = gayaTema((W) => StyleSheet.create({
-  akar: { flex: 1, backgroundColor: W.latar },
-  subjudul: { marginTop: 14, marginBottom: 5, fontSize: H.status, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
-  isi: { fontSize: H.pasar, lineHeight: 20, color: W.teksRedup, marginBottom: 4 },
-  catatan: { marginTop: 14, padding: 10, borderRadius: 14, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu },
-  catatanIsi: { marginTop: 3, fontSize: H.alat, lineHeight: 15, color: W.teksRedup },
+  berlaku: {
+    flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', paddingHorizontal: 11, paddingVertical: 6,
+    borderRadius: R.bulat, backgroundColor: W.amberLatar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.amberTepi,
+  },
+  berlakuTeks: { fontSize: 12, color: W.plusTeks, fontWeight: '600', ...ANGKA },
+  bagian: { marginTop: 20 },
+  subBaris: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  no: {
+    width: 24, height: 24, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: W.isiSamarKuat, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi,
+  },
+  noTeks: { fontSize: 11.5, fontWeight: '700', color: W.teksRedup, ...ANGKA },
+  subjudul: { flex: 1, fontSize: 15, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
+  isi: { fontSize: 14, lineHeight: 22, color: W.teksRedup },
+  catatanIsi: { marginTop: 4, fontSize: 12.5, lineHeight: 18, color: W.teksRedup },
 }));

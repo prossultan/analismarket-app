@@ -10,8 +10,7 @@
  */
 import { useCallback, useState } from 'react';
 import { gayaTema } from '../gaya/tema';
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ambilBacaan, ambilJadwal, syaratWajib, type Mesin, type Rilis } from '../data/api';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ambilRingkas, hapusAkun, keluarAkun, type Ringkas } from '../data/saya';
 import { tokenPerangkat } from '../data/push';
 import { TOKO_PLAY } from '../data/amplus';
@@ -19,10 +18,11 @@ import { useMuat, type Hasil } from '../data/muat';
 import { hapusSesi } from '../data/sesi';
 import { useSesi } from './Akun';
 import { labelStatus, useStatusPlus } from '../data/statusPlus';
-import { jamWib, tanggalWib } from '../data/tampil';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
-import { Blok, Butir, Chip, Kosong, Lbl, Menu, Mikro, Nil, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
-import { W, H, R, TALANG } from '../gaya/token';
+import { Blok, Butir, Chip, Lbl, Menu, Mikro, Nil, PitaBasi, Tombol } from '../komponen/mockup';
+import { W, R, TALANG } from '../gaya/token';
+import { Latar } from '../komponen/Latar';
+import { Ikon } from '../komponen/Ikon';
 import type { Setelan } from '../data/simpan';
 
 type Props = { setelan: Setelan; bukaSambung: () => void; bukaPengaturan: () => void; bukaPantauan: () => void; buka: (ke: 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Berlangganan') => void };
@@ -39,18 +39,10 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
     if (!j.ok) { setGalatHapus(j.kalimat); setSibukHapus(false); return; }
     await hapusSesi();
   };
-  const konfirmasiHapus = (): void => {
-    const pesan = 'Akun, sambungan, pantauan, kabar, perangkat, dan setelan dihapus seketika dan tidak bisa dikembalikan. Catatan pembayaran disimpan tanpa identitas selama diwajibkan hukum.';
-    if (Platform.OS === 'web') {
-      const tanya = (globalThis as { confirm?: (m: string) => boolean }).confirm;
-      if (tanya === undefined || tanya(`Hapus akun?\n\n${pesan}`)) void jalankanHapus();
-      return;
-    }
-    Alert.alert('Hapus akun?', pesan, [
-      { text: 'Batal', style: 'cancel' },
-      { text: 'Hapus akun', style: 'destructive', onPress: () => { void jalankanHapus(); } },
-    ]);
-  };
+  /* Konfirmasi di dialog KACA milik app, bukan Alert sistem: Alert Android
+     berwarna terang di tengah layar obsidian, dan dialog yang paling serius di
+     app ini justru terlihat seperti bagian dari app lain. Kalimatnya sama. */
+  const [tanyaHapus, setTanyaHapus] = useState(false);
   /* KELUAR mencabut HP ini sebagai penerima kabar dulu (`keluarAkun`), selagi
      sesinya masih sah — tanpa itu kabar akun ini terus masuk ke HP yang sudah
      keluar. Paling lama 5 detik; sesudah itu keluar tetap jalan. Layar ini
@@ -88,42 +80,28 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
   const status = r?.langganan ?? statusSimpan;
   const plus = status === 'plus';
   const angka = (n: number | undefined): string => (n === undefined ? '—' : String(n));
+  const namaTampil = nama !== null && nama.trim() !== '' ? nama.trim() : null;
+  /* BUKAN '?'. Akun Telegram boleh tidak punya nama tampilan, dan itu keadaan
+     yang sah — bukan sesuatu yang app-nya tidak tahu. Tanda tanya membaca
+     seolah ada yang rusak; huruf merek membaca sebagai "kamu, di app ini". */
+  const huruf = namaTampil === null ? 'A' : namaTampil.charAt(0).toUpperCase();
   return (
-    <ScrollView style={g.akar} contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
-      {/* Angka akun tidak terbaca — sebabnya disebut, bukan disamarkan jadi "—". */}
-      {sesi !== null && sebab !== null && <PitaBasi kalimat={sebab} />}
-      {/* Masuk lewat Google tapi belum ditautkan ke bot: pantauan, kabar, dan
-          kabar hidup di akun Telegram. Ini bukan galat, ini langkah berikutnya. */}
-      {sesi !== null && r !== null && !r.telegramTersambung && (
-        <Blok emas rapat gaya={{ paddingHorizontal: 10 }}>
-          <View style={[g.baris, { gap: 8 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={g.nama}>Tautkan Telegram (opsional)</Text>
-              <Lbl polos>Kabar tetap jalan lewat HP ini. Telegram jadi cadangan saat HP tidak terdaftar.</Lbl>
-            </View>
-            <Chip teks="Sambungkan" emas onPress={bukaSambung} />
+    <Latar>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 10, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 8 }}>
+        {/* Angka akun tidak terbaca — sebabnya disebut, bukan disamarkan jadi "—". */}
+        {sesi !== null && sebab !== null && <PitaBasi kalimat={sebab} />}
+
+        <View style={g.hero}>
+          <View style={[g.avatar, plus && g.avatarPlus]}>
+            <Text style={[g.avatarHuruf, plus && { color: W.utamaTeks }]}>{huruf}</Text>
           </View>
-        </Blok>
-      )}
-      <Blok>
-        <View style={g.baris}>
-          <View style={[g.avatar, sesi !== null && g.avatarAda]}>
-            <Text style={[g.avatarHuruf, sesi !== null && { color: '#1A1508' }]}>
-              {/* BUKAN '?'. Akun Telegram boleh tidak punya nama tampilan, dan
-                  itu keadaan yang sah — bukan sesuatu yang app-nya tidak tahu.
-                  Tanda tanya membaca seolah ada yang rusak; lambang merek
-                  membaca sebagai "kamu, di app ini". */}
-              {nama === null ? 'A' : nama.trim().charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={g.nama} numberOfLines={1}>{sesi === null ? 'Belum tersambung' : nama ?? 'Akun Telegram'}</Text>
-            <Lbl polos>{sesi === null ? 'Identitas datang dari bot Telegram' : sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Tersambung lewat Telegram'}</Lbl>
-            <View style={{ marginTop: 5, alignSelf: 'flex-start' }}>
-              <Chip teks={plus ? 'AnalisMarket+ aktif' : labelStatus(status)} emas={plus} lencana />
-            </View>
+          <Text style={g.nama} numberOfLines={1}>{sesi === null ? 'Belum tersambung' : namaTampil ?? (sesi.jenis === 'clerk' ? 'Akun Google' : 'Akun Telegram')}</Text>
+          <Text style={g.sub} numberOfLines={1}>{sesi === null ? 'Identitas datang dari bot Telegram' : sesi.jenis === 'clerk' ? 'Masuk dengan Google' : 'Tersambung lewat Telegram'}</Text>
+          <View style={{ marginTop: 10 }}>
+            <Chip teks={plus ? 'AnalisMarket+ aktif' : labelStatus(status)} emas={plus} lencana />
           </View>
         </View>
+
         <View style={g.statistik}>
           <View style={g.sel}><Nil besar>{setelan.tf.toLowerCase()}</Nil><Lbl polos>Timeframe</Lbl></View>
           <View style={g.sel}>
@@ -131,80 +109,126 @@ export function LayarProfil({ setelan, bukaSambung, bukaPengaturan, bukaPantauan
             <Lbl polos>Pantauan</Lbl>
           </View>
           {/* Akun gratis: kata, bukan garis. "— Hari AM+" terbaca sebagai angka yang gagal dimuat (audit 20 Sep). */}
-          <View style={g.sel}><Nil besar>{plus ? angka(r?.sisaHariPlus) : labelStatus(status)}</Nil><Lbl polos>{plus ? 'Hari AM+' : 'Paket'}</Lbl></View>
+          <View style={[g.sel, plus && g.selEmas]}>
+            <Nil besar warna={plus ? W.plusTerang : undefined}>{plus ? angka(r?.sisaHariPlus) : labelStatus(status)}</Nil>
+            <Lbl polos>{plus ? 'Hari AM+' : 'Paket'}</Lbl>
+          </View>
         </View>
+
         {/* Mockup: tombol sambung hanya saat BELUM masuk; putus sambungan
             adalah baris di bagian Akun, bukan tombol besar di kartu. */}
-        {sesi === null && (
-          <View style={{ marginTop: 10 }}>
-            <Tombol teks="Sambungkan Telegram" onPress={bukaSambung} />
+        {sesi === null && <Tombol teks="Sambungkan Telegram" onPress={bukaSambung} />}
+
+        {/* Masuk lewat Google tapi belum ditautkan ke bot: pantauan, kabar, dan
+            kabar hidup di akun Telegram. Ini bukan galat, ini langkah berikutnya. */}
+        {sesi !== null && r !== null && !r.telegramTersambung && (
+          <Blok emas rapat gaya={{ paddingHorizontal: 13 }}>
+            <View style={g.baris}>
+              <View style={{ flex: 1 }}>
+                <Text style={g.tautJudul}>Tautkan Telegram (opsional)</Text>
+                <Lbl polos>Kabar tetap jalan lewat HP ini. Telegram jadi cadangan saat HP tidak terdaftar.</Lbl>
+              </View>
+              <Chip teks="Sambungkan" emas onPress={bukaSambung} />
+            </View>
+          </Blok>
+        )}
+
+        <Lbl gaya={{ marginTop: 6 }}>Bawaan saat app dibuka</Lbl>
+        <Menu>
+          <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono onPress={bukaPengaturan} pertama />
+          <Butir ikon="jam" nama="Timeframe" ket={setelan.tf.toLowerCase()} ketMono onPress={bukaPengaturan} />
+          <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'otomatis' : setelan.mesin} ketMono onPress={bukaPengaturan} />
+        </Menu>
+
+        <Lbl gaya={{ marginTop: 6 }}>Pantauan</Lbl>
+        <Menu>
+          <Butir ikon="mata" nama="Pantauan aktif" ket={r === null ? '—' : `${String(r.pantauanAktif)} aktif`} onPress={bukaPantauan} pertama />
+          <Butir ikon="tambah" nama="Pantauan baru" ket="formulir" onPress={() => { buka('PantauanBaru'); }} />
+          <Butir ikon="kilat" nama="Kabar otomatis & jam sunyi" ket={sesi === null ? 'masuk dulu' : plus ? 'aktif' : 'butuh AM+'} onPress={() => { buka('KabarOtomatis'); }} />
+        </Menu>
+
+        <Lbl gaya={{ marginTop: 6 }}>Akun</Lbl>
+        <Menu>
+          <Butir ikon="plus" nama="Kelola langganan" ket={status === null ? '—' : plus ? 'aktif' : TOKO_PLAY ? 'belum aktif' : 'lewat bot'} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
+          <Butir ikon="kisi" nama="Cek banyak pasar" ket={sesi === null ? 'masuk dulu' : plus ? 'siap' : 'butuh AM+'} onPress={() => { buka('CekBanyak'); }} />
+          {sesi !== null && (
+            <Butir ikon="keluar" nama={sibukKeluar ? 'Keluar…' : sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
+              onPress={sibukKeluar ? undefined : () => { void keluar(); }} />
+          )}
+          {sesi !== null && (
+            <Butir ikon="hapus" bahaya nama={sibukHapus ? 'Menghapus akun…' : 'Hapus akun'} ket="permanen"
+              onPress={sibukHapus ? undefined : () => { setTanyaHapus(true); }} />
+          )}
+        </Menu>
+        {galatHapus !== '' && <Mikro>{galatHapus}</Mikro>}
+        {galatKeluar !== '' && <Mikro>{galatKeluar}</Mikro>}
+
+        <View style={{ flex: 1 }} />
+        <Mikro>{sesi === null
+          ? 'Setelan bawaan tersimpan di perangkat ini. Yang lain menunggu kamu masuk.'
+          : 'Setelan bawaan tersimpan di perangkat ini; pantauan dan langganan ikut akunmu.'}</Mikro>
+      </ScrollView>
+
+      <Modal visible={tanyaHapus} transparent animationType="fade" statusBarTranslucent onRequestClose={() => { setTanyaHapus(false); }}>
+        <View style={g.tirai}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => { setTanyaHapus(false); }} accessibilityLabel="Batal" />
+          <View style={g.dialog} accessibilityViewIsModal>
+            <View style={g.dialogIkon}><Ikon nama="hapus" warna={W.turun} ukuran={22} /></View>
+            <Text style={g.dialogJudul}>Hapus akun?</Text>
+            <Text style={g.dialogIsi}>{PESAN_HAPUS}</Text>
+            {/* Yang IKUT TERHAPUS, dalam angka akun ini — kalimat umum di atas
+                terbaca seperti syarat; "4 pantauan" terbaca seperti kehilangan. */}
+            {r !== null && (r.pantauanAktif > 0 || plus) && (
+              <View style={g.dialogChips}>
+                {r.pantauanAktif > 0 && <Chip teks={`${String(r.pantauanAktif)} pantauan`} lencana />}
+                {plus && <Chip teks={`AnalisMarket+ (${String(r.sisaHariPlus)} hari)`} emas lencana />}
+              </View>
+            )}
+            <View style={g.dialogTombol}>
+              <Tombol teks="Hapus akun" jenis="bahaya" onPress={() => { setTanyaHapus(false); void jalankanHapus(); }} />
+              <Tombol teks="Batal" jenis="kedua" onPress={() => { setTanyaHapus(false); }} />
+            </View>
           </View>
-        )}
-      </Blok>
-
-      <Lbl gaya={{ marginTop: 2 }}>Bawaan saat app dibuka</Lbl>
-      <Menu>
-        <Butir simbol={setelan.pasar} nama="Pasar" ket={setelan.pasar} ketMono onPress={bukaPengaturan} pertama />
-        <Butir ikon="kalender" nama="Timeframe" ket={setelan.tf.toLowerCase()} ketMono onPress={bukaPengaturan} />
-        <Butir ikon="analisis" nama="Mesin" ket={setelan.mesin === '' ? 'otomatis' : setelan.mesin} ketMono onPress={bukaPengaturan} />
-      </Menu>
-
-      <Lbl gaya={{ marginTop: 2 }}>Pantauan</Lbl>
-      <Menu>
-        <Butir ikon="kabar" nama="Pantauan aktif" ket={r === null ? '—' : `${String(r.pantauanAktif)} aktif`} onPress={bukaPantauan} pertama />
-        <Butir ikon="kabar" nama="Pantauan baru" ket="formulir" onPress={() => { buka('PantauanBaru'); }} />
-        <Butir ikon="kalender" nama="Kabar otomatis & jam sunyi" ket={sesi === null ? 'masuk dulu' : plus ? 'aktif' : 'butuh AM+'} onPress={() => { buka('KabarOtomatis'); }} />
-      </Menu>
-
-      <Lbl gaya={{ marginTop: 2 }}>Akun</Lbl>
-      <Menu>
-        <Butir ikon="plus" nama="Kelola langganan" ket={status === null ? '—' : plus ? 'aktif' : TOKO_PLAY ? 'belum aktif' : 'lewat bot'} ketEmas onPress={() => { buka('Berlangganan'); }} pertama />
-        <Butir ikon="pasar" nama="Cek banyak pasar" ket={sesi === null ? 'masuk dulu' : plus ? 'siap' : 'butuh AM+'} onPress={() => { buka('CekBanyak'); }} />
-        {sesi !== null && (
-          <Butir ikon="lainnya" nama={sibukKeluar ? 'Keluar…' : sesi.jenis === 'clerk' ? 'Keluar dari akun Google' : 'Putuskan sambungan Telegram'}
-            onPress={sibukKeluar ? undefined : () => { void keluar(); }} />
-        )}
-        {sesi !== null && (
-          <Butir ikon="lainnya" nama={sibukHapus ? 'Menghapus akun…' : 'Hapus akun'} ket="permanen"
-            onPress={sibukHapus ? undefined : konfirmasiHapus} />
-        )}
-      </Menu>
-      {galatHapus !== '' && <Mikro>{galatHapus}</Mikro>}
-      {galatKeluar !== '' && <Mikro>{galatKeluar}</Mikro>}
-
-      <View style={{ flex: 1 }} />
-      <Mikro>{sesi === null
-        ? 'Setelan bawaan tersimpan di perangkat ini. Yang lain menunggu kamu masuk.'
-        : 'Setelan bawaan tersimpan di perangkat ini; pantauan dan langganan ikut akunmu.'}</Mikro>
-    </ScrollView>
+        </View>
+      </Modal>
+    </Latar>
   );
 }
 
-/**
- * KABAR — mockup 05.
- *
- * Yang butuh akun (setup, pantauan) belum bisa; yang TIDAK butuh akun —
- * berita dampak tinggi dari kalender — bisa, dan mockup 05 memang memuatnya
- * di saringan "Berita". Jadi layar ini terisi data sungguhan, bukan kosong,
- * dan satu blok di atas menyebut apa yang masih menunggu Telegram.
- */
+const PESAN_HAPUS = 'Akun, sambungan, pantauan, kabar, perangkat, dan setelan dihapus seketika dan tidak bisa dikembalikan. Catatan pembayaran disimpan tanpa identitas selama diwajibkan hukum.';
 
 const g = gayaTema((W) => StyleSheet.create({
-  akar: { flex: 1, backgroundColor: W.latar },
+  hero: { alignItems: 'center', paddingTop: 12, paddingBottom: 8 },
+  avatar: {
+    width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+    backgroundColor: W.kartuTerang, borderWidth: 1.5, borderColor: W.tinta(0.16),
+  },
+  /* AM+: isian amber + cincin tipis — sama dengan avatar di kepala. */
+  avatarPlus: { backgroundColor: '#E9B65C', borderColor: 'rgba(240,191,107,0.85)' },
+  avatarHuruf: { fontSize: 30, fontWeight: '800', color: W.teks },
+  nama: { fontSize: 21, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4, maxWidth: '90%' },
+  sub: { fontSize: 13, color: W.teksRedup, marginTop: 3 },
   baris: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis },
-  avatarAda: { backgroundColor: W.plus, borderColor: 'transparent' },
-  avatarHuruf: { fontSize: 15, fontWeight: '700', color: W.teksSamar },
-  nama: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
-  statistik: { flexDirection: 'row', gap: 6, marginTop: 9 },
-  sel: { flex: 1, backgroundColor: W.kartuTerang, borderWidth: 1, borderColor: W.garis, borderRadius: R.besar, padding: 7 },
-  chips: { flexDirection: 'row', gap: 4 },
-  garis: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  kabarItem: { flexDirection: 'row', gap: 8, paddingVertical: 8 },
-  titik: { width: 6, height: 6, borderRadius: 3, backgroundColor: W.plus, marginTop: 4 },
-  titikDibaca: { backgroundColor: W.garis },
-  kabarJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.1 },
-  kabarIsi: { fontSize: H.alat, color: W.teksRedup, lineHeight: 14, marginTop: 2 },
-  kabarWaktu: { fontSize: H.label, color: W.teksSamar, marginTop: 2, fontVariant: ['tabular-nums'] },
-  kosongKet: { fontSize: H.alat, color: W.teksSamar, marginTop: 8 },
+  tautJudul: { fontSize: 14, fontWeight: '600', color: W.teksKuat, marginBottom: 2 },
+  statistik: { flexDirection: 'row', gap: 8 },
+  sel: {
+    flex: 1, minWidth: 0, gap: 3, paddingVertical: 13, paddingHorizontal: 8, borderRadius: R.kartu - 4, alignItems: 'center',
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
+  selEmas: { backgroundColor: W.amberLatar, borderColor: W.amberTepi, borderTopColor: 'rgba(240,191,107,0.62)' },
+  /* Tirai dan dialog PADAT — tanpa blur. Dialog paling serius di app tidak
+     boleh bergantung pada efek yang boleh gagal diam-diam di Android. */
+  tirai: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, backgroundColor: 'rgba(5,4,3,0.72)' },
+  dialog: {
+    borderRadius: 28, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 18, backgroundColor: W.latar900, alignItems: 'center',
+    borderWidth: 1, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
+  dialogIkon: {
+    width: 52, height: 52, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginBottom: 14,
+    backgroundColor: W.turunLatar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.turunTepi,
+  },
+  dialogJudul: { fontSize: 20, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.3, textAlign: 'center' },
+  dialogIsi: { fontSize: 13.5, color: W.teksRedup, lineHeight: 20, marginTop: 8, textAlign: 'center' },
+  dialogChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 14 },
+  dialogTombol: { alignSelf: 'stretch', gap: 8, marginTop: 20 },
 }));

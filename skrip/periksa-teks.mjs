@@ -35,6 +35,20 @@ const PEMROSES = ['Mid', 'trans'].join('');
 /** Asal yang memang milik kita. Apa pun di luar ini tautan keluar. */
 const ASAL_SENDIRI = 'https://analismarket.com';
 
+/**
+ * Asal yang DITANAM, bukan ditautkan: halaman pihak lain yang tampil DI DALAM
+ * app (iframe di WebView) dan tidak pernah dibuka orang sebagai tautan. Tiap
+ * asal sah di SATU berkas saja — tempat ia divalidasi — supaya ia tidak bisa
+ * diam-diam menjadi tautan di layar lain. Asal yang mirip (`….net.lain`)
+ * tetap tautan keluar.
+ *
+ * Pemutar Bunny Stream (9 Okt 2026): video Akademi dipindah pemilik ke sana,
+ * server menerbitkan URL embed bertanda tangan, dan `pemutar.ts` cuma
+ * menerima asal ini persis. Dirakit dari potongan, sama seperti kata-kata di
+ * atas: penjaga ini memindai dirinya sendiri.
+ */
+const ASAL_TERTANAM = new Map([[['https:', '//iframe.mediadelivery.net'].join(''), 'src/data/pemutar.ts']]);
+
 function kumpulkan(dir, keluar) {
   for (const nama of readdirSync(dir)) {
     const jalur = join(dir, nama);
@@ -69,7 +83,9 @@ for (const f of berkas) {
 
     for (const m of isi.matchAll(/https?:\/\/[^\s'"`)]+/g)) {
       const url = m[0];
-      if (!url.startsWith(ASAL_SENDIRI)) temuan.push(['tautan keluar', url, di, potong]);
+      if (url.startsWith(ASAL_SENDIRI)) continue;
+      const tanam = [...ASAL_TERTANAM].find(([asal]) => url === asal || url.startsWith(`${asal}/`));
+      if (tanam === undefined || f !== tanam[1]) temuan.push(['tautan keluar', url, di, potong]);
     }
   });
 }

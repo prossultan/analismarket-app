@@ -12,9 +12,13 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { gayaTema } from '../gaya/tema';
-import { ScrollView, StyleSheet, Text, TextInput, View, AppState, Linking } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TextInput, View, AppState, Linking, useWindowDimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { ambilBacaan, ambilPasar, syaratWajib, type Mesin, type Pasar } from '../data/api';
+import { ambilBacaan, ambilPasar, syaratWajib, type Bacaan, type Mesin, type Pasar } from '../data/api';
+import type { Jawaban } from '../data/antrian';
+import { bolehDibacaOtomatis, contohKabarPush, keadaanPantauan } from '../data/keadaanPantauan';
+import { MARK } from '../komponen/Merek';
+import { Cincin } from '../komponen/Cincin';
 import {
   ambilKabarOtomatis, ambilPantauan, ambilRingkas,
   cekBanyak, matikanPantauan, setelJamKabar, setelKabarOtomatis, tambahPantauan, MAKS_SLOT_CEK_BANYAK,
@@ -34,6 +38,8 @@ import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { Ikon } from '../komponen/Ikon';
 import { LambangPasar } from '../komponen/LambangPasar';
 import { FormulirSambung, BOT } from '../komponen/FormulirSambung';
+import { Latar } from '../komponen/Latar';
+import { Tekan } from '../komponen/Tekan';
 import {
   BarIsi, BarisPakai, Blok, Butir, Chip, Langkah, Lbl, Menu, Mikro, Nil, PitaBasi, Radio, Rangka, Saklar, Tombol,
 } from '../komponen/mockup';
@@ -49,10 +55,12 @@ function Wadah({ children }: { children: React.ReactNode }) {
        baru menjawab di ketukan kedua. Di web tidak pernah terlihat, karena
        tidak ada keyboard yang menutupi. Pemilik melaporkannya sebagai
        "tombol tidak berfungsi", dan itu memang persis rasanya. */
-    <ScrollView style={g.akar} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
-      contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 7 }}>
-      {children}
-    </ScrollView>
+    <Latar kuat="redup">
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+        contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 10, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 8 }}>
+        {children}
+      </ScrollView>
+    </Latar>
   );
 }
 
@@ -327,6 +335,33 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
   const mati = semua.filter((x) => !x.aktif);
   const terlihat = saring === 'aktif' ? aktif : mati;
 
+  /* KEADAAN SEKARANG per pantauan aktif — lihat `keadaanPantauan.ts`. Satu
+     bacaan per pasangan (pair, tf), lewat antrean bersimpanan; kegagalan
+     dicetak di barisnya, bukan disamarkan jadi baris tanpa keadaan. */
+  const [bacaanPantau, setBacaanPantau] = useState<Record<string, Jawaban<Bacaan>>>({});
+  const kunciPasangan = [...new Set(aktif.filter((w) => bolehDibacaOtomatis(w.pair, w.tf)).map((w) => `${w.pair}|${w.tf.toLowerCase()}`))].join(',');
+  useEffect(() => {
+    if (kunciPasangan === '') return undefined;
+    let hidup = true;
+    for (const k of kunciPasangan.split(',')) {
+      const [pair = '', t = ''] = k.split('|');
+      void ambilBacaan(pair, t).then((j) => { if (hidup) setBacaanPantau((x) => ({ ...x, [k]: j })); });
+    }
+    return () => { hidup = false; };
+  }, [kunciPasangan]);
+  const barisKeadaan = (pair: string, t: string, kode: string | null): { teks: string; warna: string | null } => {
+    if (!bolehDibacaOtomatis(pair, t)) return { teks: 'm1/m5 emas & forex tidak dibaca otomatis — memakai jatah harian', warna: null };
+    const j = bacaanPantau[`${pair}|${t.toLowerCase()}`];
+    if (j === undefined) return { teks: 'Membaca keadaan…', warna: null };
+    if (!j.ok) return { teks: j.kalimat, warna: null };
+    const k = keadaanPantauan(j.isi, kode);
+    if (k === null) return { teks: 'Mesin ini tidak ada lagi di bacaan', warna: null };
+    return {
+      teks: `${k.label}${kode === null ? ` · ${k.mesin}` : ''} · ${String(k.lolos)} dari ${String(k.wajib)} syarat wajib`,
+      warna: k.label === 'Setup' ? W.naik : k.label === 'Pantau' ? W.teksKuat : W.teksSamar,
+    };
+  };
+
   return (
     <Wadah>
       {(sebab ?? sebabPasar) !== null && <PitaBasi kalimat={(sebab ?? sebabPasar) ?? ''} />}
@@ -339,11 +374,16 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
       {sesi === null
         ? <PerluSesi apa="Pantauan" buka={bukaSambung} />
         : (
-          <Blok rapat gaya={{ paddingHorizontal: 10 }}>
-            <View style={g.rata}>
-              <View><Text style={g.pilihJudul}>{aktif.length} pantauan aktif</Text>
-                <Lbl polos>Batas {punya?.maks ?? '—'} pantauan</Lbl></View>
-              <Chip teks="+ Baru" onPress={bukaBaru} />
+          <Blok>
+            <View style={[g.baris, { gap: 14 }]}>
+              <Cincin persen={punya === null || punya.maks <= 0 ? 0 : (aktif.length / punya.maks) * 100} ukuran={60} tebal={4.5}>
+                <Text style={g.cincinTeks}>{punya === null ? '—' : `${String(aktif.length)}/${String(punya.maks)}`}</Text>
+              </Cincin>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={g.heroJudul}>{punya === null ? 'Pantauan' : `${String(aktif.length)} pantauan aktif`}</Text>
+                <Text style={g.heroKet}>Batas {punya?.maks ?? '—'} pantauan · dikabari saat syarat wajib lolos semua</Text>
+              </View>
+              <Chip teks="+ Baru" emas onPress={bukaBaru} />
             </View>
           </Blok>
         )}
@@ -351,19 +391,27 @@ export function LayarPantauan({ bukaSambung, bukaBaru, pasar, tf }: {
       {sesi !== null && terlihat.length > 0 && (
         <Blok>
           <Lbl>{saring === 'aktif' ? 'Sedang dipantau' : 'Sudah dimatikan'}</Lbl>
-          {terlihat.map((w, i) => (
-            <View key={w.id} style={[g.pantau, i > 0 && g.garis]}>
-              <LambangPasar simbol={w.pair} ukuran={22} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={g.pilihJudul} numberOfLines={1}>
-                  {w.pair} <Text style={{ color: W.teksRedup, fontWeight: '400' }}>{w.tf.toLowerCase()}</Text>
-                  {w.strategiKode !== null && ` · ${w.strategiKode}`}
-                </Text>
-                <Lbl polos>Kabari saat syarat wajib lolos semua</Lbl>
+          {terlihat.map((w, i) => {
+            const k = w.aktif ? barisKeadaan(w.pair, w.tf, w.strategiKode) : null;
+            return (
+              <View key={w.id} style={[g.pantau, i > 0 && g.garis]}>
+                <LambangPasar simbol={w.pair} ukuran={28} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={g.pilihJudul} numberOfLines={1}>
+                    {w.pair} <Text style={{ color: W.teksRedup, fontWeight: '400' }}>{w.tf.toLowerCase()}</Text>
+                    {w.strategiKode !== null && ` · ${w.strategiKode}`}
+                  </Text>
+                  {k === null ? <Lbl polos>Sudah dimatikan</Lbl> : (
+                    <View style={g.keadaan}>
+                      {k.warna !== null && <View style={[g.titikKeadaan, { backgroundColor: k.warna }]} />}
+                      <Text style={g.keadaanTeks} numberOfLines={2}>{k.teks}</Text>
+                    </View>
+                  )}
+                </View>
+                {w.aktif && <Chip teks="matikan" onPress={() => { matikan(w.id); }} />}
               </View>
-              {w.aktif && <Chip teks="matikan" onPress={() => { matikan(w.id); }} />}
-            </View>
-          ))}
+            );
+          })}
         </Blok>
       )}
 
@@ -450,6 +498,20 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
     });
   };
 
+  /* Keadaan pasangan ini SEKARANG — bacaan yang sama dengan layar Pasar
+     (antrean bersimpanan). m1/m5 emas & forex dilewati: jatah harian. */
+  const bisaBaca = bolehDibacaOtomatis(pasar, tf);
+  const [bacaan, setBacaan] = useState<Jawaban<Bacaan> | null>(null);
+  useEffect(() => {
+    if (!bisaBaca) return undefined;
+    let hidup = true;
+    void ambilBacaan(pasar, tf).then((j) => { if (hidup) setBacaan(j); });
+    return () => { hidup = false; };
+  }, [pasar, tf, bisaBaca]);
+  const kd = bacaan !== null && bacaan.ok ? keadaanPantauan(bacaan.isi, mesin === '' ? null : mesin) : null;
+  const sebabBaca = bacaan !== null && !bacaan.ok ? bacaan.kalimat : null;
+  const contoh = contohKabarPush(pasar, tf, mesin !== '' ? mesin : kd?.mesin ?? 'mesin yang lolos');
+
   return (
     <Wadah>
       <Lbl>Pasar &amp; timeframe</Lbl>
@@ -460,7 +522,26 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
       </Menu>
       <Mikro>Ganti pasar, timeframe, atau mesin di layar Pasar, lalu kembali ke sini.</Mikro>
 
-      <Lbl gaya={{ marginTop: 2 }}>Kabari saya saat</Lbl>
+      {bisaBaca && (
+        <Blok>
+          <View style={g.rata}>
+            <Lbl>Keadaan sekarang</Lbl>
+            {kd !== null && (
+              <Text style={[g.keadaanKanan, { color: kd.label === 'Setup' ? W.naik : kd.label === 'Pantau' ? W.teksKuat : W.teksSamar }]}>
+                {kd.label} · {String(kd.lolos)}/{String(kd.wajib)}
+              </Text>
+            )}
+          </View>
+          <Text style={g.ket}>
+            {bacaan === null ? 'Membaca keadaan…'
+              : sebabBaca !== null ? sebabBaca
+                : kd === null ? 'Mesin ini tidak ada di bacaan terbaru.'
+                  : `${String(kd.lolos)} dari ${String(kd.wajib)} syarat wajib ${kd.mesin} lolos di bacaan terbaru ${pasar} ${tf.toLowerCase()}.`}
+          </Text>
+        </Blok>
+      )}
+
+      <Lbl gaya={{ marginTop: 6 }}>Kabari saya saat</Lbl>
       <Menu>
         {[
           ['Syarat wajib lolos semua', 'Kartunya berubah jadi SETUP'],
@@ -479,6 +560,20 @@ export function LayarPantauanBaru({ pasar, tf, mesin, bukaSambung, selesai }: {
       {pilihan !== 0 && (
         <Mikro>Bot saat ini mengabari saat syarat lolos. Dua pemicu lain menyusul; pantauan tetap tersimpan.</Mikro>
       )}
+
+      <Lbl gaya={{ marginTop: 6 }}>Contoh kabar di layar kunci</Lbl>
+      <View style={g.notif}>
+        <Image source={MARK} style={g.notifLogo} accessibilityIgnoresInvertColors />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={g.rata}>
+            <Text style={g.notifApp}>AnalisMarket</Text>
+            <Text style={g.notifWaktu}>sekarang</Text>
+          </View>
+          <Text style={g.notifJudul} numberOfLines={1}>{contoh.judul}</Text>
+          <Text style={g.notifIsi}>{contoh.isi}</Text>
+        </View>
+      </View>
+      <Mikro>Arah, entry, SL, dan TP tidak ikut di notifikasi — dibaca di app, segar.</Mikro>
 
       <View style={{ flex: 1 }} />
       {galat !== '' && <Text style={g.galat}>{galat}</Text>}
@@ -558,8 +653,8 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
           terang sekarang, dengan rumus yang sama dengan bot. */}
       <Lbl>Jam sunyi</Lbl>
       <Menu>
-        <Butir ikon="kalender" nama="Kabar dikirim" ket={jendela === null ? '—' : `${labelKirim(jendela)} WIB`} ketMono pertama />
-        <Butir ikon="kalender" nama="Sunyi" ket={jendela === null ? '—' : tanpaSunyi(jendela) ? 'tidak ada' : `${labelSunyi(jendela)} WIB`} ketMono />
+        <Butir ikon="kirim" nama="Kabar dikirim" ket={jendela === null ? '—' : `${labelKirim(jendela)} WIB`} ketMono pertama />
+        <Butir ikon="bulan" nama="Sunyi" ket={jendela === null ? '—' : tanpaSunyi(jendela) ? 'tidak ada' : `${labelSunyi(jendela)} WIB`} ketMono />
       </Menu>
       {pilihanJam.length > 0 && (
         <View style={[g.chips, { flexWrap: 'wrap' }]}>
@@ -591,7 +686,7 @@ export function LayarKabarOtomatis({ bukaSambung, bukaPlus }: { bukaSambung: () 
               const kunci = `${x.tf}:${x.kode}`;
               return (
                 <Butir key={kunci} ikon="analisis" nama={`${x.tf.toLowerCase()} · ${x.kode}`}
-                  ket={x.nama} pertama={i === 0}
+                  sub={x.nama} pertama={i === 0}
                   kanan={(
                     <Saklar on={nyala}
                       /* Tanpa AM+ `ganti` sengaja TIDAK diberikan: `Saklar`
@@ -678,6 +773,8 @@ export function LayarCekBanyak({ bukaSambung, bukaPlus, tf }: { bukaSambung: () 
 
   const slot = pilih.length; // satu timeframe
   const lewat = slot > MAKS_SLOT_CEK_BANYAK;
+  const { width: lebarLayar } = useWindowDimensions();
+  const lebarPetak = (lebarLayar - TALANG * 2 - 8) / 2;
 
   return (
     <Wadah>
@@ -712,40 +809,72 @@ export function LayarCekBanyak({ bukaSambung, bukaPlus, tf }: { bukaSambung: () 
       {/* Kartu HASIL cuma setinggi isinya sebelum dijalankan. Audit 20 Sep:
           `flex: 1` membuatnya memenuhi layar dalam keadaan kosong, dan
           kartu kosong setinggi layar terbaca sebagai layar yang gagal. */}
-      <Blok gaya={hasil === null ? undefined : { flex: 1 }}>
-        {hasil === null ? (
+      {hasil === null ? (
+        <Blok>
+          <Lbl>Hasil</Lbl>
+          <Text style={g.ket}>
+            {galatJalan !== '' ? galatJalan
+              : `Menjalankan ${String(slot)} pasar sekaligus, kelima mesin, satu timeframe. Hasilnya tampil di sini.`}
+          </Text>
+        </Blok>
+      ) : (() => {
+        /* Satu petak per pasar (mesin terbaiknya). Bilah ringkas di atas
+           menjawab "ada yang layak?" sebelum orang membaca satu per satu. */
+        const per = terbaik(hasil);
+        const nSetup = per.filter((b) => b.sebab === undefined && b.ideal === true).length;
+        const nPantau = per.filter((b) => b.sebab === undefined && b.ideal === false).length;
+        const nLain = per.length - nSetup - nPantau;
+        return (
           <>
-            <Lbl>Hasil</Lbl>
-            <Text style={g.ket}>
-              {galatJalan !== '' ? galatJalan
-                : `Menjalankan ${String(slot)} pasar sekaligus, kelima mesin, satu timeframe. Hasilnya tampil di sini.`}
-            </Text>
-          </>
-        ) : (
-          <>
-            <View style={[g.rata, { paddingBottom: 6 }]}>
-              <Lbl>Pasar</Lbl><Lbl>Terbaik</Lbl><Lbl>Jarak</Lbl><Lbl>Status</Lbl>
-            </View>
-            {terbaik(hasil).map((b, i) => {
-              const st = statusBaris(b);
-              return (
-                <View key={b.pair} style={[g.rata, g.pantau, i > 0 && g.garis]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1.3 }}>
-                    <LambangPasar simbol={b.pair} ukuran={18} />
-                    <Text style={g.pilihJudul} numberOfLines={1}>{b.pair.replace('USDT', '')}</Text>
-                  </View>
-                  <Nil gaya={{ flex: 1 }}>{b.mesin}</Nil>
-                  <Nil gaya={{ flex: 1 }}>{b.jarakAtr === null ? '—' : `${b.jarakAtr.toFixed(1)} ATR`}</Nil>
-                  <Text style={[g.pilihJudul, { flex: 1, color: st.warna, textAlign: 'right' }]}>{st.teks}</Text>
+            <Blok rapat gaya={{ paddingHorizontal: 13 }}>
+              <View style={g.bilahRingkas}>
+                {nSetup > 0 && <View style={{ flex: nSetup, backgroundColor: W.naik }} />}
+                {nPantau > 0 && <View style={{ flex: nPantau, backgroundColor: W.tinta(0.55) }} />}
+                {nLain > 0 && <View style={{ flex: nLain, backgroundColor: W.tinta(0.16) }} />}
+              </View>
+              <View style={[g.rata, { marginTop: 9 }]}>
+                <View style={[g.baris, { gap: 12 }]}>
+                  <Text style={g.ringkasAngka}><Text style={{ color: W.naik }}>●</Text> {String(nSetup)} Setup</Text>
+                  <Text style={g.ringkasAngka}><Text style={{ color: W.tinta(0.55) }}>●</Text> {String(nPantau)} Pantau</Text>
+                  <Text style={g.ringkasAngka}><Text style={{ color: W.tinta(0.25) }}>●</Text> {String(nLain)} Lain</Text>
                 </View>
-              );
-            })}
-            <Lbl polos gaya={{ marginTop: 8 }}>
-              {String(hasil.baris.filter((b) => b.ideal === true).length)} setup · {String(hasil.baris.filter((b) => b.ideal === false).length)} pantau · {String(hasil.tarikan)} tarikan · {String(Math.round(hasil.msTotal / 100) / 10)} dtk
-            </Lbl>
+                <Text style={g.ringkasWaktu}>{String(Math.round(hasil.msTotal / 100) / 10).replace('.', ',')} dtk</Text>
+              </View>
+            </Blok>
+            <View style={g.papan}>
+              {per.map((b) => {
+                const st = statusBaris(b);
+                const jarak = b.sebab === undefined ? b.jarakAtr : null;
+                /* Meter = KEDEKATAN ke entry: penuh di level entry, kosong di 3 ATR
+                   atau lebih (lewat 3 ATR entry-nya belum terjangkau — Istilah).
+                   Bilah yang makin penuh makin jauh terbaca terbalik. */
+                const porsi = jarak === null ? null : 1 - Math.min(1, Math.max(0, jarak / 3));
+                return (
+                  <View key={b.pair} style={[g.petak, { width: lebarPetak }, st.teks === 'Setup' && g.petakSetup]}>
+                    <View style={g.baris}>
+                      <LambangPasar simbol={b.pair} ukuran={20} />
+                      <Text style={[g.pilihJudul, { flex: 1 }]} numberOfLines={1}>{b.pair.replace(/USDT$/, '')}</Text>
+                      <Text style={g.petakMesin} numberOfLines={1}>{b.mesin}</Text>
+                    </View>
+                    <View style={[g.baris, { gap: 6, marginTop: 8 }]}>
+                      <View style={[g.titikKeadaan, { backgroundColor: st.warna }]} />
+                      <Text style={[g.petakStatus, { color: st.warna }]} numberOfLines={1}>{st.teks}</Text>
+                    </View>
+                    <View style={g.meter}>
+                      {porsi !== null && <View style={[g.meterIsi, { width: `${Math.max(4, porsi * 100)}%`, backgroundColor: st.teks === 'Setup' ? W.naik : W.tinta(0.35) }]} />}
+                    </View>
+                    <Text style={g.petakKet} numberOfLines={2}>
+                      {jarak === null ? (b.sebab === undefined ? 'jarak entry —' : st.teks)
+                        : jarak < 0.05 ? 'di level entry' : `${jarak.toFixed(1).replace('.', ',')} ATR ke entry`}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+            <Lbl polos>{String(hasil.tarikan)} tarikan data · meter penuh = di level entry, kosong = 3 ATR atau lebih</Lbl>
           </>
-        )}
-      </Blok>
+        );
+      })()}
 
       {hasil === null && <View style={{ flex: 1 }} />}
       <Tombol
@@ -762,6 +891,11 @@ export function LayarCekBanyak({ bukaSambung, bukaPlus, tf }: { bukaSambung: () 
 export function LayarBerlangganan() {
   const sesi = useSesi();
   const { isi: r, sebab } = useAkun(ambilRingkas, sesi);
+  /* Masa aktif untuk RINCIAN — pratinjau harga, bukan pesanan: pembayarannya
+     di bot, dan di sana masa aktifnya dipilih lagi. Angkanya dari PAKET_PLUS
+     (satu sumber, dijaga periksa-harga). */
+  const [iPaket, setIPaket] = useState(0);
+  const paket = PAKET_PLUS[iPaket] ?? SATU_BULAN;
 
   const aktif = r?.langganan === 'plus';
   /* Dari cap waktu server — lihat catatan di AmPlus.tsx. */
@@ -801,6 +935,22 @@ export function LayarBerlangganan() {
 
       {!TOKO_PLAY && (
         <>
+          <Lbl>Masa aktif</Lbl>
+          <View style={g.paketBaris}>
+            {PAKET_PLUS.map((pk, i) => {
+              const hemat = Math.round((1 - pk.hargaRp / (pk.bulan * SATU_BULAN.hargaRp)) * 100);
+              return (
+                <Tekan key={pk.kode} onPress={() => { setIPaket(i); }} skala={0.96} gayaLuar={{ flex: 1 }}
+                  gaya={[g.paket, iPaket === i && g.paketOn]} accessibilityState={{ selected: iPaket === i }}
+                  accessibilityLabel={`${String(pk.bulan * 30)} hari, ${rupiah(pk.hargaRp)}`}>
+                  <Text style={[g.paketHari, iPaket === i && { color: W.teksKuat }]}>{pk.bulan * 30} hari</Text>
+                  <Text style={g.paketHarga} numberOfLines={1} adjustsFontSizeToFit>{rupiah(pk.hargaRp)}</Text>
+                  <Text style={[g.paketHemat, hemat > 0 && { color: W.naik }]}>{hemat > 0 ? `hemat ${String(hemat)}%` : 'dasar'}</Text>
+                </Tekan>
+              );
+            })}
+          </View>
+
           <Lbl>Cara bayar</Lbl>
           <Menu>
             <View style={g.pilih}><Radio on /><View style={{ flex: 1 }}>
@@ -821,11 +971,11 @@ export function LayarBerlangganan() {
         <Blok gaya={{ flex: 1 }}>
           <Lbl>Rincian</Lbl>
           <View style={{ marginTop: 4 }}>
-            <BarisPakai kiri={`AnalisMarket+ · ${String(SATU_BULAN.bulan)} bulan`} kanan={rupiah(SATU_BULAN.hargaRp)} pertama />
+            <BarisPakai kiri={`AnalisMarket+ · ${String(paket.bulan * 30)} hari`} kanan={rupiah(paket.hargaRp)} pertama />
             <BarisPakai kiri="PPN" kanan="Termasuk" />
-            <BarisPakai kiri="Total" kanan={rupiah(SATU_BULAN.hargaRp)} tebal />
+            <BarisPakai kiri="Total" kanan={rupiah(paket.hargaRp)} tebal />
           </View>
-          <Mikro>Dibayar sekali di muka untuk {String(SATU_BULAN.bulan * 30)} hari. Tidak ada potong otomatis: sesudah tanggal berakhir, akun kembali ke paket gratis dan setelanmu tetap tersimpan.</Mikro>
+          <Mikro>Dibayar sekali di muka untuk {String(paket.bulan * 30)} hari. Tidak ada potong otomatis: sesudah tanggal berakhir, akun kembali ke paket gratis dan setelanmu tetap tersimpan. Masa aktifnya dipilih lagi di bot saat membayar.</Mikro>
         </Blok>
   
         {/* Emas terisi — dan ini memang halaman AM+. Mati: pembayaran di bot. */}
@@ -838,30 +988,75 @@ export function LayarBerlangganan() {
 }
 
 const g = gayaTema((W) => StyleSheet.create({
-  akar: { flex: 1, backgroundColor: W.latar },
-  baris: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  baris: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rata: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  chips: { flexDirection: 'row', gap: 4 },
-  garis: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  judulTengah: { marginTop: 8, fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, textAlign: 'center', letterSpacing: -0.2 },
-  ketTengah: { marginTop: 6, fontSize: H.alat, color: W.teksRedup, lineHeight: 15, textAlign: 'center', maxWidth: 260 },
-  centangBaris: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
-  centang: { color: W.plusTeks, fontSize: 9, marginTop: 2 },
-  centangTeks: { flex: 1, fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
-  pilih: { flexDirection: 'row', gap: 9, alignItems: 'flex-start', paddingHorizontal: 11, paddingVertical: 9 },
-  pilihJudul: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat },
-  pantau: { flexDirection: 'row', gap: 8, alignItems: 'center', paddingVertical: 8 },
-  ket: { marginTop: 5, fontSize: H.alat, color: W.teksRedup, lineHeight: 15 },
+  chips: { flexDirection: 'row', gap: 6 },
+  garis: { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: W.garisSamar },
+  judulTengah: { marginTop: 10, fontSize: 17, fontWeight: '700', color: W.teksKuat, textAlign: 'center', letterSpacing: -0.3 },
+  ketTengah: { marginTop: 6, fontSize: 13, color: W.teksRedup, lineHeight: 19, textAlign: 'center', maxWidth: 290 },
+  centangBaris: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  centang: { color: W.plusTeks, fontSize: 12, marginTop: 2, fontWeight: '700' },
+  centangTeks: { flex: 1, fontSize: 12.5, color: W.teksRedup, lineHeight: 18 },
+  pilih: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingHorizontal: 13, paddingVertical: 12 },
+  pilihJudul: { fontSize: 13.5, fontWeight: '600', color: W.teksKuat },
+  pantau: { flexDirection: 'row', gap: 10, alignItems: 'center', paddingVertical: 11 },
+  cincinTeks: { fontSize: 14, fontWeight: '700', color: W.teksKuat, fontVariant: ['tabular-nums'] },
+  heroJudul: { fontSize: 16, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.2 },
+  heroKet: { fontSize: 12.5, color: W.teksRedup, lineHeight: 18, marginTop: 3 },
+  keadaan: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
+  titikKeadaan: { width: 7, height: 7, borderRadius: 4 },
+  keadaanTeks: { flex: 1, fontSize: 12, color: W.teksRedup, lineHeight: 16, fontVariant: ['tabular-nums'] },
+  keadaanKanan: { fontSize: 12.5, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  paketBaris: { flexDirection: 'row', gap: 6 },
+  paket: {
+    alignItems: 'center', gap: 3, paddingVertical: 11, paddingHorizontal: 4, borderRadius: R.besar,
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
+  paketOn: { backgroundColor: W.amberLatar, borderColor: W.amberTepi, borderTopColor: 'rgba(240,191,107,0.62)', borderWidth: 1 },
+  paketHari: { fontSize: 13, fontWeight: '700', color: W.teksRedup, fontVariant: ['tabular-nums'] },
+  paketHarga: { fontSize: 11, color: W.teksSamar, fontVariant: ['tabular-nums'] },
+  paketHemat: { fontSize: 10.5, fontWeight: '700', color: W.teksSamar },
+  bilahRingkas: { flexDirection: 'row', height: 6, borderRadius: 3, overflow: 'hidden', gap: 2, backgroundColor: W.tinta(0.06) },
+  ringkasAngka: { fontSize: 12.5, fontWeight: '600', color: W.teksKuat, fontVariant: ['tabular-nums'] },
+  ringkasWaktu: { fontSize: 12, color: W.teksSamar, fontVariant: ['tabular-nums'] },
+  papan: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  petak: {
+    padding: 12, borderRadius: R.kartu - 4, backgroundColor: W.kacaIsi,
+    borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
+  petakSetup: { backgroundColor: 'rgba(16,185,129,0.07)', borderColor: 'rgba(16,185,129,0.30)', borderTopColor: 'rgba(16,185,129,0.45)' },
+  petakMesin: {
+    fontSize: 10.5, fontWeight: '700', color: W.teksRedup, fontVariant: ['tabular-nums'], paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 6, backgroundColor: W.isiSamarKuat, overflow: 'hidden', maxWidth: 74,
+  },
+  petakStatus: { fontSize: 13, fontWeight: '700' },
+  meter: { height: 4, borderRadius: 2, backgroundColor: W.tinta(0.08), marginTop: 10, overflow: 'hidden' },
+  meterIsi: { height: 4, borderRadius: 2 },
+  petakKet: { fontSize: 11.5, color: W.teksSamar, marginTop: 6, lineHeight: 15, fontVariant: ['tabular-nums'] },
+  /* Meniru notifikasi sistem — PADAT, karena layar kunci tidak punya kaca. */
+  notif: {
+    flexDirection: 'row', gap: 11, padding: 13, borderRadius: 22, backgroundColor: W.kartuTerang,
+    borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi,
+  },
+  notifLogo: { width: 34, height: 34, borderRadius: 9 },
+  notifApp: { fontSize: 12, fontWeight: '600', color: W.teksRedup },
+  notifWaktu: { fontSize: 11.5, color: W.teksSamar },
+  notifJudul: { fontSize: 13.5, fontWeight: '700', color: W.teksKuat, marginTop: 2 },
+  notifIsi: { fontSize: 12.5, color: W.teksRedup, lineHeight: 18, marginTop: 1 },
+  ket: { marginTop: 6, fontSize: 13, color: W.teksRedup, lineHeight: 19 },
   besar: { fontSize: H.harga, fontWeight: '700', color: W.teksKuat, fontVariant: ['tabular-nums'] },
-  dari: { fontSize: H.alat, color: W.teksRedup, fontWeight: '400' },
-  kartuEmas: { borderRadius: R.kartu, padding: 13, borderWidth: 1, borderColor: 'rgba(201,169,97,0.38)', backgroundColor: 'rgba(201,169,97,0.10)' },
-  cap: { fontSize: H.label, letterSpacing: 1.4, textTransform: 'uppercase', color: W.plusTeks, fontWeight: '600' },
-  harga: { fontSize: 19, fontWeight: '700', color: W.plusTerang, marginTop: 5, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  dari: { fontSize: 13, color: W.teksRedup, fontWeight: '400' },
+  kartuEmas: {
+    borderRadius: R.kartu, padding: 16, borderWidth: 1, borderColor: W.amberTepi, borderTopColor: 'rgba(240,191,107,0.62)',
+    backgroundColor: W.amberLatar,
+  },
+  cap: { fontSize: H.label, letterSpacing: 1.5, textTransform: 'uppercase', color: W.plusTeks, fontWeight: '600' },
+  harga: { fontSize: 26, fontWeight: '700', color: W.plusTerang, marginTop: 6, letterSpacing: -0.6, fontVariant: ['tabular-nums'] },
   handle: { marginTop: 6, marginBottom: 8, fontSize: 22, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.4 },
   tempelKotak: {
-    marginTop: 6, minHeight: SENTUH, paddingHorizontal: 10, borderRadius: R.besar,
-    borderWidth: 1, borderColor: W.garis, backgroundColor: W.tinta(0.05), justifyContent: 'center',
+    marginTop: 6, minHeight: SENTUH, paddingHorizontal: 12, borderRadius: R.besar,
+    borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, backgroundColor: W.isiSamar, justifyContent: 'center',
   },
-  tempelIsi: { color: W.teksKuat, fontSize: H.nilai, paddingVertical: 10 },
-  galat: { marginTop: 8, fontSize: H.alat, color: W.turun, lineHeight: 15 },
+  tempelIsi: { color: W.teksKuat, fontSize: 14, paddingVertical: 11 },
+  galat: { marginTop: 8, fontSize: 12.5, color: W.turun, lineHeight: 18 },
 }));

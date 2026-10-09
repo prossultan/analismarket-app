@@ -17,5 +17,10 @@
       "mulai": 7,
       "selesai": 22
     }
-  ]
+  ],
+  "pushKabar": {
+    "judul": "${a.pair} ${a.tf.toLowerCase()} · kondisi terpenuhi",
+    "isi": "${a.mesin} · berlaku sampai ${a.berlakuSampaiWib} WIB. Buka app untuk membaca levelnya."
+  },
+  "garisMiringTwelve": true
 }

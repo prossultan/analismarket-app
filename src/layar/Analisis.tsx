@@ -39,11 +39,12 @@ import { useSesi } from './Akun';
 import { tokenSesi } from '../data/sesi';
 import { kunciSesi } from '../data/statusPlus';
 import { isiLembarGagal } from '../data/gagalBacaan';
-import { useBacaanPasar, usePasarTf } from '../data/layarPasar';
+import { ALAT_BAWAAN, useBacaanPasar, usePasarTf } from '../data/layarPasar';
 import { IsiBacaan } from '../komponen/IsiBacaan';
 import { BandingMesin } from '../komponen/BandingMesin';
 import { LambangPasar } from '../komponen/LambangPasar';
 import { Kaca } from '../komponen/Kaca';
+import { Latar } from '../komponen/Latar';
 import { Ikon } from '../komponen/Ikon';
 import { Blok, Chip, Harga, Lbl, Nil, PilTf, PitaMesin, Rangka, Tarik, type SelMesin } from '../komponen/mockup';
 import { useSisaBilah } from '../gaya/jarak';
@@ -71,9 +72,9 @@ true;
 /** Lapisan chart yang bisa dinyalakan — nama dan urutannya sama dengan web. */
 const ALAT = ['volume', 'zona', 'struktur', 'level', 'pola lilin'] as const;
 
-type Props = { setelan: Setelan; simpan: (s: Setelan) => void; bukaPasarTanda: number; bukaPlus: () => void };
+type Props = { setelan: Setelan; simpan: (s: Setelan) => void; bukaPasarTanda: number; bukaBacaanTanda: number; bukaPlus: () => void };
 
-export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Props) {
+export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaBacaanTanda, bukaPlus }: Props) {
   const sesiChart = useSesi();
   /* Menahan layar HANYA kalau orangnya sendiri yang memintanya di Pengaturan.
      `useKeepAwake` tidak bisa dipakai di sini: ia tidak punya cara dimatikan
@@ -91,7 +92,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
      lihat `layarPasar.ts`. `kataTf` = penggantian yang WAJIB disebut. */
   const { pasar, tf, kataTf, pilihTf, pilihPasar } = usePasarTf(setelan, simpan, daftarPasar);
   const [mesin, setMesin] = useState(setelan.mesin);
-  const [alat, setAlat] = useState<ReadonlySet<string>>(() => new Set(['volume', 'zona', 'struktur', 'level']));
+  const [alat, setAlat] = useState<ReadonlySet<string>>(() => new Set(ALAT_BAWAAN));
   /* DUA kegagalan, DUA keadaan. Daftar pasar yang gagal mengosongkan layar;
      bacaan yang gagal cuma mengisi lembar bawah — dan bacaan yang DITOLAK
      (402 butuh AM+, 429 jatah habis) bukan "mesin tidak menjawab". Dulu
@@ -115,6 +116,10 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
      persis `MenuBawah` di web. Tandanya angka yang naik, supaya ketukan
      kedua pada tab yang sama tetap membuka. */
   useEffect(() => { if (bukaPasarTanda > 0) setLembarPasar(true); }, [bukaPasarTanda]);
+  /* Tombol "Bacaan" di kartu utama Home: tab ini dibuka DENGAN lembar
+     bacaannya. Kalau bacaannya belum tiba, lembarnya menunggu — `terbuka`
+     di bawah mensyaratkan mesinnya sudah ada. */
+  useEffect(() => { if (bukaBacaanTanda > 0) setLapisBacaan(true); }, [bukaBacaanTanda]);
 
   /* Naik satu: penghitung yang dinaikkan tombol "Coba lagi". Daftar pasar
      adalah akar layar ini — tanpa ia, tidak ada pasar, tidak ada bacaan, dan
@@ -156,9 +161,13 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
   const temaChart = useTema();
 
   if (pasar === null) {
-    return gagal === ''
-      ? <Memuat teks="Menyiapkan…" />
-      : <Kosong judul="Daftar pasar tidak terbaca" sebab={gagal} aksi={() => { setGagal(''); setUlang((n) => n + 1); }} />;
+    return (
+      <Latar kuat="redup" gaya={{ justifyContent: 'center' }}>
+        {gagal === ''
+          ? <Memuat teks="Menyiapkan…" />
+          : <Kosong judul="Daftar pasar tidak terbaca" sebab={gagal} aksi={() => { setGagal(''); setUlang((n) => n + 1); }} />}
+      </Latar>
+    );
   }
 
   const aktif = bacaan === null ? mesin : (bacaan.mesin.find((m) => m.mesin === mesin) ?? bacaan.mesin[0])?.mesin ?? '';
@@ -199,7 +208,7 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
   });
 
   return (
-    <View style={g.akar}>
+    <Latar kuat="redup">
       {/* ── KEPALA KACA: lambang · simbol ⌄ · harga · ubah ─────────────── */}
       <Kaca tepi="bawah" gaya={{ paddingTop: atas }}>
         <View style={g.kepala}>
@@ -207,13 +216,16 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
               bisa ditekan atau tidak. Yang bisa ditekan harus TERLIHAT bisa
               ditekan — bingkai, latar, dan kata "ganti" di sebelahnya. */}
           <Tekan onPress={() => { setLembarPasar(true); }} gaya={g.pasarTombol} hitSlop={6} accessibilityLabel="Ganti pasar">
-            <LambangPasar simbol={pasar.simbol} ukuran={19} />
+            <LambangPasar simbol={pasar.simbol} ukuran={24} />
             <Text style={g.simbol} numberOfLines={1}>{pasar.simbol}</Text>
-            <View style={g.gantiPil}><Text style={g.gantiTeks}>ganti ⌄</Text></View>
+            <View style={g.gantiPil}><Text style={g.gantiTeks}>ganti</Text><Ikon nama="turunkan" warna={W.teksRedup} ukuran={12} /></View>
           </Tekan>
           <View style={{ flex: 1 }} />
-          <Harga kecil>{angka(harga ?? pasar.harga, pasar.desimal)}</Harga>
-          <Text style={[g.ubahTeks, { color: warnaUbah }]}>{ubah(u)}</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Harga kecil>{angka(harga ?? pasar.harga, pasar.desimal)}</Harga>
+            {/* Dengan %: tanpa tanda itu "+1,24" terbaca seperti selisih harga. */}
+            <Text style={[g.ubahTeks, { color: warnaUbah }]}>{u === null ? '—' : `${ubah(u)}%`}</Text>
+          </View>
         </View>
       </Kaca>
 
@@ -264,8 +276,8 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
 
         {/* ── ALAT: di BAWAH chart, tepat di sebelah benda yang diubahnya ── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={g.alatRow}>
-          {ALAT.map((a) => <Chip key={a} teks={a} on={alat.has(a)} onPress={() => { gantiAlat(a); }} />)}
-          <Chip teks="banding" onPress={() => { setLapisBanding(true); }} />
+          {ALAT.map((a) => <Chip key={a} teks={a} on={alat.has(a)} halus onPress={() => { gantiAlat(a); }} />)}
+          <Chip teks="banding" emas onPress={() => { setLapisBanding(true); }} />
         </ScrollView>
 
         {/* Ruang untuk lembar yang melayang di bawah. */}
@@ -383,51 +395,57 @@ export function LayarAnalisis({ setelan, simpan, bukaPasarTanda, bukaPlus }: Pro
           tutup={() => { setLembarPasar(false); }}
         />
 
-    </View>
+    </Latar>
   );
 }
 
 /** Tinggi lembar yang melayang — ruang yang harus disisakan isi di atasnya. */
-const TINGGI_LEMBAR = 134;
+const TINGGI_LEMBAR = 150;
 
 const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  kepala: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: TALANG, paddingVertical: 8, minHeight: SENTUH },
+  kepala: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: TALANG - 2, paddingVertical: 8, minHeight: SENTUH + 6 },
   pasarTombol: {
-    flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: SENTUH - 8,
+    flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: SENTUH - 4,
     paddingLeft: 8, paddingRight: 6, borderRadius: 999,
-    backgroundColor: W.tinta(0.06), borderWidth: 1, borderColor: W.garis,
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
   },
-  gantiPil: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: W.tinta(0.10) },
-  gantiTeks: { fontSize: H.label, fontWeight: '600', color: W.teksKuat },
-  simbol: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2, flexShrink: 1 },
+  gantiPil: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: W.tinta(0.09) },
+  gantiTeks: { fontSize: 11.5, fontWeight: '600', color: W.teksRedup },
+  simbol: { fontSize: 15, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2, flexShrink: 1 },
   tanda: { fontSize: 12, color: W.teksSamar, marginTop: -3 },
-  kataTf: { fontSize: H.label, color: W.teksRedup, lineHeight: 15 },
-  ubahTeks: { fontSize: H.label, ...ANGKA },
-  isi: { flex: 1, paddingHorizontal: TALANG, paddingTop: 9, gap: 6 },
-  mesinRangka: { flexDirection: 'row', gap: 6, paddingVertical: 8, paddingHorizontal: 6, borderWidth: 1, borderColor: W.garis, borderRadius: R.besar },
+  kataTf: { fontSize: H.alat, color: W.teksRedup, lineHeight: 16 },
+  ubahTeks: { fontSize: 12, fontWeight: '600', ...ANGKA },
+  isi: { flex: 1, paddingHorizontal: TALANG - 4, paddingTop: 10, gap: 8 },
+  mesinRangka: { flexDirection: 'row', gap: 6, paddingVertical: 12, paddingHorizontal: 8, borderRadius: R.besar, backgroundColor: W.isiSamar },
   tutupJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat },
-  wadahChart: { flex: 1, minHeight: 120, position: 'relative', borderRadius: R.besar, overflow: 'hidden', borderWidth: 1, borderColor: W.garis, backgroundColor: W.chart },
+  wadahChart: {
+    flex: 1, minHeight: 120, position: 'relative', borderRadius: R.kartu, overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau, backgroundColor: W.chart,
+  },
   web: { flex: 1, backgroundColor: W.chart },
   tunggu: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   /* Gaya utuh, bukan timpaan `left: undefined` — di web timpaan itu tidak
      berlaku dan dua chip menumpuk di pojok yang sama. */
-  alatRow: { flexDirection: 'row', gap: 4, paddingVertical: 2 },
+  alatRow: { flexDirection: 'row', gap: 6, paddingVertical: 2 },
 
-  lembar: { position: 'absolute', left: 0, right: 0 },
-  lembarIsi: { borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingHorizontal: TALANG, paddingTop: 5, paddingBottom: 10, overflow: 'hidden' },
+  lembar: { position: 'absolute', left: 10, right: 10 },
+  lembarIsi: {
+    borderRadius: 24, paddingHorizontal: 14, paddingTop: 6, paddingBottom: 12, overflow: 'hidden',
+    borderWidth: 1, borderColor: W.amberTepi, borderTopColor: 'rgba(240,191,107,0.62)',
+  },
   lembarBaris: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  lembarStatus: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat, marginTop: 1 },
-  angkaBaris: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  ditahan: { gap: 3 },
-  ditahanJudul: { fontSize: H.nilai, fontWeight: '600', color: W.teksKuat, lineHeight: 15 },
-  ditahanKet: { fontSize: H.label, color: W.teksRedup, lineHeight: 13 },
+  lembarStatus: { fontSize: 17, fontWeight: '600', color: W.teksKuat, marginTop: 2, letterSpacing: -0.3 },
+  angkaBaris: { flexDirection: 'row', gap: 14, marginTop: 10 },
+  ditahan: { gap: 4 },
+  ditahanJudul: { fontSize: 14, fontWeight: '600', color: W.teksKuat, lineHeight: 19 },
+  ditahanKet: { fontSize: H.alat, color: W.teksRedup, lineHeight: 16 },
 
   lapisLuar: { flex: 1, justifyContent: 'flex-end' },
   lapisTirai: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: W.tirai },
   /* TANPA backgroundColor: warnanya datang dari <Kaca>. */
-  lapis: { maxHeight: '88%', borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden', paddingTop: 6 },
-  lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH - 6, borderBottomWidth: 1, borderBottomColor: W.garis },
+  lapis: { maxHeight: '88%', borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', paddingTop: 8 },
+  lapisKepala: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: TALANG, minHeight: SENTUH, borderBottomWidth: StyleSheet.hairlineWidth * 2, borderBottomColor: W.garisSamar },
   tutup: { minHeight: SENTUH, justifyContent: 'center', paddingHorizontal: J.x2 },
-  tutupTeks: { fontSize: H.nilai, color: W.teksRedup },
+  tutupTeks: { fontSize: 13, fontWeight: '600', color: W.plusTeks },
 }));

@@ -26,7 +26,9 @@ export function TombolTab({ ikon, label, nama, emas = false, aktif = false, lenc
   const dariNav = useNavigationState((st) => st.routes[st.index]?.name === nama);
   const aktifKini = dariNav || aktif;
   /* Label PLUS+ memakai emas-TEKS (lolos kontras di tema terang); ikonnya tetap emas isian. */
-  const warna = emas ? W.plusTeks : aktifKini ? W.teksKuat : W.teksSamar;
+  const warna = emas ? (aktifKini ? W.teksKuat : W.plusTeks) : aktifKini ? W.teksKuat : W.teksSamar;
+  /* Ikon tab aktif AMBER (mockup polish-2026); labelnya tetap terang. */
+  const warnaIkon = emas ? W.plus : aktifKini ? W.plus : W.teksSamar;
   /* Pindah tab TIDAK menggeser layar — tab itu setara. Yang terasa adalah pil
      yang baru aktif MEKAR dari 0,78 dengan pegas kecil: cukup untuk menjawab
      jari, tidak cukup untuk terasa seperti perjalanan. */
@@ -46,8 +48,9 @@ export function TombolTab({ ikon, label, nama, emas = false, aktif = false, lenc
           pilnya, 120 ms: cukup untuk tidak "berkedip", tidak cukup untuk terasa. */}
       <Animated.View style={[g.pil, PIL_TRANSISI, aktifKini && g.pilAktif, gayaMekar]}>
         <View>
-          <Ikon nama={ikon} warna={warna} ukuran={22} isi={emas ? W.plus : undefined} tebal={aktifKini} />
-          {/* Satu-satunya merah di luar arti "turun": "ada yang belum dibaca" memang butuh mata. */}
+          <Ikon nama={ikon} warna={warnaIkon} ukuran={22} isi={emas ? W.plus : undefined} tebal={aktifKini} />
+          {/* Lencana amber, angka gelap — sama dengan mockup; amber di sini
+              berarti "ada yang menunggu", bukan "berbayar". */}
           {lencana > 0 && <View style={g.lencana}><Text style={g.lencanaTeks}>{lencana > 99 ? '99+' : String(lencana)}</Text></View>}
         </View>
         <Text style={[g.label, { color: warna }, aktifKini && { fontWeight: '600' }]} numberOfLines={1}>{label}</Text>
@@ -64,9 +67,9 @@ const PIL_TRANSISI = {
 
 const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, paddingVertical: 6, paddingHorizontal: 3 },
-  pil: { flex: 1, borderRadius: 26, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  pilAktif: { backgroundColor: W.tinta(0.10) },
-  label: { fontSize: H.alat, fontWeight: '500' },
-  lencana: { position: 'absolute', top: -5, right: -10, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 4, backgroundColor: W.turun, alignItems: 'center', justifyContent: 'center' },
-  lencanaTeks: { fontSize: 10, fontWeight: '700', color: '#fff' },
+  pil: { flex: 1, borderRadius: 27, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  pilAktif: { backgroundColor: W.tinta(0.12), borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.tinta(0.09), borderTopColor: W.tinta(0.18) },
+  label: { fontSize: 10.5, fontWeight: '500' },
+  lencana: { position: 'absolute', top: -6, right: -11, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: W.plus, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#17130E' },
+  lencanaTeks: { fontSize: 10, fontWeight: '800', color: W.utamaTeks },
 }));

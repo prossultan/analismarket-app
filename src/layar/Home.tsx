@@ -1,51 +1,56 @@
 /**
- * HOME — pusat menu, bukan pasar. Varian A di `opendesign/mockups/home-2026`.
+ * HOME — redesain kaca obsidian (Okt 2026, mockup `opendesign/mockups/polish-2026`).
  *
- * Keputusan pemilik 19 Sep: "pasar jangan taruh di home". Harga, kartu
- * pasar, dan daftar "yang bergerak" pindah seluruhnya ke tab Pasar. Yang
- * tinggal di sini: siapa yang masuk, apa yang sudah dipasang, dan pintu ke
- * tiap fitur — supaya orang tidak perlu menebak menunya ada di mana.
+ * Urutan, dari yang paling sering dicari:
+ *   kepala        avatar (→ Menu) · sapaan · status AM+ · lonceng kabar
+ *   kartu utama   pasar/tf/mesin TERAKHIR DIBUKA dengan bacaan asli
+ *   lanjut belajar video Akademi terakhir (dari kemajuan di perangkat ini)
+ *   enam pintu    yang tidak dobel dengan tab — dengan angka hidup
+ *   pasar favorit tiga kartu sparkline, digulir mendatar
+ *   kabar / AM+   kabar terakhir untuk pelanggan, kartu AM+ untuk yang belum
  *
- * Satu permintaan jaringan saja (`/api/saya`). Dulu Home menarik pasar DAN
- * bacaan tiap dibuka; sekarang kedua permintaan itu milik tab Pasar.
+ * Keputusan pemilik yang tetap berlaku: tidak ada DAFTAR pasar di Home
+ * (19 Sep). Kartu utama bukan daftar — ia satu pasar yang orangnya sendiri
+ * pilih, dan satu ketukan kembali ke sana.
+ *
+ * Kisi 12 ikon lama dipangkas ke 6: Chart, Kabar, AnalisMarket+, dan Lainnya
+ * sudah jadi tab (dobel), Profil dan Pengaturan pindah ke Menu dari avatar.
  */
+import { ISTILAH } from '../data/istilah';
 import { useCallback, useEffect } from 'react';
 import { gayaTema } from '../gaya/tema';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
+import { Image, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSisaBilah } from '../gaya/jarak';
 import { ambilKabarMasuk, ambilRingkas, type KabarMasuk, type Ringkas } from '../data/saya';
 import { useMuat, type Hasil } from '../data/muat';
+import { useKemajuan, urlSampul } from '../data/akademi';
 import { useSesi } from './Akun';
 import { Ikon, type NamaIkon } from '../komponen/Ikon';
-import { Kosong, Lbl, Mikro, PitaBasi, Tombol } from '../komponen/mockup';
-import { Ikon as IkonKabar } from '../komponen/Ikon';
+import { Kosong, Mikro, PitaBasi, Tombol } from '../komponen/mockup';
 import { jamWib } from '../data/tampil';
-import { W, H, R, TALANG } from '../gaya/token';
+import { W, R, TALANG } from '../gaya/token';
 import type { Setelan } from '../data/simpan';
+import { Latar } from '../komponen/Latar';
+import { KartuUtama } from '../komponen/KartuUtama';
 import { KartuPasarMini } from '../komponen/KartuPasarMini';
 import { KartuPlus } from '../komponen/KartuPlus';
+import { AvatarKepala } from '../komponen/AvatarKepala';
 import { Tekan } from '../komponen/Tekan';
 import { setBelumDibaca, useBelumDibaca } from '../data/kotakMasuk';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { JEDA_URUT } from '../gaya/gerak';
 
-export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung';
-type Props = { setelan: Setelan; bukaPasar: () => void; buka: (ke: TujuanHome) => void; bukaTab: (t: 'amplus' | 'lainnya' | 'kabar') => void; bukaPasarDi: (simbol: string) => void };
+export type TujuanHome = 'Profil' | 'Pantauan' | 'PantauanBaru' | 'KabarOtomatis' | 'CekBanyak' | 'Kalender' | 'Belajar' | 'Pengaturan' | 'Sambung' | 'Menu';
+type Props = {
+  setelan: Setelan; bukaPasar: () => void; bukaBacaan: () => void; buka: (ke: TujuanHome) => void;
+  bukaTab: (t: 'amplus' | 'kabar' | 'akademi') => void; bukaPelajaran: (id: string) => void; bukaPasarDi: (simbol: string) => void;
+};
 
-/** Satu sel kisi: lencana di atas, ikon, label — mengikuti referensi pemilik. */
-function Sel({ ikon, label, lencana, warnaLencana, emas = false, onPress }: {
-  ikon: NamaIkon; label: string; lencana?: string; warnaLencana?: 'emas' | 'putih' | 'merah'; emas?: boolean; onPress: () => void;
-}) {
-  const lb = warnaLencana === 'merah' ? g.lencanaMerah : warnaLencana === 'putih' ? g.lencanaPutih : g.lencanaEmas;
-  const lbTeks = warnaLencana === 'putih' ? W.teksKuat : warnaLencana === 'merah' ? '#fff' : '#1A1508';
-  return (
-    <Tekan onPress={onPress} accessibilityLabel={label} gayaLuar={{ width: '25%' }} gaya={g.sel}>
-      {lencana !== undefined && <View style={[g.lencana, lb]}><Text style={[g.lencanaTeks, { color: lbTeks }]}>{lencana}</Text></View>}
-      <Ikon nama={ikon} warna={emas ? W.plus : W.teksKuat} ukuran={26} />
-      <Text style={g.selLabel} numberOfLines={1}>{label}</Text>
-    </Tekan>
-  );
+/** "Jumat, 9 Okt" — tanggal hari ini, dalam bahasa produk. */
+function tanggalPendek(): string {
+  const t = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 /** Urutan masuk isi Home — hanya saat layar lahir (tab dibekukan sesudahnya), bukan tiap pindah tab. */
@@ -55,6 +60,19 @@ function Masuk({ i, children }: { i: number; children: React.ReactNode }) {
      produk — cuma harness — jadi di sana tanpa animasi masuk. */
   if (Platform.OS === 'web') return <View>{children}</View>;
   return <Animated.View entering={FadeInDown.duration(280).delay(i * JEDA_URUT)}>{children}</Animated.View>;
+}
+
+/** Satu pintu: ikon dalam kotak amber, nama, dan angka yang HIDUP (bukan hiasan). */
+function Pintu({ ikon, judul, ket, am = false, onPress }: { ikon: NamaIkon; judul: string; ket: string; am?: boolean; onPress: () => void }) {
+  return (
+    <Tekan onPress={onPress} accessibilityLabel={judul} gayaLuar={{ flex: 1 }} gaya={g.pintu}>
+      {am && <Text style={g.pintuAm}>AM+</Text>}
+      <View style={g.pintuIkon}><Ikon nama={ikon} warna={W.plus} ukuran={18} /></View>
+      <View style={{ flex: 1 }} />
+      <Text style={g.pintuJudul} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.86}>{judul}</Text>
+      <Text style={g.pintuKet} numberOfLines={1}>{ket}</Text>
+    </Tekan>
+  );
 }
 
 /**
@@ -74,7 +92,7 @@ function KartuKabarTerakhir({ kunci, kosong, onPress }: { kunci: number; kosong:
   return (
     <Tekan onPress={onPress} accessibilityLabel="Buka kabar" gaya={g.kabarTerakhir} skala={0.97}>
       <View style={g.kabarKepala}>
-        <IkonKabar nama={k.jenis === 'sistem' ? 'gir' : k.jenis === 'promo' || k.jenis === 'otomatis' ? 'plus' : 'kabar'} warna={W.plusTeks} ukuran={14} />
+        <Ikon nama={k.jenis === 'sistem' ? 'gir' : k.jenis === 'promo' || k.jenis === 'otomatis' ? 'plus' : 'kabar'} warna={W.plusTeks} ukuran={14} />
         <Text style={g.kabarCap}>Kabar terakhir · {jamWib(Math.floor(new Date(k.dibuat).getTime() / 1000))}</Text>
         {!k.dibaca && <View style={g.kabarTitik} />}
       </View>
@@ -84,8 +102,8 @@ function KartuKabarTerakhir({ kunci, kosong, onPress }: { kunci: number; kosong:
   );
 }
 
-export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Props) {
-  const tinggiKepala = useTinggiKepala();
+export function LayarHome({ setelan, bukaPasar, bukaBacaan, buka, bukaTab, bukaPelajaran, bukaPasarDi }: Props) {
+  const { top } = useSafeAreaInsets();
   const sisaBilah = useSisaBilah();
   const sesi = useSesi();
 
@@ -95,116 +113,175 @@ export function LayarHome({ setelan, bukaPasar, buka, bukaTab, bukaPasarDi }: Pr
   }, [sesi]);
   const { keadaan, segarkan, menyegarkan, ulangi } = useMuat(muat, sesi === null ? 'kosong' : `ada:${sesi.jenis ?? 'mini'}`);
 
-  /* SEMUA KAIT DI ATAS early return. `useBelumDibaca` dan `useEffect` dulu
-     duduk di bawahnya: saat `/api/saya` gagal, layar gagal dirender tanpa
-     kedua kait itu, dan render berikutnya yang berhasil menambahkannya —
-     React menjatuhkan app. Dijaga `skrip/periksa-kait.mjs`. */
+  /* SEMUA KAIT DI ATAS early return. Dijaga `skrip/periksa-kait.mjs`. */
   const r = keadaan.fase === 'ada' ? keadaan.isi : null;
   const basi = keadaan.fase === 'ada' ? keadaan.basi : null;
   const plus = r?.langganan === 'plus';
   const belum = useBelumDibaca();
+  const kemajuan = useKemajuan();
   useEffect(() => { if (r !== null && r.kabarBelumDibaca !== undefined) setBelumDibaca(r.kabarBelumDibaca); }, [r]);
+
+  const nama = sesi?.akun.nama ?? null;
+  const namaDepan = nama === null || nama.trim() === '' ? null : (nama.trim().split(' ')[0] ?? nama);
+
+  const kepala = (
+    <View style={g.kepala}>
+      <AvatarKepala ukuran={42} label="Menu" onPress={() => { buka('Menu'); }} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={g.tanggal}>{tanggalPendek()}</Text>
+        {/* Nama tampilan Telegram boleh kosong, dan itu sah — sapaannya tidak menggantung. */}
+        <Text style={g.sapa} numberOfLines={1}>{namaDepan === null ? 'Selamat datang' : `Halo, ${namaDepan}`}</Text>
+      </View>
+      {r !== null && (plus
+        ? <View style={g.lencanaAm}><Text style={g.lencanaAmTeks}>AM+ · {r.sisaHariPlus} hari</Text></View>
+        : <View style={g.lencanaGratis}><Text style={g.lencanaGratisTeks}>Gratis</Text></View>)}
+      <Tekan onPress={() => { bukaTab('kabar'); }} accessibilityLabel={belum > 0 ? `Kabar, ${String(belum)} belum dibaca` : 'Kabar'} gaya={g.lonceng}>
+        <Ikon nama="kabar" warna={W.teksKuat} ukuran={20} />
+        {belum > 0 && <View style={g.lencanaLonceng}><Text style={g.lencanaLoncengTeks}>{belum > 99 ? '99+' : String(belum)}</Text></View>}
+      </Tekan>
+    </View>
+  );
 
   if (keadaan.fase === 'gagal') {
     return (
-      <View style={[g.akar, { paddingTop: tinggiKepala, paddingBottom: sisaBilah, paddingHorizontal: TALANG, justifyContent: 'center' }]}>
-        <Kosong ikon="rumah" judul="Akun tidak terbaca" kalimat={keadaan.kalimat} aksi={ulangi} />
-      </View>
+      <Latar>
+        <View style={{ flex: 1, paddingTop: top + 8, paddingBottom: sisaBilah, paddingHorizontal: TALANG }}>
+          {kepala}
+          <Kosong ikon="rumah" judul="Akun tidak terbaca" kalimat={keadaan.kalimat} aksi={ulangi} />
+        </View>
+      </Latar>
     );
   }
-  const nama = sesi?.akun.nama ?? null;
-  const google = sesi?.jenis === 'clerk';
-  const angka = (n: number | undefined): string => (n === undefined ? '—' : n.toLocaleString('id-ID'));
+
+  const terakhir = kemajuan.terakhir;
+  const posisi = terakhir === null ? 0 : kemajuan.posisi[terakhir.id] ?? 0;
+  const durasi = terakhir?.menit === null || terakhir === null ? 0 : (terakhir.menit ?? 0) * 60;
+  const sampul = urlSampul(terakhir?.sampul ?? undefined);
 
   return (
-    <ScrollView
-      style={g.akar}
-      contentContainerStyle={{ flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 8 }}
-      refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup} onRefresh={segarkan} />}
-    >
-      {basi !== null && <PitaBasi kalimat={basi} />}
+    <Latar>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, paddingTop: top + 8, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 12 }}
+        refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup} onRefresh={segarkan} />}
+      >
+        {kepala}
+        {basi !== null && <PitaBasi kalimat={basi} />}
 
-      {/* Kartu akun — ringkas: siapa, status, dua angka. Emas hanya untuk AM+. */}
-      <Masuk i={0}><View style={[g.akun, plus ? g.akunPlus : g.akunGratis]}>
-        {plus && <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.18)', 'rgba(201,169,97,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={g.akunNama} numberOfLines={1}>{nama === null ? 'Selamat datang' : `Halo, ${nama.split(' ')[0] ?? nama}`}</Text>
-          <Text style={g.akunKet} numberOfLines={1}>
-            {plus ? `AnalisMarket+ · ${angka(r?.sisaHariPlus)} hari lagi` : 'Paket gratis'} · {google ? 'Google' : 'Telegram'}
-          </Text>
-        </View>
-        <View style={g.angka}><Text style={g.angkaBesar}>{r === null ? '—' : `${String(r.pantauanAktif)}/${String(r.maksPantauan)}`}</Text><Text style={g.angkaLabel}>pantauan</Text></View>
-        {/* Akun gratis: "Gratis", bukan "— hari AM+" (garis terbaca sebagai angka yang gagal dimuat). */}
-        <View style={g.angka}><Text style={g.angkaBesar}>{plus ? angka(r?.sisaHariPlus) : 'Gratis'}</Text><Text style={g.angkaLabel}>{plus ? 'hari AM+' : 'paket'}</Text></View>
-      </View></Masuk>
-      {/* Kabar ke HP lewat push; ajakannya ke saklar notifikasi, bukan ke Telegram. */}
-      {!setelan.pushNyala && <Tombol teks="Nyalakan notifikasi — kabar pantauan datang ke HP ini" jenis="kedua" onPress={() => { buka('Pengaturan'); }} />}
+        <Masuk i={0}>
+          <KartuUtama pasar={setelan.pasar} tf={setelan.tf} mesin={setelan.mesin} bukaPasar={bukaPasar} bukaBacaan={bukaBacaan} />
+        </Masuk>
 
-      {/* Kisi menu — SEMUA pintu di satu tempat, ikon di atas label. */}
-      <Masuk i={1}><View style={g.kisi}>
-        <Sel ikon="pasar" label="Chart" onPress={bukaPasar} />
-        <Sel ikon="kabar" label="Pantauan" lencana={r === null ? undefined : `${String(r.pantauanAktif)} aktif`} warnaLencana="putih" onPress={() => { buka('Pantauan'); }} />
-        <Sel ikon="tambah" label="Pantauan baru" onPress={() => { buka('PantauanBaru'); }} />
-        <Sel ikon="kalender" label="Kabar otomatis" lencana="AM+" emas={plus} onPress={() => { buka('KabarOtomatis'); }} />
-        <Sel ikon="kabar" label="Kabar" lencana={belum > 0 ? `${String(belum)} baru` : undefined} warnaLencana="merah" onPress={() => { bukaTab('kabar'); }} />
-        <Sel ikon="kisi" label="Cek banyak" lencana="AM+" emas={plus} onPress={() => { buka('CekBanyak'); }} />
-        <Sel ikon="kalender" label="Kalender" onPress={() => { buka('Kalender'); }} />
-        <Sel ikon="buku" label="Belajar" onPress={() => { buka('Belajar'); }} />
-        <Sel ikon="profil" label="Profil" onPress={() => { buka('Profil'); }} />
-        <Sel ikon="gir" label="Pengaturan" onPress={() => { buka('Pengaturan'); }} />
-        <Sel ikon="plus" label="AnalisMarket+" emas onPress={() => { bukaTab('amplus'); }} />
-        <Sel ikon="turunkan" label="Lainnya" onPress={() => { bukaTab('lainnya'); }} />
-      </View></Masuk>
+        <Masuk i={1}>
+          <Tekan onPress={() => { if (terakhir !== null) bukaPelajaran(terakhir.id); else bukaTab('akademi'); }} skala={0.97}
+            accessibilityLabel={terakhir === null ? 'Buka Akademi' : `Lanjutkan ${terakhir.judul}`} gaya={g.lanjut}>
+            <View style={g.thumb}>
+              {sampul !== null
+                ? <Image source={{ uri: sampul }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                : <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}><Ikon nama="akademi" warna={W.plus} ukuran={24} /></View>}
+              <View style={g.thumbPutar}><Ikon nama="putar" warna="#fff" isi="#fff" ukuran={18} /></View>
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+              <Text style={g.alis}>{terakhir === null ? 'AKADEMI · BELAJAR DARI NOL' : `AKADEMI · BAB ${String(terakhir.bab)} · VIDEO ${String(terakhir.no).padStart(2, '0')}`}</Text>
+              <Text style={g.lanjutJudul} numberOfLines={1}>{terakhir === null ? 'Mulai dari video 01' : terakhir.judul}</Text>
+              {terakhir !== null && durasi > 0 && (
+                <View style={g.bar}><View style={[g.barIsi, { width: `${String(Math.min(100, (posisi / durasi) * 100))}%` as `${number}%` }]} /></View>
+              )}
+              <Text style={g.lanjutKet}>{terakhir === null ? '6 bab · video tayang bertahap' : kemajuan.selesai.length > 0 ? `${String(kemajuan.selesai.length)} video selesai di perangkat ini` : 'Lanjutkan dari detik terakhir'}</Text>
+            </View>
+            <Text style={g.panah}>›</Text>
+          </Tekan>
+        </Masuk>
 
-      {/* PEMANIS — bento sparkline (referensi pemilik): satu besar, tiga kecil.
-          BTC besar; XAU/USD, ETH, SOL kecil. Hiasan yang hidup, bukan daftar. */}
-      <Masuk i={2}><View style={g.bento}>
-        <KartuPasarMini simbol="BTCUSDT" nama="Bitcoin" besar onPress={() => { bukaPasarDi('BTCUSDT'); }} />
-        <View style={g.bentoKanan}>
-          <KartuPasarMini simbol="XAU/USD" nama="Emas" onPress={() => { bukaPasarDi('XAU/USD'); }} />
-          <View style={g.bentoBawah}>
-            <KartuPasarMini simbol="ETHUSDT" nama="ETH" onPress={() => { bukaPasarDi('ETHUSDT'); }} />
-            <KartuPasarMini simbol="SOLUSDT" nama="SOL" onPress={() => { bukaPasarDi('SOLUSDT'); }} />
+        {/* Kabar ke HP lewat push; ajakannya ke saklar notifikasi, bukan ke Telegram. */}
+        {!setelan.pushNyala && <Tombol teks="Nyalakan notifikasi — kabar pantauan datang ke HP ini" jenis="kedua" onPress={() => { buka('Pengaturan'); }} />}
+
+        <Masuk i={2}>
+          <View style={{ gap: 10 }}>
+            <View style={g.barisPintu}>
+              <Pintu ikon="mata" judul="Pantauan" ket={r === null ? '—' : `${String(r.pantauanAktif)} dari ${String(r.maksPantauan)} aktif`} onPress={() => { buka('Pantauan'); }} />
+              <Pintu ikon="tambah" judul="Pantau baru" ket="pasar × tf" onPress={() => { buka('PantauanBaru'); }} />
+              <Pintu ikon="kilat" judul="Kabar otomatis" ket="rangkuman pagi" am onPress={() => { buka('KabarOtomatis'); }} />
+            </View>
+            <View style={g.barisPintu}>
+              <Pintu ikon="kisi" judul="Cek banyak" ket="sampai 12 pasar" am onPress={() => { buka('CekBanyak'); }} />
+              <Pintu ikon="kalender" judul="Kalender" ket="30 hari ke depan" onPress={() => { buka('Kalender'); }} />
+              <Pintu ikon="buku" judul="Istilah" ket={`${String(ISTILAH.length)} istilah`} onPress={() => { buka('Belajar'); }} />
+            </View>
           </View>
-        </View>
-      </View></Masuk>
+        </Masuk>
 
-      {/* PELANGGAN: kabar terakhir, bukan kartu AM+ kedua. Kartu sapaan sudah
-          menyebut "AnalisMarket+ · 23 hari lagi"; mengulangnya di bawah cuma
-          menghabiskan satu layar (audit 20 Sep). Yang belum berlangganan
-          tetap melihat kartu jualan. */}
-      <Masuk i={3}>{plus && sesi !== null
-        ? <KartuKabarTerakhir kunci={belum} kosong={<KartuPlus plus sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />} onPress={() => { bukaTab('kabar'); }} />
-        : <KartuPlus plus={plus} sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />}</Masuk>
+        <Masuk i={3}>
+          <View style={g.seksi}><Text style={g.seksiJudul}>Pasar favorit</Text></View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }} style={{ marginHorizontal: -TALANG }}>
+            <View style={{ width: TALANG - 10 }} />
+            <KartuPasarMini simbol="XAU/USD" nama="Emas" lebar={150} onPress={() => { bukaPasarDi('XAU/USD'); }} />
+            <KartuPasarMini simbol="ETHUSDT" nama="ETH" lebar={150} onPress={() => { bukaPasarDi('ETHUSDT'); }} />
+            <KartuPasarMini simbol="SOLUSDT" nama="SOL" lebar={150} onPress={() => { bukaPasarDi('SOLUSDT'); }} />
+            <KartuPasarMini simbol="BTCUSDT" nama="Bitcoin" lebar={150} onPress={() => { bukaPasarDi('BTCUSDT'); }} />
+            <View style={{ width: TALANG - 10 }} />
+          </ScrollView>
+        </Masuk>
 
-      <Mikro>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Mikro>
-    </ScrollView>
+        {/* PELANGGAN: kabar terakhir, bukan kartu AM+ kedua — status AM+ sudah
+            di kepala. Yang belum berlangganan tetap melihat kartu AM+. */}
+        <Masuk i={4}>{plus && sesi !== null
+          ? <KartuKabarTerakhir kunci={belum} kosong={<KartuPlus plus sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />} onPress={() => { bukaTab('kabar'); }} />
+          : <KartuPlus plus={plus} sisaHari={r?.sisaHariPlus} onPress={() => { bukaTab('amplus'); }} />}</Masuk>
+
+        <Mikro>Alat baca chart, bukan alat prediksi. Bukan ajakan melakukan transaksi.</Mikro>
+      </ScrollView>
+    </Latar>
   );
 }
 
 const g = gayaTema((W) => StyleSheet.create({
-  kabarTerakhir: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, padding: 14, gap: 4 },
+  kepala: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingBottom: 2 },
+  tanggal: { fontSize: 12, color: W.teksRedup },
+  sapa: { fontSize: 19, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.4, marginTop: 1 },
+  lencanaAm: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: W.amberTepi, backgroundColor: W.amberLatar },
+  lencanaAmTeks: { fontSize: 11.5, fontWeight: '700', color: W.plusTeks },
+  lencanaGratis: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, backgroundColor: W.isiSamar },
+  lencanaGratisTeks: { fontSize: 11.5, fontWeight: '600', color: W.teksRedup },
+  lonceng: {
+    width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
+  lencanaLonceng: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: W.plus, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: W.latar },
+  lencanaLoncengTeks: { fontSize: 10, fontWeight: '800', color: W.utamaTeks },
+
+  lanjut: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, padding: 10, paddingRight: 12,
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
+  thumb: { width: 104, height: 58, borderRadius: 11, overflow: 'hidden', backgroundColor: W.latar900, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.tinta(0.1) },
+  thumbPutar: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.25)' },
+  alis: { fontSize: 9.5, letterSpacing: 1.4, color: W.plusTeks, fontWeight: '700' },
+  lanjutJudul: { fontSize: 13.5, fontWeight: '600', color: W.teksKuat },
+  lanjutKet: { fontSize: 11, color: W.teksSamar },
+  bar: { height: 4, borderRadius: 2, backgroundColor: W.tinta(0.1), overflow: 'hidden', marginTop: 2 },
+  barIsi: { height: 4, borderRadius: 2, backgroundColor: W.plus },
+  panah: { fontSize: 20, color: W.teksSamar, marginTop: -2 },
+
+  barisPintu: { flexDirection: 'row', gap: 8 },
+  pintu: {
+    height: 88, borderRadius: 18, padding: 10, paddingTop: 12,
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
+  pintuIkon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: W.amberLatar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(229,173,81,0.22)' },
+  pintuAm: { position: 'absolute', top: 10, right: 10, fontSize: 9, fontWeight: '800', color: W.plusTeks, letterSpacing: 0.4 },
+  pintuJudul: { fontSize: 12.5, fontWeight: '600', color: W.teksKuat, letterSpacing: -0.2 },
+  pintuKet: { fontSize: 10.5, color: W.teksSamar, marginTop: 1 },
+
+  seksi: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10, marginTop: 2 },
+  seksiJudul: { fontSize: 15, fontWeight: '600', color: W.teksKuat },
+
+  kabarTerakhir: {
+    borderRadius: R.kartu, padding: 14, gap: 4,
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+  },
   kabarKepala: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  kabarCap: { color: W.plusTeks, fontSize: H.label, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', flex: 1 },
+  kabarCap: { color: W.plusTeks, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', flex: 1 },
   kabarTitik: { width: 8, height: 8, borderRadius: 4, backgroundColor: W.plus },
-  kabarJudul: { color: W.teksKuat, fontSize: H.nama, fontWeight: '700', marginTop: 4 },
-  kabarIsi: { color: W.teks, fontSize: H.nilai, lineHeight: 19 },
-  akar: { flex: 1, backgroundColor: W.latar },
-  akun: { borderRadius: R.kartu + 2, paddingVertical: 12, paddingHorizontal: 13, overflow: 'hidden', borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  akunPlus: { borderColor: 'rgba(201,169,97,0.38)', backgroundColor: W.kartu },
-  akunGratis: { borderColor: W.garis, backgroundColor: W.kartu },
-  akunNama: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, letterSpacing: -0.3 },
-  akunKet: { fontSize: H.alat, color: W.teksRedup, marginTop: 2 },
-  angka: { alignItems: 'flex-end' },
-  angkaBesar: { fontSize: 16, fontWeight: '600', color: W.teksKuat, fontVariant: ['tabular-nums'] },
-  angkaLabel: { fontSize: H.label, color: W.teksSamar },
-  kisi: { backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: 20, paddingTop: 14, paddingBottom: 8, paddingHorizontal: 4, flexDirection: 'row', flexWrap: 'wrap' },
-  sel: { alignItems: 'center', paddingTop: 12, paddingBottom: 10, gap: 7 },
-  selLabel: { fontSize: 11, color: W.teks },
-  lencana: { position: 'absolute', top: -2, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
-  lencanaEmas: { backgroundColor: W.plus }, lencanaPutih: { backgroundColor: W.tinta(0.12) }, lencanaMerah: { backgroundColor: W.turun },
-  lencanaTeks: { fontSize: 9, fontWeight: '700' },
-  bento: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
-  bentoKanan: { flex: 1.2, gap: 8 },
-  bentoBawah: { flexDirection: 'row', gap: 8 },
+  kabarJudul: { color: W.teksKuat, fontSize: 14, fontWeight: '600', marginTop: 4 },
+  kabarIsi: { color: W.teks, fontSize: 12.5, lineHeight: 18 },
 }));

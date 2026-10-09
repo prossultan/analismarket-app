@@ -26,6 +26,13 @@ import { gagalBacaan, type GagalBacaan } from './gagalBacaan';
 import type { Setelan } from './simpan';
 import { bukaTf } from './tfPengganti';
 
+/**
+ * Lapisan chart yang menyala saat layar Pasar dibuka. Satu sumber untuk layar
+ * Pasar dan Pengaturan — Pengaturan sempat menulis "volume · zona · level"
+ * sementara chart-nya membuka empat lapisan.
+ */
+export const ALAT_BAWAAN: readonly string[] = ['volume', 'zona', 'struktur', 'level'];
+
 export type PasarTf = {
   pasar: Pasar | null;
   /** Yang dibuka — `setelan.tf`, atau penggantinya kalau pasar ini tidak punya. */

@@ -17,7 +17,7 @@ export function KartuPlus({ plus, sisaHari, onPress }: { plus: boolean; sisaHari
   const h = hargaPlus();
   return (
     <View style={g.kartu}>
-      <LinearGradient pointerEvents="none" colors={['rgba(201,169,97,0.22)', 'rgba(201,169,97,0.05)', 'rgba(201,169,97,0.12)']} locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient pointerEvents="none" colors={['rgba(229,173,81,0.22)', 'rgba(229,173,81,0.05)', 'rgba(229,173,81,0.12)']} locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={g.kepala}>
         <Ikon nama="plus" warna={W.plus} ukuran={18} isi={W.plus} />
         <Text style={g.cap}>AnalisMarket+</Text>
@@ -48,15 +48,15 @@ export function KartuPlus({ plus, sisaHari, onPress }: { plus: boolean; sisaHari
 }
 
 const g = gayaTema((W) => StyleSheet.create({
-  kartu: { borderRadius: R.kartu + 2, padding: 14, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(201,169,97,0.42)', backgroundColor: W.kartu },
+  kartu: { borderRadius: R.kartu, padding: 16, overflow: 'hidden', borderWidth: 1, borderColor: W.amberTepi, borderTopColor: 'rgba(240,191,107,0.62)', backgroundColor: W.kartu },
   kepala: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   cap: { fontSize: H.label, letterSpacing: 1.6, textTransform: 'uppercase', color: W.plusTeks, fontWeight: '700' },
   judul: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, marginTop: 8, letterSpacing: -0.2 },
-  ket: { fontSize: H.alat, color: W.teksRedup, marginTop: 4, lineHeight: 15 },
-  harga: { fontSize: 20, fontWeight: '700', color: W.plusTerang, marginTop: 4, letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
+  ket: { fontSize: 12.5, color: W.teksRedup, marginTop: 4, lineHeight: 18 },
+  harga: { fontSize: 24, fontWeight: '700', color: W.plusTerang, marginTop: 6, letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
   per: { fontSize: H.alat, fontWeight: '400', color: W.teksRedup },
   manfaat: { marginTop: 8, gap: 5 },
   baris: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
   centang: { color: W.plusTeks, fontSize: 11, marginTop: 1 },
-  manfaatTeks: { fontSize: H.nilai, color: W.teks, flex: 1 },
+  manfaatTeks: { fontSize: 13, color: W.teks, flex: 1, lineHeight: 19 },
 }));

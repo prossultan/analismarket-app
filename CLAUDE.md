@@ -817,3 +817,85 @@ mencetak tembok AM+ m5 di tf gratis.
   ditetapkan (`teksTercetak`), bukan cuma dari `tanyaPlus(true)`.
 - Keluar akun = `keluarAkun(tokenPerangkat)`: cabut perangkat push selagi
   Bearer sah, baru buang sesi; maksimal 5 detik, gagal tidak menahan keluar.
+
+## Redesain Obsidian + amber (9 Okt) — keputusan yang tidak terbaca dari kode
+
+Pemilik memilih palet landing yang live (obsidian `#080706`, amber `#E5AD51`)
+dan **tombol utama amber seperti landing**. Akibatnya aturan lama "emas cuma
+untuk AnalisMarket+" tidak berlaku lagi untuk tombol utama dan chip saringan
+terpilih: identitas AM+ sekarang dibawa lencana "AM+", `plusTeks`/`plusTerang`,
+dan kartu member, bukan warna saja. Saklar banyak-pilih (lapisan chart) memakai
+`<Chip halus>` — empat chip amber berderet bersaing dengan tombol utama.
+
+- **Kaca Android = View padat, tanpa BlurView.** `dimezisBlurView` merender ulang
+  blur tiap frame, dan aturan keterbacaan sudah menuntut kaca layak tanpa blur.
+  iOS tetap blur. Dijaga `periksa-kaca.mjs` aturan 6 (uji-mutasi 3/3).
+- **Cahaya di balik kaca = `<Latar>` per layar**: SVG statis dan memo, nol kerja
+  per frame. Layar tetap berlatar padat, karena layar transparan di native-stack
+  memperlihatkan layar sebelumnya selama transisi.
+- **Tab Lainnya → Akademi.** Isi Lainnya pindah ke layar `Menu` (dibuka dari
+  avatar di Home). Rutenya `Menu` di tumpukan Home.
+- **Splash A + C** (`SplashBergerak.tsx`). Frame pertamanya = splash native: logo
+  75 dp di tengah (cakram 384 px pada kanvas 1024, `imageWidth` 200) di atas
+  `#080706`. Warna splash di `app.json` WAJIB sama dengan `LATAR` di komponen,
+  kalau tidak ada kedip di sambungannya. Semua gerak di UI thread. Tidak menambah
+  waktu tunggu. Kurangi gerak = diam lalu pudar. Versi C cuma sekali (kunci
+  `am_sambutan_v1`).
+- **Keadaan navigasi disimpan di ref**, bukan state. Sebagai state, ia merender
+  ulang seluruh pohon tiap pindah layar.
+- **`<Butir sub>`** untuk keterangan yang panjang. Nama baris sekarang mengisi
+  sisa baris, sampai dua baris. Potret 9 Okt menemukan "Lapisan baw…",
+  "Tetap menyala saat chart terbu…", dan "Kabar oto…"; dari kode semuanya
+  terlihat wajar.
+
+## Pemutar Akademi = iframe Bunny Stream (9 Okt)
+
+Video Akademi pindah ke Bunny atas keputusan pemilik, dan MP4 di VPS dihapus.
+App mengirim `dukung=iframe` ke `/putar`. Keputusannya ada di `src/data/pemutar.ts`
+(murni, dijalankan `uji-keputusan.mjs`).
+
+- URL iframe diterima cuma kalau asalnya persis `iframe.mediadelivery.net`,
+  jalurnya `/embed/<angka>/<uuid>`, dan **huruf kuerinya dibatasi**, karena URL
+  itu ditulis ke atribut HTML halaman pembungkus.
+- Halaman pembungkus berasal analismarket.com (`baseUrl`), jadi iframe membawa
+  Referer yang sama dengan web. Kemajuan menonton dibaca lewat jembatan
+  player.js:
+  - pesan cuma diterima dari jendela iframe itu dengan asal Bunny;
+  - perintah dikirim dengan targetOrigin Bunny, bukan `"*"`;
+  - `setCurrentTime` cuma sekali, sesudah `ready`;
+  - `error` sengaja tidak didengar — Bunny menampilkan galatnya sendiri.
+- **`originWhitelist={['*']}` + `bolehDimuatPemutar`, BUKAN daftar sempit.** Di
+  react-native-webview, daftar itu cuma memutuskan apa yang diserahkan ke
+  peramban HP. iOS juga menanyakan navigasi iframe, jadi daftar sempit membuka
+  pemutar Bunny di Safari. Android selalu melaporkan `isTopFrame: true`
+  (13.16.1), jadi aturannya tidak boleh bergantung pada bingkai.
+- **`mulai` dibekukan saat pemutar dipasang.** Tanpa itu, `catatPosisi` (tiap
+  3 detik) mengganti HTML-nya, dan WebView memuat ulang videonya tiap 3 detik.
+- Jawaban `/putar` ditandai dengan id videonya dan dibuang saat pelajaran
+  berganti, karena URL bertanda tangan cuma berumur 2 jam.
+- MP4 satu asal tetap menjadi cadangan untuk jawaban tanpa `jenis` (server tanpa
+  kunci, atau id yang belum masuk `bunny.json`). Pemutaran MP4 lokal tidak ditambah.
+- `periksa-teks` punya `ASAL_TERTANAM`: asal Bunny sah di `pemutar.ts` saja, dan
+  asal yang mirip tetap dihitung tautan keluar. Uji-mutasi 2/2. Uji pemutar
+  15/16 merah; satu sisanya mutasi setara, karena regex jalurnya sudah menutup.
+
+## Pantauan: keadaan sekarang dan contoh notifikasi (9 Okt)
+
+- Baris pantauan membaca `/api/bacaan` lewat antrean yang sama dengan layar Pasar.
+  **m1/m5 emas & forex tidak dibaca otomatis**: tiap bacaan di sana memakai jatah
+  harian AM+ (`BATAS_PLUS_M1M5_HARIAN`). Aturannya sama dengan `penyediaUntuk`
+  di bot (bergaris miring → Twelve Data), dan potret `garisMiringTwelve` merah
+  kalau bot mengubahnya.
+- Contoh "kabar di layar kunci" adalah salinan `pesanKabarPush` bot, dan
+  templatnya dicocokkan lewat potret `pushKabar`. Jamnya `hh.mm`, bukan jam
+  karangan. Uji-mutasi 7/7.
+
+## Harness 9 Okt — tiga jebakan yang terbaca seperti bug app
+
+- `getByText('Jalankan')` mencocokkan sebagian kata TANPA peka huruf, jadi yang
+  terketuk "Dijalankan di server…". Hasilnya terlihat persis seperti tombol yang
+  diam. Pakai `{ exact: true }`.
+- Galat 400 dari `clerk.analismarket.com` di 127.0.0.1 adalah artefak harness
+  (asal yang tidak terdaftar), bukan galat app.
+- Di bawah beban server, Kalender butuh lebih dari 2,5 detik. Potret yang terlalu
+  cepat terbaca sebagai rangka yang tidak pernah berhenti.

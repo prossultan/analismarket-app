@@ -6,8 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0C0B09",
-    "primaryColor": "#C9A961",
+    "backgroundColor": "#080706",
+    "primaryColor": "#E5AD51",
     "scheme": "analismarket",
     "description": "Analisa teknikal otomatis untuk 131 pasar. Alat baca chart, bukan alat prediksi.",
     "assetBundlePatterns": [
@@ -81,13 +81,13 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0C0B09"
+          "backgroundColor": "#080706"
         }
       ],
       [
         "expo-notifications",
         {
-          "color": "#C9A961",
+          "color": "#E5AD51",
           "defaultChannel": "kabar"
         }
       ]

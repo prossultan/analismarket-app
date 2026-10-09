@@ -106,10 +106,34 @@ cek(!/backgroundColor/.test(gayaLapis),
 cek(/<Kaca tebal/.test(analisis),
   'Analisis.tsx: lapisan bacaan tidak memakai <Kaca tebal>');
 
-/* 6 · Android butuh experimentalBlurMethod, atau blur-nya diam-diam mati. */
-const kaca = readFileSync('src/komponen/Kaca.tsx', 'utf8');
-cek(/experimentalBlurMethod/.test(kaca),
-  'Kaca.tsx: tanpa experimentalBlurMethod — di Android BlurView merender kotak polos tanpa peringatan');
+/* 6 · ANDROID TANPA BLUR, DAN ISIANNYA PEKAT (Okt 2026).
+ *
+ * Aturan lamanya kebalikan ini: `experimentalBlurMethod` wajib ada supaya
+ * blur Android tidak diam-diam mati. Redesain kaca obsidian mencabut blur
+ * Android sama sekali — `dimezisBlurView` menghitung ulang blur tiap frame
+ * saat isi lewat di bawah kepala dan bilah, dan itu sebab gulir tersendat di
+ * HP menengah. Dua hal yang sekarang dijaga, karena keduanya bisa kembali
+ * tanpa satu pun galat:
+ *   a. BlurView cuma dirender SESUDAH cabang `if (!PAKAI_BLUR) return`, dan
+ *      PAKAI_BLUR = iOS saja;
+ *   b. isian kaca Android ≥ 0,9 — tanpa blur, warna itulah satu-satunya
+ *      yang menjaga teks di belakang bilah tidak tembus. */
+const kaca = readFileSync('src/komponen/Kaca.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+cek(/const PAKAI_BLUR = Platform\.OS === 'ios';/.test(kaca),
+  "Kaca.tsx: PAKAI_BLUR bukan `Platform.OS === 'ios'` — Android kembali menghitung blur tiap frame");
+/* Cabang Android DITEMBAK ISINYA, bukan letaknya: versi pertama cuma
+   menuntut `<BlurView` muncul sesudah `if (!PAKAI_BLUR)` — dan mutasi yang
+   menaruh BlurView DI DALAM cabang Android itu sendiri tetap hijau. */
+const cabangAndroid = kaca.match(/if \(!PAKAI_BLUR\)\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
+cek(/^\s*return\s*<View\b/.test(cabangAndroid) && !/BlurView/.test(cabangAndroid),
+  'Kaca.tsx: cabang Android tidak mengembalikan <View> polos — blur kembali dibayar tiap frame');
+const token = readFileSync('src/gaya/token.ts', 'utf8');
+const blokGelap = token.match(/const KACA_GELAP = \{[\s\S]*?\} as const;/)?.[0] ?? '';
+const alfaAndroid = [...blokGelap.matchAll(/IOS \? '[^']+' : 'rgba\([^)]*,\s*([0-9.]+)\)'/g)].map((m) => Number(m[1]));
+cek(alfaAndroid.length === 2, `token.ts: isian kaca Android tidak terbaca (${String(alfaAndroid.length)} dari 2)`);
+for (const a of alfaAndroid) {
+  cek(a >= 0.9, `token.ts: isian kaca Android ${String(a)} < 0,9 — tanpa blur, isi di belakang bilah tembus terbaca`);
+}
 
 if (masalah.length > 0) {
   process.stdout.write(`GAGAL — ${masalah.length} masalah kaca:\n`);

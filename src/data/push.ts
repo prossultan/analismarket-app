@@ -34,7 +34,7 @@ export async function siapkanSaluran(): Promise<void> {
     /* Getar TIDAK dinyalakan: izin VIBRATE sengaja diblokir di app.json, dan
        menyalakannya di sini akan menariknya kembali ke manifes. */
     vibrationPattern: undefined,
-    lightColor: '#C9A961',
+    lightColor: '#E5AD51',
   });
 }
 

@@ -23,8 +23,10 @@ import { W, H, R } from '../gaya/token';
 
 type Isi = { harga: number; deret: number[]; ubahPersen: number; desimal: number };
 
-export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPress }: {
-  simbol: string; nama: string; besar?: boolean; desimal?: number; onPress: () => void;
+export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, lebar, onPress }: {
+  simbol: string; nama: string; besar?: boolean; desimal?: number;
+  /** Lebar tetap — baris gulir mendatar di Home. Tanpa ini kartu membagi lebar barisnya. */
+  lebar?: number; onPress: () => void;
 }) {
   const muat = useCallback(async (segarkan: boolean): Promise<Hasil<Isi>> => {
     const b = await ambilBacaan(simbol, 'h1', segarkan);
@@ -61,7 +63,7 @@ export function KartuPasarMini({ simbol, nama, besar = false, desimal = 2, onPre
       /* Flex kartu harus di PRESSABLE LUAR: dialah anak baris bento. Saat
           gaya kartu pindah ke kotak dalam, BTC menyusut jadi sepertiga — luarnya
           tidak lagi ikut membagi lebar. */
-      gayaLuar={[{ flex: 1, minWidth: 0 }, besar && g.besar]} gaya={[g.kartu, { flex: 1 }]} skala={0.96}>
+      gayaLuar={lebar !== undefined ? { width: lebar } : [{ flex: 1, minWidth: 0 }, besar && g.besar]} gaya={[g.kartu, { flex: 1 }]} skala={0.96}>
       <View style={g.kepala}>
         <LambangPasar simbol={simbol} ukuran={20} />
         <Text style={g.nama} numberOfLines={1}>{nama}</Text>
@@ -99,14 +101,17 @@ function SparklineIsi({ deret, warna }: { deret: number[]; warna: string }) {
 const g = gayaTema((W) => StyleSheet.create({
   /* flex 1 + minWidth 0: di baris dua kartu, keduanya berbagi lebar dan
      tidak ada yang meluap keluar layar (terlihat di potret: Solana terpotong). */
-  kartu: { flex: 1, minWidth: 0, backgroundColor: W.kartu, borderWidth: 1, borderColor: W.garis, borderRadius: R.kartu + 2, padding: 11, overflow: 'hidden' },
+  kartu: {
+    flex: 1, minWidth: 0, backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+    borderRadius: 18, padding: 12, overflow: 'hidden',
+  },
   besar: { flex: 1 },
   kepala: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   nama: { fontSize: H.pasar, fontWeight: '700', color: W.teksKuat, flex: 1 },
   ticker: { fontSize: H.alat, color: W.teksSamar, marginTop: 4, fontWeight: '600', letterSpacing: 0.3 },
   harga: { fontSize: H.status, fontWeight: '700', color: W.teksKuat, marginTop: 2, fontVariant: ['tabular-nums'] },
   hargaBesar: { fontSize: 22, letterSpacing: -0.5 },
-  garis: { marginTop: 6, marginHorizontal: -11, flexDirection: 'row' },
+  garis: { marginTop: 6, marginHorizontal: -12, flexDirection: 'row' },
   kaki: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
   ubah: { fontSize: H.nilai, fontWeight: '700', fontVariant: ['tabular-nums'] },
 }));

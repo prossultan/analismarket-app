@@ -25,38 +25,47 @@ export type Palet = {
   plusTerang: string;
   plusRedup: string; chart: string; turunTepi: string; turunLatar: string; tirai: string;
   isiSamar: string; isiSamarKuat: string;
+  /** Tombol utama (amber, sama dengan landing) dan teks di atasnya. */
+  utama: string; utamaTerang: string; utamaTeks: string;
+  /** Isian kaca untuk KARTU isi: tembus tipis, supaya cahaya latar ikut terasa. */
+  kacaIsi: string; kacaTepi: string; kacaKilau: string;
+  /** Tepi amber untuk kartu utama dan lencana AM+. */
+  amberTepi: string; amberLatar: string;
+  /** Cahaya amber di belakang layar (Latar.tsx): pusat → tepi. */
+  cahaya: readonly [string, string, string];
   /** "Tinta" beralfa: putih di tema gelap, hampir-hitam di tema terang. Pengganti rgba(255,255,255,a). */
   tinta: (a: number) => string;
 };
 
 export const PALET_GELAP: Palet = {
-  /** obsidian hangat — latar halaman */
-  latar: '#0C0B09',
-  latar900: '#11100D',
-  /** permukaan kartu */
-  kartu: '#161512',
-  kartuTerang: '#1C1A17',
-  garis: '#252321',
-  garisSamar: 'rgba(255,255,255,0.06)',
+  /** OBSIDIAN — palet landing live (Okt 2026), bukan coklat-hitam lama. */
+  latar: '#080706',
+  latar900: '#0E0C0A',
+  /** permukaan kartu padat */
+  kartu: '#14120F',
+  kartuTerang: '#201C16',
+  garis: '#2E2924',
+  garisSamar: 'rgba(255,232,196,0.07)',
 
-  teks: '#CFCECB',
-  teksKuat: '#E8E7E5',
-  teksRedup: '#A7A4A1',
-  teksSamar: '#84827E',
+  teks: '#E4DED4',
+  teksKuat: '#F4F1EB',
+  teksRedup: '#BDB5A9',
+  teksSamar: '#8C8479',
 
   naik: '#10B981',
   turun: '#F43F5E',
   tanda: '#FD9829',
 
   /**
-   * EMAS CUMA UNTUK AnalisMarket+.
-   *
-   * Bukan selera. Di web emas berarti satu hal saja, dan begitu ia dipakai
-   * untuk "terpilih" juga, ia berhenti berarti apa pun. Keadaan terpilih
-   * memakai `teksKuat` — putih hangat, bukan emas.
+   * AMBER = WARNA MEREK (redesain 9 Okt, pilihan pemilik: "amber seperti
+   * landing"). Ia dipakai tombol utama (`utama`) dan chip saringan terpilih.
+   * Identitas AnalisMarket+ TIDAK lagi dibawa warna saja: lencana "AM+",
+   * `plusTeks`/`plusTerang`, dan kartu member yang membawanya. Saklar
+   * banyak-pilih memakai `<Chip halus>` — bukan amber — supaya tidak
+   * bersaing dengan tombol utama di layar yang sama.
    */
-  plus: '#C9A961',
-  plusRedup: 'rgba(201,169,97,0.14)',
+  plus: '#E5AD51',
+  plusRedup: 'rgba(229,173,81,0.14)',
 
   /* ── Warna yang sebelumnya diketik mentah di layar ────────────────────
      Enam nilai tersebar di lima berkas. Yang tersebar akan menyimpang. */
@@ -67,13 +76,23 @@ export const PALET_GELAP: Palet = {
   turunLatar: 'rgba(244,63,94,0.08)',
   /** Tirai di belakang lapisan bacaan. Tipis, supaya kendali di baliknya
       tetap terbaca — keduanya masih hidup saat lapisan terbuka. */
-  tirai: 'rgba(0,0,0,0.45)',
+  tirai: 'rgba(5,4,3,0.55)',
   /** Isian chip netral dan bar biaya kosong. */
-  isiSamar: 'rgba(255,255,255,0.05)',
-  isiSamarKuat: 'rgba(255,255,255,0.06)',
-  plusTeks: '#C9A961',
-  plusTerang: '#E3CE97',
-  tinta: (a) => `rgba(255,255,255,${String(a)})`,
+  isiSamar: 'rgba(255,236,206,0.05)',
+  isiSamarKuat: 'rgba(255,236,206,0.07)',
+  plusTeks: '#E5AD51',
+  plusTerang: '#F3D69C',
+  utama: '#E5AD51',
+  utamaTerang: '#F0BF6B',
+  utamaTeks: '#1B1207',
+  kacaIsi: 'rgba(255,236,206,0.045)',
+  kacaTepi: 'rgba(255,232,196,0.09)',
+  kacaKilau: 'rgba(255,236,206,0.17)',
+  amberTepi: 'rgba(229,173,81,0.42)',
+  amberLatar: 'rgba(229,173,81,0.09)',
+  cahaya: ['#4C331B', '#2E2114', '#161009'],
+  /* Putih HANGAT, bukan putih murni: di atas obsidian putih murni terbaca biru. */
+  tinta: (a) => `rgba(255,244,228,${String(a)})`,
 };
 
 /**
@@ -97,16 +116,25 @@ export const PALET_TERANG: Palet = {
   naik: '#0C8F6B',
   turun: '#D63A52',
   tanda: '#B8650A',
-  plus: '#C9A961',
-  plusTeks: '#8A6B26',
-  plusTerang: '#7A5C1E',
-  plusRedup: 'rgba(201,169,97,0.18)',
+  plus: '#E5AD51',
+  plusTeks: '#8A5A12',
+  plusTerang: '#7A4E0E',
+  plusRedup: 'rgba(229,173,81,0.18)',
   chart: '#F6F3EC',
   turunTepi: 'rgba(214,58,82,0.30)',
   turunLatar: 'rgba(214,58,82,0.08)',
   tirai: 'rgba(20,18,15,0.35)',
   isiSamar: 'rgba(20,18,15,0.04)',
   isiSamarKuat: 'rgba(20,18,15,0.06)',
+  utama: '#E5AD51',
+  utamaTerang: '#F0BF6B',
+  utamaTeks: '#1B1207',
+  kacaIsi: 'rgba(255,255,255,0.72)',
+  kacaTepi: 'rgba(20,18,15,0.08)',
+  kacaKilau: 'rgba(255,255,255,0.95)',
+  amberTepi: 'rgba(184,124,28,0.40)',
+  amberLatar: 'rgba(229,173,81,0.12)',
+  cahaya: ['#F3DDB2', '#F6E9CF', '#F6F3EC'],
   tinta: (a) => `rgba(20,18,15,${String(a)})`,
 };
 
@@ -136,21 +164,25 @@ export const W: Palet = new Proxy({} as Palet, {
  */
 export const H = {
   /** satu-satunya angka terbesar */
-  harga: 19,
+  harga: 21,
   /** kata status */
-  status: 15,
+  status: 16,
   /** nama pasar */
-  pasar: 13,
+  pasar: 14,
   /** entry, sl, tp, ATR, RR, timeframe, nama mesin */
-  nilai: 12,
+  nilai: 13,
   /** toolbar */
-  alat: 10,
+  alat: 11.5,
   /** label soft, dan mikro */
-  label: 9,
+  label: 10,
   /* Nama lama, dipertahankan supaya layar yang belum disamakan tidak pecah. */
-  nama: 13,
-  kontrol: 12,
+  nama: 14,
+  kontrol: 13,
 } as const;
+/* REDESAIN OKT 2026 menaikkan tangga satu tingkat (19/15/13/12/10/9 →
+   21/16/14/13/11,5/10). Tangga lama disalin dari web MOBILE, tapi di HP
+   Android label 9 px terbaca seperti catatan kaki — mockup polish-2026 yang
+   disetujui pemilik memakai ukuran ini. */
 
 /**
  * TINGGI KOMPONEN — diturunkan dari isinya, bukan angka bulat yang kebetulan
@@ -166,8 +198,8 @@ export const TINGGI_KENDALI = 40;
 /** Bilah navigasi bawah. */
 /** Bilah tab PIL melayang (mockup home-2026/kisi): 64 tinggi, 12 dari tepi
     kiri/kanan, 10 di atas jarak aman. */
-export const TINGGI_BILAH = 64;
-export const TEPI_BILAH = 12;
+export const TINGGI_BILAH = 66;
+export const TEPI_BILAH = 14;
 export const ANGKAT_BILAH = 10;
 /** Bar biaya. */
 export const TINGGI_BAR = 6;
@@ -192,7 +224,7 @@ export const TINGGI_BAR = 6;
  */
 export const SISA_BILAH = TINGGI_BILAH + 8;
 
-export const TALANG = 11;
+export const TALANG = 16;
 /** Jarak antar chip dan antar tab. Terukur diketik mentah di 16 tempat. */
 export const SELA_CHIP = 6;
 
@@ -226,12 +258,14 @@ const KACA_GELAP = {
      boleh gagal; blur di sini penyedap, bukan penopang.
      iOS tetap 0,44 — di sana blur-nya memang selalu ada, dan menaikkannya
      cuma membuat kacanya jadi tirai. */
-  tipis: { intensitas: 68, warna: IOS ? 'rgba(26,24,21,0.44)' : 'rgba(18,17,15,0.88)' },
+  /* ANDROID TANPA BLUR SAMA SEKALI (Okt 2026) — lihat Kaca.tsx. Isiannya
+     karena itu PEKAT: ia satu-satunya penopang keterbacaan di sana. */
+  tipis: { intensitas: 64, warna: IOS ? 'rgba(30,25,18,0.46)' : 'rgba(24,20,15,0.93)' },
   /** Lembar: ia menutupi sesuatu, jadi lebih pekat. */
-  tebal: { intensitas: 84, warna: IOS ? 'rgba(20,19,16,0.66)' : 'rgba(16,15,13,0.94)' },
+  tebal: { intensitas: 84, warna: IOS ? 'rgba(26,21,15,0.68)' : 'rgba(21,17,13,0.97)' },
   /** Garis rambut atas — kilau tepi yang membuat kaca punya ketebalan. */
-  tepi: 'rgba(255,255,255,0.16)',
-  rim: 'rgba(255,255,255,0.15)',
+  tepi: 'rgba(255,236,206,0.16)',
+  rim: 'rgba(255,236,206,0.18)',
 } as const;
 
 /** Kaca tema terang: krem gading pekat, rim gelap tipis. Android tetap lebih pekat. */
@@ -249,7 +283,7 @@ export const KACA: Kaca = new Proxy({} as Kaca, {
 });
 
 export const J = { x1: 4, x2: 8, x3: 12, x4: 18, x5: 26 } as const;
-export const R = { kecil: 4, sedang: 6, besar: 8, kartu: 12, bulat: 999 } as const;
+export const R = { kecil: 6, sedang: 10, besar: 14, kartu: 20, bulat: 999 } as const;
 
 /**
  * Angka TIDAK BOLEH bergeser saat digitnya berubah. Dipasang di tiap harga,

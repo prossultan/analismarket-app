@@ -11,8 +11,9 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { ambilJadwal, type Rilis } from '../data/api';
 import { jamWib, judulHariWib, kunciHariWib } from '../data/tampil';
-import { Chip, Dampak, Hari, Kosong, Lbl, Mikro, Rangka } from '../komponen/mockup';
-import { W, H, TALANG } from '../gaya/token';
+import { Blok, Chip, Dampak, Hari, Kosong, Lbl, Mikro, Rangka } from '../komponen/mockup';
+import { Latar } from '../komponen/Latar';
+import { W, H, R, TALANG } from '../gaya/token';
 
 const HARI = 30;
 type Saring = 'semua' | 'tinggi' | 'sedang';
@@ -50,23 +51,43 @@ export function LayarKalender() {
     return [...peta.values()].map((isi) => ({ judul: isi[0] === undefined ? '' : judulHariWib(isi[0].waktu), isi }));
   }, [rilis, saring, kode]);
 
-  const isiPadding = { flexGrow: 1, paddingTop: tinggiKepala + 9, paddingBottom: sisaBilah, paddingHorizontal: TALANG };
+  const isiPadding = { flexGrow: 1, paddingTop: tinggiKepala + 10, paddingBottom: sisaBilah, paddingHorizontal: TALANG, gap: 10 };
+  /* RILIS BERIKUTNYA — jawaban untuk "kapan yang besar berikutnya", tanpa
+     menggulir. Diturunkan dari daftar yang sama, jadi tidak ada angka kedua. */
+  const sekarang = Date.now() / 1000;
+  const berikut = rilis.filter((r) => r.waktu >= sekarang).sort((a, b) => a.waktu - b.waktu)[0] ?? null;
+  const hariLagi = berikut === null ? null : Math.floor((berikut.waktu + 7 * 3600) / 86400) - Math.floor((sekarang + 7 * 3600) / 86400);
 
   if (keadaan === 'gagal') {
     return (
-      <View style={[g.akar, isiPadding]}>
-        <Kosong ikon="kalender" judul="Jadwal tidak terbaca" kalimat={sebab} aksi={() => { setKeadaan('memuat'); void muat(true); }} />
-      </View>
+      <Latar kuat="redup">
+        <View style={[{ flex: 1 }, isiPadding]}>
+          <Kosong ikon="kalender" judul="Jadwal tidak terbaca" kalimat={sebab} aksi={() => { setKeadaan('memuat'); void muat(true); }} />
+        </View>
+      </Latar>
     );
   }
 
   return (
+    <Latar kuat="redup">
     <ScrollView
-      style={g.akar}
       contentContainerStyle={isiPadding}
       refreshControl={<RefreshControl refreshing={menyegarkan} tintColor={W.teksRedup}
         onRefresh={() => { setMenyegarkan(true); void muat(true).finally(() => { setMenyegarkan(false); }); }} />}
     >
+      {berikut !== null && hariLagi !== null && (
+        <Blok emas gaya={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <View style={g.hitung}>
+            <Text style={g.hitungAngka}>{hariLagi <= 0 ? 'Hari' : String(hariLagi)}</Text>
+            <Text style={g.hitungKet}>{hariLagi <= 0 ? 'ini' : hariLagi === 1 ? 'hari lagi · besok' : 'hari lagi'}</Text>
+          </View>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Lbl warna={W.plusTeks}>Rilis berikutnya</Lbl>
+            <Text style={g.hitungNama} numberOfLines={2}>{berikut.nama}</Text>
+            <Text style={g.ket}>{judulHariWib(berikut.waktu).toLowerCase()} · {jamWib(berikut.waktu)} WIB · dampak {berikut.dampak}</Text>
+          </View>
+        </Blok>
+      )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={g.chips}>
         <Chip teks="Semua" on={saring === 'semua'} onPress={() => { setSaring('semua'); }} />
         <Chip teks="Tinggi" on={saring === 'tinggi'} onPress={() => { setSaring('tinggi'); }} />
@@ -91,16 +112,21 @@ export function LayarKalender() {
       {bagian.map((b) => (
         <View key={b.judul}>
           <Hari>{b.judul}</Hari>
-          {b.isi.map((r, i) => (
-            <View key={`${String(r.waktu)}${r.kode}${String(i)}`} style={[g.rilis, i > 0 && g.garis]}>
-              <Dampak tinggi={r.dampak === 'tinggi'} />
-              <Text style={g.jam}>{jamWib(r.waktu)}</Text>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={g.acara} numberOfLines={2}>{r.acara}</Text>
-                <Text style={g.ket} numberOfLines={1}>{r.kode} · dampak {r.dampak}</Text>
+          <View style={g.grup}>
+            {b.isi.map((r, i) => (
+              <View key={`${String(r.waktu)}${r.kode}${String(i)}`} style={[g.rilis, i > 0 && g.garis]}>
+                <Dampak tinggi={r.dampak === 'tinggi'} />
+                <Text style={g.jam}>{jamWib(r.waktu)}</Text>
+                <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                  {/* Nama Indonesia dulu, nama sumber di bawahnya — yang pertama
+                      dibaca orang, yang kedua dicari di kalender lain. */}
+                  <Text style={g.nama} numberOfLines={2}>{r.nama}</Text>
+                  <Text style={g.acara} numberOfLines={2}>{r.acara}</Text>
+                  <Text style={[g.ket, r.dampak === 'tinggi' && { color: W.turun }]} numberOfLines={1}>{r.kode} · dampak {r.dampak}</Text>
+                </View>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
       ))}
 
@@ -113,19 +139,32 @@ export function LayarKalender() {
       </View>
       <Mikro>Jadwal dari penyedia kalender ekonomi.</Mikro>
     </ScrollView>
+    </Latar>
   );
 }
 
 const g = gayaTema((W) => StyleSheet.create({
   akar: { flex: 1, backgroundColor: W.latar },
-  chips: { flexDirection: 'row', gap: 4, paddingBottom: 4 },
-  rilis: { flexDirection: 'row', gap: 8, alignItems: 'stretch', paddingVertical: 6 },
-  garis: { borderTopWidth: 1, borderTopColor: W.garisSamar },
-  jam: { width: 34, fontSize: H.alat, color: W.teksRedup, paddingTop: 1, fontVariant: ['tabular-nums'] },
-  acara: { fontSize: H.nilai, fontWeight: '500', color: W.teksKuat, lineHeight: 15, letterSpacing: -0.1 },
-  ket: { fontSize: H.label, color: W.teksSamar, marginTop: 1 },
-  legenda: { marginTop: 8, marginBottom: 7, padding: 10, gap: 7, borderRadius: 14, borderWidth: 1, borderColor: W.garis, backgroundColor: W.kartu },
-  legendaBaris: { flexDirection: 'row', gap: 8, alignItems: 'stretch' },
-  legendaTeks: { flex: 1, fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },
+  chips: { flexDirection: 'row', gap: 6, paddingVertical: 2 },
+  grup: {
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
+    borderRadius: R.kartu, overflow: 'hidden', paddingHorizontal: 14,
+  },
+  rilis: { flexDirection: 'row', alignItems: 'stretch', gap: 12, paddingVertical: 12 },
+  garis: { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: W.garisSamar },
+  jam: { width: 44, fontSize: 14, fontWeight: '600', color: W.teksKuat, fontVariant: ['tabular-nums'], paddingTop: 1 },
+  nama: { fontSize: 13.5, fontWeight: '600', color: W.teksKuat, lineHeight: 18 },
+  acara: { fontSize: 11.5, color: W.teksSamar, lineHeight: 16 },
+  ket: { fontSize: 11.5, color: W.teksRedup, fontWeight: '600' },
+  hitung: { alignItems: 'flex-start', minWidth: 64 },
+  hitungAngka: { fontSize: 40, fontWeight: '600', color: W.teksKuat, letterSpacing: -1.5, fontVariant: ['tabular-nums'] },
+  hitungKet: { fontSize: 11.5, color: W.teksRedup, marginTop: -2 },
+  hitungNama: { fontSize: 15, fontWeight: '600', color: W.teksKuat },
+  legenda: {
+    gap: 10, padding: 14, borderRadius: R.kartu, marginTop: 12,
+    backgroundColor: W.kacaIsi, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi,
+  },
+  legendaBaris: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },
+  legendaTeks: { flex: 1, fontSize: 12.5, color: W.teksRedup, lineHeight: 18 },
   legendaTebal: { color: W.teksKuat, fontWeight: '600' },
 }));

@@ -3,10 +3,12 @@
  * Warna ikut arah: dari titik pertama ke terakhir. Tidak ada sumbu, tidak ada
  * label — ia hiasan yang jujur, bukan chart.
  */
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { memo } from 'react';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { W } from '../gaya/token';
 
-export function Sparkline({ data, lebar, tinggi, warna }: { data: readonly number[]; lebar: number; tinggi: number; warna?: string }) {
+/* Memo: deret yang sama tidak digambar ulang tiap render induknya. */
+export const Sparkline = memo(function Sparkline({ data, lebar, tinggi, warna, titikAkhir = false }: { data: readonly number[]; lebar: number; tinggi: number; warna?: string; titikAkhir?: boolean }) {
   if (data.length < 2) return <Svg width={lebar} height={tinggi} />;
   const min = Math.min(...data), maks = Math.max(...data);
   const rentang = maks - min || 1;
@@ -27,7 +29,13 @@ export function Sparkline({ data, lebar, tinggi, warna }: { data: readonly numbe
         </LinearGradient>
       </Defs>
       <Path d={isi} fill={`url(#${id})`} />
-      <Path d={garis} fill="none" stroke={w} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round" />
+      <Path d={garis} fill="none" stroke={w} strokeWidth={1.7} strokeLinejoin="round" strokeLinecap="round" />
+      {titikAkhir && (
+        <>
+          <Circle cx={x(data.length - 1)} cy={y(data[data.length - 1] ?? 0)} r={7.5} fill={w} opacity={0.18} />
+          <Circle cx={x(data.length - 1)} cy={y(data[data.length - 1] ?? 0)} r={3.2} fill={w} />
+        </>
+      )}
     </Svg>
   );
-}
+});

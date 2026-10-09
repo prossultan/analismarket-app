@@ -18,7 +18,11 @@ import { useSisaBilah } from '../gaya/jarak';
 import type { Pasar } from '../data/api';
 import { angka, kategoriTersedia, labelJenis, labelKategori, ubah, volumeRingkas } from '../data/tampil';
 import { BarisPasar, Chip, Lbl, Tarik } from './mockup';
+import { Ikon } from './Ikon';
 import { W, H, J, R, SENTUH, TALANG } from '../gaya/token';
+
+/** Perubahan 24 jam DENGAN tanda persen — angka "−0,40" tanpa satuan terbaca sebagai harga. */
+const persen = (u: number | null): string => { const t = ubah(u); return t === '—' ? t : `${t}%`; };
 
 /** Chip saringan berhuruf kapital di depan, seperti mockup — labelnya datang dari data dalam huruf kecil. */
 const kapital = (t: string): string => t.charAt(0).toUpperCase() + t.slice(1);
@@ -42,6 +46,11 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) 
 
   const jenisAda = useMemo(() => ['semua', ...new Set(daftar.map((p) => p.jenis))], [daftar]);
   const kategoriAda = useMemo(() => kategoriTersedia(daftar), [daftar]);
+  const jumlahJenis = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of daftar) m.set(p.jenis, (m.get(p.jenis) ?? 0) + 1);
+    return m;
+  }, [daftar]);
 
   const terlihat = useMemo(() => {
     const q = cari.trim().toUpperCase();
@@ -66,7 +75,7 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) 
 
           {/* Cari — mockup 28. */}
           <View style={g.cari}>
-            <Text style={g.cariIkon}>⌕</Text>
+            <Ikon nama="cari" warna={W.teksSamar} ukuran={17} />
             <TextInput
               value={cari}
               onChangeText={setCari}
@@ -83,7 +92,7 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) 
 
           <View style={g.chips}>
             {jenisAda.map((j) => (
-              <Chip key={j} teks={j === 'semua' ? 'Semua' : kapital(labelJenis(j))} on={jenis === j}
+              <Chip key={j} teks={j === 'semua' ? 'Semua' : `${kapital(labelJenis(j))} ${String(jumlahJenis.get(j) ?? 0)}`} on={jenis === j}
                 onPress={() => { setJenis(j); setKategori('semua'); }} />
             ))}
             {jenis !== 'semua' && kategoriAda.length > 1 && kategoriAda.map((k) => (
@@ -113,19 +122,15 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) 
               return (
                 <BarisPasar
                   simbol={item.simbol}
-                  label={tutupPasar ? `${labelJenis(item.jenis)} · tutup` : item.volume24hUsd > 0 ? `Vol ${volumeRingkas(item.volume24hUsd)}` : item.label}
+                  label={tutupPasar ? `${labelJenis(item.jenis)} · tutup` : item.volume24hUsd > 0 ? `${item.label} · vol ${volumeRingkas(item.volume24hUsd)}` : item.label}
                   harga={tutupPasar ? '—' : angka(item.harga, item.desimal)}
-                  ubah={tutupPasar ? '—' : ubah(u)}
+                  ubah={tutupPasar ? '—' : persen(u)}
                   ubahWarna={warna}
                   pertama={index === 0}
                   redup={tutupPasar}
+                  terpilih={item.simbol === terpilih}
+                  lencana={item.simbol === terpilih ? 'dibuka' : undefined}
                   onPress={() => { pilih(item); tutup(); }}
-                  kanan={item.simbol === terpilih ? (
-                    <View style={{ alignItems: 'flex-end', gap: 3 }}>
-                      <Text style={g.hargaTerpilih}>{angka(item.harga, item.desimal)}</Text>
-                      <Chip teks="dibuka" on />
-                    </View>
-                  ) : undefined}
                 />
               );
             }}
@@ -145,14 +150,12 @@ export function LembarPasar({ daftar, terpilih, pilih, tutup, terbuka }: Props) 
 
 const g = gayaTema((W) => StyleSheet.create({
   cari: {
-    flexDirection: 'row', alignItems: 'center', gap: 7, marginHorizontal: TALANG,
-    minHeight: SENTUH - 6, paddingHorizontal: 10, borderRadius: R.besar,
-    backgroundColor: W.tinta(0.05), borderWidth: 1, borderColor: W.garis,
+    flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: TALANG,
+    minHeight: SENTUH, paddingHorizontal: 13, borderRadius: R.besar,
+    backgroundColor: W.isiSamar, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.kacaTepi, borderTopColor: W.kacaKilau,
   },
-  cariIkon: { fontSize: 13, color: W.teksSamar },
-  cariIsi: { flex: 1, color: W.teksKuat, fontSize: H.nilai, paddingVertical: 8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: TALANG, paddingVertical: 7 },
-  hargaTerpilih: { fontSize: H.nilai, color: W.teksKuat, fontWeight: '500' },
+  cariIsi: { flex: 1, color: W.teksKuat, fontSize: 14, paddingVertical: 10 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: TALANG, paddingVertical: 10 },
   kosong: { paddingVertical: 26, paddingHorizontal: J.x3, gap: 5 },
   kosongJudul: { fontSize: H.pasar, fontWeight: '600', color: W.teksKuat },
   kosongKet: { fontSize: H.alat, color: W.teksRedup, lineHeight: 14 },

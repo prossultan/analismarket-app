@@ -10,5 +10,5 @@
      kode RN (`setTimeout` berubah jadi NodeJS.Timeout). Jadi skrip punya
      tsconfig sendiri, dan `npm run periksa` menjalankan KEDUANYA — bukan
      mengecualikan yang satu. */
-  "exclude": ["node_modules", "skrip"]
+  "exclude": ["node_modules", "skrip", "opendesign"]
 }

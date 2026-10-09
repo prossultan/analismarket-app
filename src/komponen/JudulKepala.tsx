@@ -12,13 +12,13 @@ export function JudulKepala({ judul, sub }: { judul: string; sub?: string }) {
   return (
     <View style={g.akar}>
       <Text style={g.judul} numberOfLines={1}>{judul}</Text>
-      {sub !== undefined && sub !== '' && <Text style={g.sub} numberOfLines={1}>{sub}</Text>}
+      {sub !== undefined && sub !== '' && <Text style={[g.sub, sub.startsWith('AnalisMarket+') && { color: W.plusTeks, fontWeight: '600' }]} numberOfLines={1}>{sub}</Text>}
     </View>
   );
 }
 
 const g = gayaTema((W) => StyleSheet.create({
   akar: { justifyContent: 'center' },
-  judul: { color: W.teksKuat, fontSize: H.status, fontWeight: '700', letterSpacing: -0.2 },
-  sub: { color: W.teksSamar, fontSize: H.alat, marginTop: 1 },
+  judul: { color: W.teksKuat, fontSize: H.status, fontWeight: '600', letterSpacing: -0.2 },
+  sub: { color: W.teksSamar, fontSize: 11.5, marginTop: 1 },
 }));
