@@ -25,7 +25,16 @@ PKG="id.analismarket.app"
 KELUAR="${2:-uji-emulator}"
 mkdir -p "$KELUAR"
 
-gagal() { echo "::error::$1"; echo "GAGAL: $1" | tee -a "$KELUAR/hasil.txt"; simpan_log; exit 1; }
+# Log disimpan DULU, lalu sebab kematiannya diringkas ke anotasi: artefak butuh
+# login GitHub, anotasi tidak (lihat skrip/ringkas-crash.py).
+gagal() {
+  simpan_log
+  local rinci
+  rinci="$(python3 skrip/ringkas-crash.py "$KELUAR" "$PKG" 2>/dev/null | head -c 1800 || true)"
+  echo "::error::$1 — ${rinci:-tanpa ringkasan logcat}"
+  echo "GAGAL: $1 — ${rinci:-}" | tee -a "$KELUAR/hasil.txt"
+  exit 1
+}
 simpan_log() {
   adb logcat -d -b crash > "$KELUAR/crash.log" 2>/dev/null || true
   adb logcat -d > "$KELUAR/logcat.txt" 2>/dev/null || true
@@ -94,11 +103,19 @@ echo "  chart terisi"
 echo "== tunggu bacaan selesai, ketuk timeframe lain =="
 sleep 8
 potret 03-pasar-terisi
-if TITIK_TF="$(python3 skrip/ketuk-uiautomator.py "$KELUAR/ui-pasar.xml" h4 2>/dev/null)"; then
+# Titik h4 dibaca ULANG tepat sebelum diketuk: dump sebelumnya diambil saat
+# layar baru terbuka, dan pita/kalimat yang muncul sesudahnya bisa menggeser
+# barisnya — ketukan mendarat di benda lain dan hasilnya tidak bisa dibaca.
+adb shell uiautomator dump /sdcard/ui-sebelum-tf.xml >/dev/null 2>&1 || true
+adb pull /sdcard/ui-sebelum-tf.xml "$KELUAR/ui-sebelum-tf.xml" >/dev/null 2>&1 || true
+if TITIK_TF="$(python3 skrip/ketuk-uiautomator.py "$KELUAR/ui-sebelum-tf.xml" h4 2>/dev/null)"; then
   # shellcheck disable=SC2086
   adb shell input tap $TITIK_TF; sleep 8; potret 04-h4
-  hidup || gagal "proses MATI sesudah ganti timeframe"
+  hidup || gagal "proses MATI sesudah ganti timeframe (h4 diketuk di $TITIK_TF)"
   echo "  hidup sesudah ganti timeframe"
+else
+  # Dulu dilewati DIAM-DIAM — run yang "lolos" bisa saja tidak pernah sampai ke sini.
+  echo "::warning::tombol h4 tidak terbaca di pohon UI — langkah ganti timeframe DILEWATI"
 fi
 
 echo "== logcat =="

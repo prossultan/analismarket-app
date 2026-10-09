@@ -84,7 +84,9 @@ function KartuKabarTerakhir({ kunci, kosong, onPress }: { kunci: number; kosong:
   const muat = useCallback(async (): Promise<Hasil<KabarMasuk | null>> => {
     const j = await ambilKabarMasuk(null);
     if (!j.ok) return j;
-    return { ok: true, isi: j.isi.kabar[0] ?? null };
+    /* Bentuk dibaca, bukan dipercaya: jawaban tanpa larik `kabar` dulu
+       melempar TypeError dari dalam useMuat (terlihat di harness 9 Okt). */
+    return { ok: true, isi: Array.isArray(j.isi.kabar) ? j.isi.kabar[0] ?? null : null };
   }, []);
   const { keadaan } = useMuat(muat, `kabar-terakhir:${String(kunci)}`);
   if (keadaan.fase !== 'ada' || keadaan.isi === null) return kosong;
