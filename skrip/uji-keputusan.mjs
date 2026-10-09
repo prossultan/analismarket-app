@@ -995,6 +995,27 @@ await uji('KEPUTUSAN: contoh notifikasi di Pantauan baru = templat pesanKabarPus
   tegas(/contohKabarPush\(pasar, tf,/.test(layar), 'formulir Pantauan baru tidak lewat contohKabarPush — teks contohnya diketik sendiri');
 });
 
+/* ── bot macet ≠ HP tak tersambung (9 Okt 18.23–18.46) ─────────────────── */
+process.stdout.write('\n── Bot macet bukan "periksa sambungan" ──\n');
+
+await uji('KEPUTUSAN: bot yang macet (habis waktu) atau dimulai ulang (502/503/504) TIDAK disuruh "periksa sambungan"', async () => {
+  jawab(502, {});
+  const a = await api.ambilPasar(true);
+  tegas(!a.ok && /tidak menjawab/.test(a.kalimat) && !/sambungan/i.test(a.kalimat), `502 dibaca "${a.ok ? 'ok' : a.kalimat}" — orang disuruh memeriksa HP-nya padahal bot yang mati`);
+  /* Habis waktu: fetch yang baru berhenti saat sinyalnya dihentikan, jam 30 detik dipercepat. */
+  const fetchAsli = globalThis.fetch; const jamAsli = globalThis.setTimeout;
+  globalThis.fetch = (u, init = {}) => new Promise((_, tolak) => { init.signal?.addEventListener('abort', () => { tolak(new DOMException('dihentikan', 'AbortError')); }); });
+  globalThis.setTimeout = (f, ms, ...x) => jamAsli(f, ms >= 30_000 ? 0 : ms, ...x);
+  try {
+    const b = await api.ambilPasar(true);
+    tegas(!b.ok && /terlalu lama/.test(b.kalimat) && !/sambungan/i.test(b.kalimat), `habis waktu dibaca "${b.ok ? 'ok' : b.kalimat}" — 42 permintaan /api/pasar 9 Okt berhenti di sini`);
+  } finally { globalThis.fetch = fetchAsli; globalThis.setTimeout = jamAsli; }
+  /* Cabang lawan: jaringan HP yang benar-benar putus tetap disebut. */
+  putus();
+  const c = await api.ambilPasar(true);
+  tegas(!c.ok && /Periksa sambungan/.test(c.kalimat), `jaringan putus dibaca "${c.ok ? 'ok' : c.kalimat}"`);
+});
+
 for (const [k, v] of Object.entries(globalSebelum)) { if (v === undefined) delete globalThis[k]; else globalThis[k] = v; }
 
 process.stdout.write(`\n  ${jumlah} uji · ${terkirim.length} permintaan tiruan · nol jaringan\n`);

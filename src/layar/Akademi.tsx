@@ -310,8 +310,16 @@ export function LayarPelajaran({ id, gantiJudul, bukaPelajaran, bukaIstilah, buk
                   ) : !x.v.tersedia || putar?.keadaan === 'segera' ? (
                     <View style={g.panel}><Ikon nama="jam" warna={W.plus} ukuran={24} /><Text style={g.panelJudul}>Video ini sedang diproduksi</Text><Text style={g.panelKet}>Judulnya sudah ada di kurikulum; videonya menyusul.</Text></View>
                   ) : (
-                    <Tekan onPress={mulaiPutar} accessibilityLabel="Putar video" gaya={g.putarBesar}>
-                      <Ikon nama={sibuk ? 'jam' : 'putar'} warna="#FFFFFF" isi={sibuk ? undefined : '#FFFFFF'} ukuran={24} />
+                    /* SELURUH sampul yang diketuk, tombolnya di tengah. Posisi
+                       absolut milik `gayaLuar` (Pressable-nya): di `gaya` ia
+                       menempel ke kotak dalam yang tingginya nol, terdorong ke
+                       atas, lalu terpotong `overflow: hidden` — pemilik 9 Okt:
+                       "gk ada tombol play nya". */
+                    <Tekan onPress={mulaiPutar} accessibilityLabel="Putar video" skala={0.98}
+                      gayaLuar={StyleSheet.absoluteFill} gaya={g.putarArea}>
+                      <View style={g.putarTengah}>
+                        <Ikon nama={sibuk ? 'jam' : 'putar'} warna="#FFFFFF" isi={sibuk ? undefined : '#FFFFFF'} ukuran={26} />
+                      </View>
                     </Tekan>
                   )}
                   {(putar?.keadaan === 'galat' || putar?.keadaan === 'tidak-ada') && (
@@ -441,6 +449,11 @@ const g = gayaTema((W) => StyleSheet.create({
   vidKet: { fontSize: 11, color: W.teksSamar },
 
   pemutar: { height: 206, borderRadius: 20, overflow: 'hidden', backgroundColor: '#000', borderWidth: StyleSheet.hairlineWidth * 2, borderColor: W.tinta(0.12) },
+  putarArea: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  putarTengah: {
+    width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', paddingLeft: 3,
+    backgroundColor: 'rgba(20,16,11,0.62)', borderWidth: 1, borderColor: 'rgba(255,236,206,0.38)',
+  },
   panel: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', padding: 20, gap: 6, backgroundColor: 'rgba(8,7,6,0.6)' },
   panelJudul: { fontSize: 15, fontWeight: '600', color: '#F4F1EB', textAlign: 'center' },
   panelKet: { fontSize: 12.5, color: '#BDB5A9', textAlign: 'center', lineHeight: 18 },

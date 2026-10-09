@@ -77,6 +77,35 @@ if (!/const bisaDitekan = onPress !== undefined;/.test(komponen)) {
   }
 }
 
+/* TOMBOL YANG TERPOTONG. `<Tekan gaya>` adalah kotak DALAM yang ikut
+   mengecil — bukan Pressable-nya. Gaya berposisi absolut di sana menempel ke
+   Pressable setinggi nol, terdorong ke luar bingkai, dan terpotong
+   `overflow: hidden`: tombolnya tidak ada di layar, dan tidak satu pun
+   penjaga lain yang bertanya. Tombol putar Akademi hilang persis begini
+   (pemilik 9 Okt: "gk ada tombol play nya"); potret harness pun
+   memperlihatkannya, dan terlewat. Posisi absolut milik `gayaLuar`. */
+let tekanDiperiksa = 0;
+const semuaTsx = [...readdirSync('src/layar').map((n) => `src/layar/${n}`), ...readdirSync('src/komponen').map((n) => `src/komponen/${n}`)]
+  .filter((f) => f.endsWith('.tsx'));
+for (const f of semuaTsx) {
+  const mentah = readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  /* `=>` di dalam penangan bukan penutup tag — tanpa pengecualian ini,
+     `onPress={() => …}` memutus elemennya sebelum `gaya` terbaca. */
+  for (const m of mentah.matchAll(/<Tekan\b((?:=>|[^>])*)>/g)) {
+    const gaya = /\sgaya=\{([^}]*)\}/.exec(m[1]);
+    if (gaya === null) continue;
+    for (const [, kunci] of gaya[1].matchAll(/\bg\.([A-Za-z0-9_]+)/g)) {
+      tekanDiperiksa += 1;
+      const def = new RegExp(`\\n\\s+${kunci}:\\s*\\{([^\\n]*)`).exec(mentah);
+      if (def !== null && /position:\s*'absolute'|absoluteFill/.test(def[1])) {
+        const baris = mentah.slice(0, m.index).split('\n').length;
+        masalah.push(`${f}:${baris} — <Tekan gaya={g.${kunci}}> berposisi absolut: ia menempel ke kotak dalam setinggi nol dan terpotong. Pindahkan posisinya ke \`gayaLuar\`.`);
+      }
+    }
+  }
+}
+if (tekanDiperiksa < 5) masalah.push(`cuma ${tekanDiperiksa} gaya <Tekan> terbaca — polanya berubah, pemeriksaan posisi tidak menembak apa pun`);
+
 if (diperiksa < 10 && masalah.length === 0) masalah.push(`cuma ${diperiksa} kontrol ditemukan — polanya berubah, penjaga ini tidak menembak apa pun`);
 
 if (masalah.length > 0) {
@@ -84,4 +113,4 @@ if (masalah.length > 0) {
   for (const m of masalah) process.stdout.write(`  - ${m}\n`);
   process.exit(1);
 }
-process.stdout.write(`  ${diperiksa} kontrol diperiksa · tiap yang bisa ditekan punya penangan\n`);
+process.stdout.write(`  ${diperiksa} kontrol diperiksa · tiap yang bisa ditekan punya penangan · ${tekanDiperiksa} gaya <Tekan> tanpa posisi absolut\n`);

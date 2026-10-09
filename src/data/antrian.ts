@@ -165,6 +165,12 @@ export async function ambil<T>(kunci: string, jalur: string, segarkan = false): 
         return { ok: false, jenis: 'ditolak', kalimat: badan.pesan ?? badan.galat ?? 'Permintaan ditolak.', galat: badan.galat };
       }
 
+      /* 502/503/504 = nginx tidak mendapat jawaban dari proses bot: bot sedang
+         dimulai ulang atau macet. Sambungan orangnya BAIK-BAIK saja — dan
+         "Bot menjawab 502" tidak memberi tahu apa yang harus dilakukan. */
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        return { ok: false, jenis: 'jaringan', kalimat: 'Bot sedang tidak menjawab. Coba lagi sebentar lagi.' };
+      }
       if (!res.ok) return { ok: false, jenis: 'jaringan', kalimat: `Bot menjawab ${String(res.status)}.` };
 
       const isi = (await res.json()) as T;
@@ -172,6 +178,13 @@ export async function ambil<T>(kunci: string, jalur: string, segarkan = false): 
       simpanan.set(kunci, { pada: Date.now(), isi, cacheNginx });
       return { ok: true, isi, dariSimpanan: false, cacheNginx };
     } catch {
+      /* HABIS WAKTU ≠ TIDAK TERSAMBUNG. 9 Okt 18.23–18.45 /api/pasar di bot
+         macet (42 kali habis waktu di log nginx) sementara sambungan pemilik
+         sehat — dan app menyuruhnya "periksa sambungan". Permintaan yang
+         dihentikan jam kita sendiri berarti bot terlalu lambat, bukan HP-nya. */
+      if (henti.signal.aborted) {
+        return { ok: false, jenis: 'jaringan', kalimat: 'Bot terlalu lama menjawab. Coba lagi sebentar lagi.' };
+      }
       return { ok: false, jenis: 'jaringan', kalimat: 'Tidak bisa menghubungi bot. Periksa sambungan.' };
     } finally {
       clearTimeout(jam);
