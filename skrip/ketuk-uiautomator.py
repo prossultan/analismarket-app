@@ -15,6 +15,12 @@ def utama() -> int:
         return 2
     jalur, label = sys.argv[1], sys.argv[2]
     pohon = ET.parse(jalur)
+    if label == "--teks":
+        # Semua teks yang terlihat, untuk pesan galat CI: artefak potret butuh
+        # login GitHub, anotasi `::error::` tidak.
+        terlihat = [t for n in pohon.iter("node") for t in (n.get("text", "").strip(), n.get("content-desc", "").strip()) if t]
+        print(" · ".join(dict.fromkeys(terlihat)))
+        return 0
     for n in pohon.iter("node"):
         teks = n.get("text", "")
         desk = n.get("content-desc", "")

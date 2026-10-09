@@ -53,11 +53,26 @@ potret 01-mulai
 hidup || gagal "proses $PKG MATI dalam 15 detik pertama sesudah diluncurkan"
 echo "  hidup sesudah peluncuran"
 
-echo "== cari tab Pasar di pohon UI =="
-adb shell uiautomator dump /sdcard/ui-awal.xml >/dev/null
-adb pull /sdcard/ui-awal.xml "$KELUAR/ui-awal.xml" >/dev/null
-TITIK="$(python3 skrip/ketuk-uiautomator.py "$KELUAR/ui-awal.xml" Pasar)" \
-  || gagal "tab 'Pasar' tidak ditemukan di pohon UI — app tidak sampai ke tab (masih di tembok masuk, atau layar kosong). Lihat 01-mulai.png"
+echo "== cari tab Pasar di pohon UI (sampai 65 detik sesudah peluncuran) =="
+# Waktu buka app di emulator CI TIDAK tetap. Run 49626b9 (9 Okt) tidak sampai
+# ke tab dalam 15 detik, padahal run f2cc1d3 dengan kode pembukaan yang sama
+# sampai. Jadi menunggu dengan batas, bukan angka tetap. Kalau tetap gagal,
+# teks yang terlihat ikut ditulis ke pesan galat — artefak potret butuh login
+# GitHub, anotasi `::error::` tidak, jadi sebabnya terbaca tanpa menebak.
+TITIK=""
+for i in $(seq 1 10); do
+  adb shell uiautomator dump /sdcard/ui-awal.xml >/dev/null 2>&1 || true
+  adb pull /sdcard/ui-awal.xml "$KELUAR/ui-awal.xml" >/dev/null 2>&1 || true
+  if TITIK="$(python3 skrip/ketuk-uiautomator.py "$KELUAR/ui-awal.xml" Pasar 2>/dev/null)"; then break; fi
+  TITIK=""
+  hidup || gagal "proses $PKG MATI saat menunggu tab Pasar (detik ke-$((15 + i * 5)))"
+  sleep 5
+done
+if [ -z "$TITIK" ]; then
+  potret 01b-tanpa-tab
+  TERLIHAT="$(python3 skrip/ketuk-uiautomator.py "$KELUAR/ui-awal.xml" --teks 2>/dev/null | head -c 400 || true)"
+  gagal "tab 'Pasar' tidak ditemukan sesudah 65 detik — teks di layar: ${TERLIHAT:-(kosong)}. Lihat 01b-tanpa-tab.png"
+fi
 echo "  tab Pasar di $TITIK"
 
 echo "== ketuk Pasar =="
