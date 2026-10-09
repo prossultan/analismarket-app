@@ -49,3 +49,7 @@ opendesign/manifest.json
 .env
 .env.*
 !.env.example
+
+# Render mockup (PNG/WebP/frame) — dibuat ulang dari HTML-nya; 77 MB di
+# polish-2026 + splash-2026 saja, delapan kali ukuran seluruh riwayat repo.
+opendesign/mockups/*/png/

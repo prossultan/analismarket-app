@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><title>Storyboard Splash</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050403;font-family:Inter,sans-serif;color:#F4F1EB;-webkit-font-smoothing:antialiased;padding:40px}
+.papan{width:1680px;padding:48px 56px 40px;border-radius:28px;background:radial-gradient(1200px 500px at 50% -10%,rgba(76,51,27,.55),rgba(8,7,6,0) 75%),#080706;box-shadow:inset 0 0 0 1px #1d1914}
+.kp{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:34px}
+.kp small{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.22em;color:#E5AD51}
+.kp h1{font-size:40px;font-weight:600;letter-spacing:-.03em;margin-top:10px}
+.kp p{font-size:14.5px;color:#BDB5A9;max-width:620px;text-align:right;line-height:1.55}
+.kp p b{color:#F4F1EB}
+.baris{display:grid;grid-template-columns:230px repeat(6,1fr);gap:18px;align-items:start;padding:22px 0;border-top:1px solid #241f19}
+.judul small{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.2em;color:#E5AD51}
+.judul b{display:block;font-size:20px;font-weight:600;margin-top:8px;letter-spacing:-.02em}
+.judul p{font-size:12.5px;color:#8C8479;line-height:1.5;margin-top:8px}
+.judul .rek{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:#1B1207;background:linear-gradient(180deg,#F0BF6B,#E1A645);padding:3px 8px;border-radius:6px}
+.k img{width:100%;border-radius:22px;display:block;box-shadow:0 0 0 1px #2b251e}
+.k small{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;color:#E5AD51;margin-top:10px}
+.k span{display:block;font-size:12px;color:#BDB5A9;line-height:1.45;margin-top:4px}
+.aturan{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
+.aturan div{border-radius:16px;padding:14px;background:rgba(255,236,206,.04);box-shadow:inset 0 0 0 1px rgba(255,232,196,.08)}
+.aturan b{display:block;font-size:13.5px;font-weight:600}
+.aturan p{font-size:12px;color:#8C8479;line-height:1.5;margin-top:5px}
+</style></head><body>
+<div class="papan">
+  <div class="kp"><div><small>ANALISMARKET APP · SPLASH BERGERAK · 3 KONSEP</small><h1>Dari logo splash native ke layar pertama</h1></div>
+    <p>Ketiganya mulai dari frame yang <b>identik dengan splash native</b> (logo 75 dp di tengah, latar obsidian), jadi tidak ada kedip saat app mengambil alih. Yang bergerak cuma <b>transform, opacity, dan satu garis SVG</b> — semuanya ada di Reanimated + react-native-svg yang sudah terpasang.</p></div>
+  <div class="baris"><div class="judul"><small>A · TIAP BUKA APP</small><b>Kilau</b><p>≤ 0,7 detik, mengisi waktu tunggu gerbang sesi. Kalau gerbang masih menunggu, cahaya bernapas pelan sampai siap (maks 6 dtk).</p><span class="rek">disarankan untuk harian</span></div>
+    <div class="k"><img src="png/kunci/A-0000.png"><small>0,00</small><span>Frame splash native, logo 75 dp</span></div>
+    <div class="k"><img src="png/kunci/A-0250.png"><small>0,25</small><span>Cahaya amber mulai mekar</span></div>
+    <div class="k"><img src="png/kunci/A-0450.png"><small>0,45</small><span>Kilau masuk searah sapuan kuas</span></div>
+    <div class="k"><img src="png/kunci/A-0560.png"><small>0,56</small><span>Kilau keluar di ujung sapuan</span></div>
+    <div class="k"><img src="png/kunci/A-0760.png"><small>0,76</small><span>Logo menyusut, Home naik 16 px</span></div>
+    <div class="k"><img src="png/kunci/A-1100.png"><small>0,95</small><span>Home — selesai</span></div></div>
+  <div class="baris"><div class="judul"><small>B · PEMASANGAN PERTAMA</small><b>Sapuan kuas</b><p>± 2 detik, sekali seumur pemasangan, menggantikan tahap "luncur" yang sudah ada di layar masuk.</p></div>
+    <div class="k"><img src="png/kunci/B-0000.png"><small>0,00</small><span>Frame splash native</span></div>
+    <div class="k"><img src="png/kunci/B-0450.png"><small>0,45</small><span>Logo membesar dan meredup</span></div>
+    <div class="k"><img src="png/kunci/B-0760.png"><small>0,76</small><span>Sapuan kuas dilukis ulang, percikan amber di ujung kuas</span></div>
+    <div class="k"><img src="png/kunci/B-1050.png"><small>1,05</small><span>Cincin amber mulai tergambar</span></div>
+    <div class="k"><img src="png/kunci/B-1600.png"><small>1,60</small><span>Nama per huruf, lalu tagline</span></div>
+    <div class="k"><img src="png/kunci/B-2700.png"><small>2,65</small><span>Layar masuk naik</span></div></div>
+  <div class="baris"><div class="judul"><small>C · PEMASANGAN PERTAMA</small><b>Garis harga jadi logo</b><p>± 2 detik. Garis dibentuk dari 40 harga BTCUSDT h1 yang asli (dibekukan saat build), berakhir tepat di pangkal sapuan kuas.</p><span class="rek">disarankan untuk pertama kali</span></div>
+    <div class="k"><img src="png/kunci/C-0000.png"><small>0,00</small><span>Frame splash native</span></div>
+    <div class="k"><img src="png/kunci/C-0650.png"><small>0,65</small><span>Logo membesar, garis mulai menjalar dari tepi</span></div>
+    <div class="k"><img src="png/kunci/C-1000.png"><small>1,00</small><span>Garis harga menuju logo</span></div>
+    <div class="k"><img src="png/kunci/C-1350.png"><small>1,35</small><span>Garis masuk ke sapuan kuas: kilau + denyut cincin</span></div>
+    <div class="k"><img src="png/kunci/C-1850.png"><small>1,85</small><span>Garis memudar, nama dan tagline</span></div>
+    <div class="k"><img src="png/kunci/C-2700.png"><small>2,65</small><span>Layar masuk naik</span></div></div>
+  <div class="aturan">
+    <div><b>Tidak menambah waktu tunggu</b><p>Splash tetap tunduk pada gerbang sesi. Siap lebih cepat → langsung ke tahap keluar; siap lebih lambat → tahan di cahaya bernapas.</p></div>
+    <div><b>Kurangi gerak = tanpa gerak</b><p>Kalau "kurangi animasi" di HP menyala: logo diam, lalu pudar silang 200 ms ke layar pertama.</p></div>
+    <div><b>Tanpa getar</b><p>VIBRATE sengaja diblokir di manifes; semua umpan balik visual.</p></div>
+    <div><b>Tanpa modul native baru</b><p>Reanimated + react-native-svg sudah ada → tidak ada izin baru di APK, periksa-apk tetap hijau.</p></div>
+  </div>
+</div></body></html>

@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semua Layar App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="semua.css">
+<style>
+/* ── layar masuk ── */
+.masuk-latar{position:absolute;left:0;right:0;top:46px;height:420px;z-index:1;opacity:.85}
+.masuk-latar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,7,6,.15),rgba(8,7,6,.2) 55%,rgba(8,7,6,.95))}
+.ml-tf{display:flex;gap:4px;padding:6px 16px}
+.ml-tf span{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--samar);padding:6px 0;border-radius:9px}
+.ml-tf span.on{background:rgba(255,236,206,.12);color:var(--text)}
+.ml-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:4px 16px 8px}
+.sm-sel{border-radius:10px;padding:6px 7px;background:rgba(255,236,206,.05);box-shadow:inset 0 0 0 1px rgba(255,232,196,.07)}
+.sm-sel b{display:block;font-family:var(--mono);font-size:10px;color:var(--text);font-weight:700}
+.sm-sel em{font-style:normal;font-size:10px;color:var(--samar);display:flex;align-items:center;gap:4px;margin-top:3px}
+.sm-sel em .dot{width:5px;height:5px;box-shadow:none}
+.ml-chart{width:390px;height:380px;object-fit:cover;object-position:top;display:block;opacity:.9}
+.masuk-kartu{position:absolute;left:12px;right:12px;bottom:14px;z-index:5;border-radius:30px;padding:20px 18px 16px}
+.mk-merek{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:700;letter-spacing:-.02em}
+.mk-merek img{width:28px;height:28px;border-radius:50%}
+.mk-merek span{color:var(--amber)}
+.masuk-kartu h1{font-size:25px;font-weight:600;letter-spacing:-.03em;line-height:1.12;margin-top:14px}
+.masuk-kartu > p{font-size:13px;color:var(--muted);line-height:1.5;margin-top:8px}
+.mk-kisi{display:grid;grid-template-columns:1fr 1fr;gap:12px 12px;margin:16px 0 16px}
+.mk-kisi div{display:grid;grid-template-columns:30px 1fr;column-gap:9px;row-gap:2px;align-items:start}
+.mk-kisi .ik{width:30px;height:30px;border-radius:10px;grid-row:span 2}
+.mk-kisi .ik svg{width:15px;height:15px}
+.mk-kisi b{font-size:12.5px;font-weight:600}
+.mk-kisi em{font-style:normal;font-size:10.5px;color:var(--samar);line-height:1.35}
+.mk-kecil{font-size:11px;color:var(--samar);text-align:center;line-height:1.5;margin-top:12px}
+svg.g{width:18px;height:18px}
+
+/* ── langkah telegram ── */
+.langkah{display:flex;gap:12px;padding:11px 0}
+.langkah + .langkah{box-shadow:inset 0 1px 0 rgba(255,232,196,.07)}
+.langkah .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--tinta);background:linear-gradient(180deg,#F0BF6B,#E1A645);flex:none}
+.langkah b{font-size:13.5px;font-weight:600;display:block;line-height:1.35}
+.langkah em{font-style:normal;font-size:11.5px;color:var(--samar);display:block;margin-top:3px;line-height:1.45}
+.tempel{height:48px;border-radius:14px;display:flex;align-items:center;padding:0 14px;font-size:13px;color:var(--redup);font-family:var(--mono);letter-spacing:0;background:rgba(0,0,0,.25);box-shadow:inset 0 0 0 1px rgba(255,232,196,.12)}
+.label-kecil{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--samar);margin:16px 2px 8px}
+.garis-atau{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--samar);margin:16px 0 10px}
+.garis-atau::before,.garis-atau::after{content:'';flex:1;height:1px;background:rgba(255,232,196,.09)}
+
+/* ── home ── */
+.hero{border-radius:26px;padding:16px 16px 14px}
+.hero .b1{display:flex;align-items:center;gap:8px}
+.hero .b1 b{font-size:15px;font-weight:600}
+.hero .b1 .ket{margin-left:auto;font-size:9.5px;color:var(--samar)}
+.harga-besar{font-size:40px;font-weight:600;letter-spacing:-.035em;margin-top:10px;line-height:1}
+.harga-besar span{color:var(--muted);font-size:26px}
+.ubah{font-size:13px;font-weight:600;margin-top:6px;display:flex;gap:8px;align-items:center}
+.ubah em{font-style:normal;color:var(--samar);font-weight:500}
+.keadaan{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-top:8px}
+.keadaan span{margin-left:auto;color:var(--samar);font-weight:500;font-size:12px}
+.tombol2{display:flex;gap:8px;margin-top:12px}
+.tombol2 .btn.amber{flex:1}
+.lanjut{display:flex;align-items:center;gap:12px;border-radius:20px;padding:10px 12px 10px 10px;margin-top:12px}
+.thumb{position:relative;width:104px;height:58px;border-radius:11px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(255,232,196,.1)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.mini-putar{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.35))}
+.mini-putar svg{width:22px;height:22px;color:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.lanjut .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.lanjut small{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--amber)}
+.lanjut b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:4px;border-radius:2px;background:rgba(255,236,206,.1);overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;background:var(--amber);border-radius:2px}
+.lanjut em{font-style:normal;font-size:11px;color:var(--samar)}
+.pintu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.pintu .p{border-radius:18px;padding:12px 11px 11px;height:86px;display:flex;flex-direction:column;position:relative}
+.pintu .ik{width:32px;height:32px;border-radius:10px}
+.pintu b{font-size:12.5px;font-weight:600;margin-top:auto;letter-spacing:-.01em}
+.pintu em{font-style:normal;font-size:10.5px;color:var(--samar);margin-top:1px}
+.pintu .am{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;color:var(--amber);letter-spacing:.04em}
+.favorit{display:flex;gap:10px}
+.fav{width:150px;flex:none;border-radius:18px;padding:12px}
+.fav .f1{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600}
+.fav .fh{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-top:8px}
+.fav .fu{font-size:11px;font-weight:600;margin-top:2px}
+.fav .spark{margin-top:6px}
+
+/* ── menu ── */
+.akun-mini{display:flex;align-items:center;gap:12px;border-radius:22px;padding:14px}
+.akun-mini .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+.akun-mini b{font-size:16px;font-weight:600}
+.akun-mini em{font-style:normal;font-size:12px;color:var(--muted)}
+.merek-blok{border-radius:20px;padding:14px;margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.merek-blok .m1{display:flex;align-items:center;gap:10px}
+.merek-blok .m1 img{width:30px;height:30px;border-radius:50%}
+.merek-blok .m1 b{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.merek-blok .m1 b span{color:var(--amber)}
+.merek-blok .m1 em{display:block;font-style:normal;font-size:11px;color:var(--samar);font-weight:500;letter-spacing:0;margin-top:1px}
+.data-masuk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.data-masuk div{border-radius:12px;padding:8px 10px;background:rgba(255,236,206,.04);box-shadow:inset 0 0 0 1px rgba(255,232,196,.06)}
+.data-masuk small{display:block;font-size:10.5px;color:var(--samar)}
+.data-masuk b{font-size:14px;font-weight:600}
+
+/* ── kotak masuk ── */
+.chips-baris{display:flex;gap:6px;padding:0 16px;position:relative;z-index:3;overflow:hidden}
+.km{display:flex;gap:12px;padding:12px 14px;position:relative;align-items:flex-start}
+.km + .km::before{content:'';position:absolute;top:0;left:60px;right:14px;height:1px;background:rgba(255,232,196,.07)}
+.km .ik{margin-top:1px}
+.km .tx{flex:1;min-width:0}
+.km .j{display:flex;align-items:center;gap:6px}
+.km .j b{font-size:13.5px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.km.dibaca .j b{font-weight:500;color:#DCD5CA}
+.km p{font-size:12px;color:var(--samar);line-height:1.45;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.km .kn{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none}
+.km .kn small{font-size:11px;color:var(--samar)}
+.km .kn .baris-kn{display:flex;align-items:center;gap:6px}
+.lbl-hari{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--samar);margin:14px 4px 8px}
+
+/* ── pasar ── */
+.pasar-kepala{position:relative;z-index:3;display:flex;align-items:center;gap:10px;padding:4px 14px 10px}
+.pil-pasar{display:flex;align-items:center;gap:8px;border-radius:999px;padding:6px 6px 6px 8px}
+.pil-pasar b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.pil-pasar .ganti{font-size:11.5px;font-weight:600;color:var(--muted);padding:4px 9px;border-radius:999px;background:rgba(255,236,206,.08);display:flex;align-items:center;gap:3px}
+.pil-pasar .ganti svg{width:12px;height:12px}
+.pasar-kepala .hg{margin-left:auto;text-align:right}
+.pasar-kepala .hg b{display:block;font-size:17px;font-weight:600;letter-spacing:-.02em}
+.pasar-kepala .hg em{font-style:normal;font-size:12px;font-weight:600}
+.tf-baris{position:relative;z-index:3;display:flex;gap:3px;margin:0 14px;padding:4px;border-radius:14px}
+.tf-baris span{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--samar);padding:7px 0;border-radius:10px}
+.tf-baris span.on{background:rgba(255,236,206,.13);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,236,206,.14)}
+.pita-mesin{position:relative;z-index:3;display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:8px 14px 0}
+.pm{border-radius:12px;padding:7px 8px 8px;background:rgba(255,236,206,.04);box-shadow:inset 0 0 0 1px rgba(255,232,196,.07);position:relative;overflow:hidden}
+.pm b{display:block;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm em{font-style:normal;font-size:10.5px;color:var(--samar);display:flex;align-items:center;gap:4px;margin-top:4px;white-space:nowrap}
+.pm em .dot{width:6px;height:6px}
+.pm.on{background:linear-gradient(180deg,rgba(229,173,81,.16),rgba(229,173,81,.05));box-shadow:inset 0 0 0 1px rgba(229,173,81,.45)}
+.pm.on::after{content:'';position:absolute;left:8px;right:8px;bottom:0;height:2px;border-radius:2px;background:var(--amber)}
+.pm.setup em{color:#8FE7C6}
+.chart-bingkai{position:relative;z-index:2;margin:8px 12px 0;border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,232,196,.10),0 20px 40px -20px rgba(0,0,0,.9)}
+.chart-bingkai img{display:block;width:100%}
+.alat{position:relative;z-index:3;display:flex;gap:6px;padding:8px 14px 0;overflow:hidden}
+.alat .chip{font-size:12px;padding:6px 11px}
+.alat .chip.nyala{background:rgba(255,236,206,.14);color:var(--text);box-shadow:inset 0 0 0 1px rgba(255,232,196,.16)}
+.intip{position:absolute;left:12px;right:12px;bottom:96px;z-index:18;border-radius:24px;padding:8px 14px 12px}
+.intip .pegangan{width:36px;height:4px;border-radius:2px;background:rgba(255,236,206,.25);margin:0 auto 8px}
+.intip .r1{display:flex;align-items:center;gap:8px}
+.intip .r1 small{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--samar)}
+.intip .r1 .chip{margin-left:auto}
+.intip .r2{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+.intip .r2 b{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.intip .rencana{margin-top:10px}
+
+/* ── lembar bacaan ── */
+.lb-kepala{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.lb-kepala small{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--samar)}
+.lb-kepala .tutup{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--amber)}
+.kl{border-radius:20px;padding:14px;margin-bottom:10px;background:rgba(255,236,206,.045);box-shadow:inset 0 0 0 1px rgba(255,232,196,.08)}
+.kl .kk{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.kl .kk small{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--samar)}
+.kl .kk span{font-size:12px;color:var(--muted);font-weight:600}
+.status-besar{display:flex;align-items:center;gap:10px}
+.status-besar b{font-size:22px;font-weight:600;letter-spacing:-.025em}
+.arah{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:6px}
+.arah.merah{color:#FF8FA2;background:rgba(244,63,94,.13)}
+.arah.hijau{color:#6FE3B7;background:rgba(16,185,129,.13)}
+.kl .alasan{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:6px}
+.arahan{margin-top:12px;padding-top:12px;box-shadow:inset 0 1px 0 rgba(255,232,196,.07)}
+.arahan small{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--amber)}
+.arahan p{font-size:13px;line-height:1.5;margin-top:5px}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:7px 0}
+.kv + .kv{box-shadow:inset 0 1px 0 rgba(255,232,196,.06)}
+.kv span{color:var(--samar)} .kv b{font-weight:600}
+.zl{display:flex;align-items:center;gap:10px;padding:8px 0}
+.zl + .zl{box-shadow:inset 0 1px 0 rgba(255,232,196,.06)}
+.zl .zt{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;background:rgba(255,236,206,.08);flex:none}
+.zl .zt.tekanan{color:#FF9DAE;background:rgba(244,63,94,.12)}
+.zl .zt.dukungan{color:#7FE0BC;background:rgba(16,185,129,.12)}
+.zl div{flex:1;min-width:0}
+.zl b{font-size:13px;font-weight:600;display:block}
+.zl em{font-style:normal;font-size:11.5px;color:var(--samar)}
+
+/* ── banding ── */
+.bd{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:16px;margin-bottom:6px;background:rgba(255,236,206,.035);box-shadow:inset 0 0 0 1px rgba(255,232,196,.06)}
+.bd.on{background:linear-gradient(180deg,rgba(229,173,81,.14),rgba(229,173,81,.04));box-shadow:inset 0 0 0 1px rgba(229,173,81,.4)}
+.bd .nm{width:96px;flex:none}
+.bd .nm b{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0}
+.bd .nm em{display:block;font-style:normal;font-size:10.5px;color:var(--samar);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd .kol{flex:1;text-align:right}
+.bd .kol.st-k{flex:1.5}
+.bd .kol small{display:block;font-size:9.5px;color:var(--samar);font-family:var(--mono);letter-spacing:.1em}
+.bd .kol b{font-size:13px;font-weight:600}
+.sepakat{display:flex;align-items:center;gap:12px;border-radius:16px;padding:12px 14px;margin-top:4px}
+.sepakat b{font-size:20px;font-weight:600}
+.sepakat div{font-size:12px;color:var(--muted);line-height:1.4}
+
+/* ── pilih pasar ── */
+.pp{display:flex;align-items:center;gap:11px;padding:10px 4px}
+.pp + .pp{box-shadow:inset 0 1px 0 rgba(255,232,196,.06)}
+.pp .tx{flex:1;min-width:0}
+.pp .tx b{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.pp .tx em{font-style:normal;font-size:11.5px;color:var(--samar)}
+.pp .hg{text-align:right}
+.pp .hg b{display:block;font-size:13.5px;font-weight:600}
+.pp .hg em{font-style:normal;font-size:11.5px;font-weight:600}
+.pp.dibuka{margin:0 -8px;padding:10px 12px;border-radius:16px;background:rgba(229,173,81,.08);box-shadow:inset 0 0 0 1px rgba(229,173,81,.3)}
+
+/* ── akademi ── */
+.lanjutkan{border-radius:24px;overflow:hidden;padding:0}
+.sampul{position:relative;height:200px;overflow:hidden}
+.sampul img{width:100%;height:100%;object-fit:cover;display:block}
+.sampul .gelap{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,7,6,0) 45%,rgba(8,7,6,.75))}
+.putar-besar{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(20,16,11,.45);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(255,236,206,.28),0 10px 30px rgba(0,0,0,.5)}
+.putar-besar svg{width:24px;height:24px;color:#fff;margin-left:3px}
+.putar-besar.jeda svg{margin-left:0}
+.lanjutkan .putar-besar{left:auto;top:auto;right:16px;bottom:24px;margin:0;width:52px;height:52px}
+.jejak{position:absolute;left:12px;right:12px;bottom:12px;height:4px;border-radius:2px;background:rgba(255,255,255,.22)}
+.jejak i{display:block;height:100%;border-radius:2px;background:var(--amber);box-shadow:0 0 10px rgba(229,173,81,.7)}
+.sampul .sisa{position:absolute;right:12px;top:12px;font-size:11px;font-weight:600;color:#fff;background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px}
+.lanjutkan .ket{padding:12px 16px 14px;display:flex;flex-direction:column;gap:4px}
+.lanjutkan .ket small{font-size:9.5px}
+.lanjutkan .ket b{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.lanjutkan .ket em{font-style:normal;font-size:12px;color:var(--samar)}
+.akses{font-size:11px !important;font-weight:600;color:var(--amber) !important;padding:4px 9px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--amberTepi)}
+.jalur{position:relative;display:flex;flex-direction:column;gap:8px}
+.jalur::before{content:'';position:absolute;left:33px;top:26px;bottom:26px;width:1.5px;background:linear-gradient(180deg,var(--amber),rgba(229,173,81,.30) 30%,rgba(255,236,206,.10) 60%);z-index:0}
+.bab{position:relative;z-index:1;display:flex;align-items:center;gap:12px;border-radius:18px;padding:10px 12px 10px 14px;min-height:62px}
+.simpul{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--muted);background:#17130e;box-shadow:inset 0 0 0 1.5px rgba(229,173,81,.35)}
+.simpul svg{width:16px;height:16px;color:var(--samar)}
+.simpul.cincin{background:conic-gradient(var(--amber) calc(var(--p)*1%),rgba(255,236,206,.12) 0);box-shadow:none}
+.simpul.cincin span{width:31px;height:31px;border-radius:50%;background:#1a150f;display:grid;place-items:center;color:var(--amber)}
+.bab .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.bab .tx b{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.bab .tx em{font-style:normal;font-size:11.5px;color:var(--samar);display:flex;align-items:center;gap:6px}
+.segmen{display:flex;gap:3px;margin-top:3px}
+.segmen i{flex:1;height:4px;border-radius:2px;background:rgba(255,236,206,.18)}
+.segmen i.s{background:var(--amber)}
+.segmen i.h{background:linear-gradient(90deg,var(--amber) var(--h,60%),rgba(255,236,206,.18) 0)}
+.segmen i.g{background:none;box-shadow:inset 0 0 0 1px rgba(255,236,206,.16)}
+.bab.kunci .tx b{color:#CFC7BB}
+.bab.kunci{opacity:.82}
+.vid{display:flex;align-items:center;gap:11px;padding:8px 12px 8px 8px;position:relative}
+.vid + .vid::before{content:'';position:absolute;top:0;left:104px;right:12px;height:1px;background:rgba(255,232,196,.06)}
+.vid .th{position:relative;width:84px;height:47px;border-radius:9px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(255,232,196,.08)}
+.vid .th img{width:100%;height:100%;object-fit:cover}
+.vid .th .lapis{position:absolute;inset:0;display:grid;place-items:center;background:rgba(8,7,6,.55)}
+.vid .th .lapis svg{width:16px;height:16px;color:#fff}
+.vid .th .lapis.selesai{background:rgba(16,185,129,.45)}
+.vid .th .bar-v{position:absolute;left:0;bottom:0;height:3px;background:var(--amber)}
+.vid .tx{flex:1;min-width:0}
+.vid .tx b{display:block;font-size:12.5px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vid .tx em{font-style:normal;font-size:11px;color:var(--samar);display:flex;align-items:center;gap:6px;margin-top:3px}
+.vid.segera .tx b{color:#B9B1A5}
+.pemutar{position:relative;margin:0 12px;height:206px;border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,232,196,.12),0 30px 60px -30px rgba(0,0,0,.9);z-index:2}
+.pemutar img{width:100%;height:100%;object-fit:cover}
+.pemutar .gelap2{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.04) 35%,rgba(0,0,0,.6) 72%,rgba(0,0,0,.92))}
+.kontrol{position:absolute;left:14px;right:14px;bottom:12px;display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:#fff}
+.rel{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.25);position:relative}
+.rel i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--amber)}
+.rel b{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(229,173,81,.45)}
+.pelajaran{padding:14px 18px 0;position:relative;z-index:2}
+.pelajaran small{font-size:9.5px}
+.pelajaran h2{font-size:22px;font-weight:600;letter-spacing:-.025em;margin-top:6px;line-height:1.15}
+.pelajaran .ringkas{font-size:13px;line-height:1.5;color:var(--muted);margin-top:6px}
+.coba{border-radius:22px;padding:13px;margin:14px 12px 0;position:relative;z-index:2}
+.coba-kepala{display:flex;align-items:center;gap:10px}
+.coba-kepala b{font-size:14px;font-weight:600;display:block}
+.coba-kepala em{font-style:normal;font-size:11.5px;color:var(--samar)}
+.coba-kepala .chip{margin-left:auto}
+.coba svg.lilin{width:100%;height:118px;margin-top:8px}
+.coba .btn{width:100%;margin-top:8px}
+.istilah-c{padding:12px 18px 0;position:relative;z-index:2}
+.istilah-c .cc{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.istilah-c .chip{font-size:12px;padding:6px 11px;color:var(--text);background:rgba(255,236,206,.06)}
+.istilah-c .chip svg{color:var(--amber)}
+.berikut{display:flex;align-items:center;gap:11px;border-radius:18px;padding:9px 12px 9px 9px;margin:12px 12px 0;position:relative;z-index:2}
+.berikut img{width:84px;height:47px;border-radius:9px;object-fit:cover;flex:none}
+.berikut div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.berikut small{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--amber)}
+.berikut b{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.berikut em{font-style:normal;font-size:11px;color:var(--samar)}
+.ist{padding:12px 14px;position:relative}
+.ist + .ist::before{content:'';position:absolute;top:0;left:14px;right:14px;height:1px;background:rgba(255,232,196,.07)}
+.ist .j{display:flex;align-items:center;gap:8px}
+.ist b{font-size:14px;font-weight:600}
+.ist .kd{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--amber);padding:2px 6px;border-radius:5px;background:rgba(229,173,81,.1);letter-spacing:0;white-space:nowrap}
+.ist p{font-size:12px;color:var(--muted);line-height:1.5;margin-top:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ── pantauan & kalender ── */
+.ringkas-pt{display:flex;align-items:center;gap:14px;border-radius:20px;padding:14px}
+.ringkas-pt .cincin-pt{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--amber) calc(var(--p)*1%),rgba(255,236,206,.12) 0);flex:none}
+.ringkas-pt .cincin-pt span{width:46px;height:46px;border-radius:50%;background:#1a150f;display:grid;place-items:center;font-weight:700;font-size:14px}
+.ringkas-pt .tx{flex:1}
+.ringkas-pt b{font-size:16px;font-weight:600;display:block}
+.ringkas-pt em{font-style:normal;font-size:12px;color:var(--samar)}
+.radio{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(255,236,206,.3);flex:none;position:relative}
+.radio.on{box-shadow:inset 0 0 0 1.5px var(--amber)}
+.radio.on::after{content:'';position:absolute;inset:5px;border-radius:50%;background:var(--amber)}
+.kal{display:flex;gap:12px;padding:12px 14px;position:relative;align-items:flex-start}
+.kal + .kal::before{content:'';position:absolute;top:0;left:14px;right:14px;height:1px;background:rgba(255,232,196,.07)}
+.kal .dampak{width:4px;border-radius:2px;align-self:stretch;flex:none}
+.kal .dampak.tinggi{background:var(--turun)} .kal .dampak.sedang{background:var(--amber);opacity:.8}
+.kal .jm{font-size:14px;font-weight:600;width:44px;flex:none}
+.kal .tx{flex:1;min-width:0}
+.kal .tx b{display:block;font-size:13.5px;font-weight:600}
+.kal .tx em{display:block;font-style:normal;font-size:11.5px;color:var(--samar);margin-top:2px;line-height:1.4}
+.kal .tx .lg{margin-top:6px;display:inline-block}
+.hitung{border-radius:22px;padding:16px;display:flex;align-items:center;gap:14px}
+.hitung .angka-h{font-size:44px;font-weight:600;letter-spacing:-.04em;line-height:1}
+.hitung .angka-h small{font-size:14px;color:var(--muted);letter-spacing:0;font-weight:500;margin-left:4px}
+.legenda-kal{font-size:12px;color:var(--muted);line-height:1.55;padding:12px 14px}
+.legenda-kal p + p{margin-top:8px}
+.legenda-kal b{color:var(--text)}
+
+/* ── AM+ ── */
+.kartu-member{position:relative;height:214px;border-radius:24px;overflow:hidden;padding:18px 18px 16px;display:flex;flex-direction:column;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(240,191,107,.30),rgba(240,191,107,0) 55%),linear-gradient(135deg,#3b2a14 0%,#1d150c 48%,#2a1e0f 100%);
+  box-shadow:inset 0 0 0 1px rgba(240,191,107,.38),inset 0 1px 0 rgba(255,236,206,.28),0 30px 60px -24px rgba(229,173,81,.35),0 20px 40px -20px rgba(0,0,0,.9)}
+.kartu-member.grafit{background:radial-gradient(120% 90% at 100% 0%,rgba(255,236,206,.10),rgba(255,236,206,0) 55%),linear-gradient(135deg,#26231f 0%,#151310 50%,#1f1c18 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,232,196,.16),inset 0 1px 0 rgba(255,236,206,.16),0 20px 40px -20px rgba(0,0,0,.9)}
+.kartu-member .kilau{position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 28%,rgba(255,226,170,.16) 42%,rgba(255,255,255,0) 56%);pointer-events:none}
+.kartu-member.grafit .kilau{background:linear-gradient(115deg,rgba(255,255,255,0) 28%,rgba(255,255,255,.06) 42%,rgba(255,255,255,0) 56%)}
+.kartu-member .garis-km{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(135deg,rgba(255,236,206,.18) 0 1px,transparent 1px 9px);-webkit-mask-image:linear-gradient(90deg,transparent 40%,#000)}
+.km-atas{display:flex;align-items:center;gap:9px;position:relative}
+.km-logo{width:26px;height:26px;border-radius:50%}
+.km-atas .mono{font-size:10.5px;color:#F3D69C;letter-spacing:.2em}
+.grafit .km-atas .mono{color:var(--muted)}
+.km-aktif{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#F7E7C6;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.25);box-shadow:inset 0 0 0 1px rgba(240,191,107,.35)}
+.km-aktif i{width:6px;height:6px;border-radius:50%;background:var(--naik);box-shadow:0 0 0 3px rgba(16,185,129,.2)}
+.grafit .km-aktif{color:var(--muted);box-shadow:inset 0 0 0 1px rgba(255,232,196,.16)}
+.grafit .km-aktif i{background:#8C8479;box-shadow:none}
+.km-tengah{display:flex;align-items:center;margin-top:14px;position:relative}
+.km-angka{font-size:62px;font-weight:600;letter-spacing:-.05em;line-height:.9;color:#FFF6E6;display:flex;align-items:baseline;gap:10px}
+.km-angka small{font-size:14px;letter-spacing:0;color:#E9D3A6;font-weight:500}
+.grafit .km-angka{font-size:38px;letter-spacing:-.035em;color:var(--text)}
+.grafit .km-angka small{color:var(--samar)}
+.km-cincin{margin-left:auto;width:66px;height:66px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#F0BF6B calc(var(--p)*1%),rgba(255,236,206,.14) 0)}
+.km-cincin span{width:54px;height:54px;border-radius:50%;background:#24190d;display:grid;place-items:center;font-size:12px;font-weight:700;color:#F7E7C6}
+.km-bawah{margin-top:auto;display:flex;align-items:flex-end;position:relative}
+.km-bawah small{display:block;font-size:10.5px;color:#D9C29A}
+.grafit .km-bawah small{color:var(--samar)}
+.km-bawah b{font-size:14px;font-weight:600;color:#FFF6E6}
+.grafit .km-bawah b{color:var(--muted);font-weight:500;font-size:12.5px}
+.km-plat{margin-left:auto;display:flex;align-items:center;gap:6px;color:#F0D9A8;font-size:10.5px}
+.grafit .km-plat{color:var(--samar)}
+.km-plat svg{width:15px;height:15px}
+.kontrol-cb{display:flex;align-items:center;gap:7px}
+.kontrol-cb .chip{font-size:12px;padding:8px 11px;font-weight:500;color:var(--muted)}
+.kontrol-cb .chip b{color:var(--text);font-weight:600}
+.kontrol-cb .btn{margin-left:auto;height:36px;border-radius:12px;font-size:13px;padding:0 13px}
+.ringkasan{border-radius:16px;padding:11px 13px;margin-top:10px}
+.rbar{display:flex;gap:3px;height:6px}
+.rbar i{border-radius:3px}
+.rbar .s{background:var(--naik)} .rbar .p{background:var(--krem)} .rbar .t{background:#4A443C}
+.rleg{display:flex;align-items:center;gap:12px;margin-top:9px;font-size:11.5px;color:var(--muted)}
+.rleg span{display:flex;align-items:center;gap:6px}
+.rleg b{color:var(--text);font-weight:700}
+.rleg em{margin-left:auto;font-style:normal;color:var(--samar);font-size:11px}
+.papan-cb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.paket{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.paket div{border-radius:14px;padding:10px 6px;text-align:center;background:rgba(255,236,206,.04);box-shadow:inset 0 0 0 1px rgba(255,232,196,.08)}
+.paket div.on{background:linear-gradient(180deg,rgba(229,173,81,.18),rgba(229,173,81,.06));box-shadow:inset 0 0 0 1.5px var(--amber)}
+.paket b{display:block;font-size:13px;font-weight:600}
+.paket small{display:block;font-size:10px;color:var(--samar);margin-top:3px}
+.paket .hemat{color:#8FE7C6;font-weight:600}
+.harga-plus{font-size:38px;font-weight:600;letter-spacing:-.035em;color:#FFF6E6;position:relative;margin-top:14px;line-height:1}
+.harga-plus small{font-size:14px;color:#E9D3A6;font-weight:500;letter-spacing:0}
+
+/* ── akun ── */
+.identitas{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 14px;position:relative;z-index:3}
+.identitas b{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-top:12px}
+.identitas em{font-style:normal;font-size:12.5px;color:var(--muted);margin-top:3px}
+.identitas .chip{margin-top:10px}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat3 div{border-radius:16px;padding:12px 10px;text-align:center}
+.stat3 b{display:block;font-size:20px;font-weight:600;letter-spacing:-.02em}
+.stat3 small{display:block;font-size:11px;color:var(--samar);margin-top:2px}
+.br.merah b{color:#FF8FA2}
+.dialog{position:absolute;left:24px;right:24px;top:50%;transform:translateY(-50%);z-index:25;border-radius:28px;padding:22px 20px 16px;text-align:center;
+  background:linear-gradient(180deg,rgba(44,35,25,.96),rgba(22,18,13,.98));box-shadow:inset 0 0 0 1px rgba(255,232,196,.12),inset 0 1px 0 rgba(255,236,206,.18),0 40px 80px -20px rgba(0,0,0,.95)}
+.dialog .ik{width:52px;height:52px;border-radius:16px;margin:0 auto}
+.dialog .ik svg{width:24px;height:24px}
+.dialog h3{font-size:20px;font-weight:600;letter-spacing:-.02em;margin-top:14px}
+.dialog p{font-size:13px;color:var(--muted);line-height:1.55;margin-top:8px}
+.dialog .daftar-hapus{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+.dialog .tombol-d{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+
+/* ── info ── */
+.tentang-id{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 18px 4px;position:relative;z-index:3}
+.tentang-id img{width:64px;height:64px;border-radius:50%;box-shadow:0 0 0 3px rgba(229,173,81,.25),0 20px 40px -10px rgba(229,173,81,.4)}
+.tentang-id b{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:12px}
+.tentang-id b span{color:var(--amber)}
+.tentang-id code{font-family:var(--mono);font-size:11px;color:var(--samar);margin-top:4px;letter-spacing:.04em}
+.tentang-id p{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:10px}
+.cara{display:flex;gap:12px;padding:10px 14px;position:relative}
+.cara + .cara::before{content:'';position:absolute;top:0;left:50px;right:14px;height:1px;background:rgba(255,232,196,.07)}
+.cara .n{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--amber);width:24px;flex:none;padding-top:1px}
+.cara b{display:block;font-size:13px;font-weight:600}
+.cara em{display:block;font-style:normal;font-size:11.5px;color:var(--samar);line-height:1.45;margin-top:2px}
+.dok{padding:13px 14px;position:relative}
+.dok + .dok::before{content:'';position:absolute;top:0;left:14px;right:14px;height:1px;background:rgba(255,232,196,.07)}
+.dok b{font-size:14px;font-weight:600;display:flex;gap:10px}
+.dok b span{font-family:var(--mono);color:var(--amber);font-size:12px;padding-top:2px}
+.dok p{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:5px;padding-left:24px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.2v-5.8H9.2v5.8H5A1.5 1.5 0 0 1 3.5 19z"/></symbol>
+    <symbol id="i-pasar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5v3M8 17.5v3M16 4.5V7M16 15v5.5"/><rect x="5.5" y="6.5" width="5" height="11" rx="1.2"/><rect x="13.5" y="7" width="5" height="8" rx="1.2"/></symbol>
+    <symbol id="i-akademi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.2 12 4.5l9.5 4.7L12 14z"/><path d="M6.5 11.4v4.5c0 1.6 2.5 3.1 5.5 3.1s5.5-1.5 5.5-3.1v-4.5"/><path d="M21.5 9.2v5.3"/></symbol>
+    <symbol id="i-kabar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5v-5a6 6 0 1 1 12 0v5l1.6 2.2H4.4z"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.2l1.9 5.3 5.3 1.9-5.3 1.9L11 17.6l-1.9-5.3-5.3-1.9 5.3-1.9z"/><path d="M18.6 14.6l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/></symbol>
+    <symbol id="i-cari" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+    <symbol id="i-putar" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L9.2 4.5A.8.8 0 0 0 8 5.2z" fill="currentColor"/></symbol>
+    <symbol id="i-jeda" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.8" height="14" rx="1.1" fill="currentColor"/><rect x="13.7" y="5" width="3.8" height="14" rx="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-gembok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.4"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5"/></symbol>
+    <symbol id="i-kanan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></symbol>
+    <symbol id="i-kiri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
+    <symbol id="i-bawah" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></symbol>
+    <symbol id="i-panah" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></symbol>
+    <symbol id="i-mata" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+    <symbol id="i-tambah" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-kisi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></symbol>
+    <symbol id="i-kalender" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+    <symbol id="i-bulan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.2 6.2 0 0 0 10.1 10.1z"/></symbol>
+    <symbol id="i-matahari" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M5.5 18.5l1.4-1.4M17.1 6.9l1.4-1.4"/></symbol>
+    <symbol id="i-kilat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2.8 5 13.5h6l-1 7.7 8-10.7h-6z"/></symbol>
+    <symbol id="i-buku" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 5.5a2 2 0 0 1 2-2h12v14h-12a2 2 0 0 0-2 2z"/><path d="M4.5 19.5a2 2 0 0 0 2 2h12v-4"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol>
+    <symbol id="i-hp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.8" width="10" height="18.4" rx="2.4"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-kirim" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 4 3.5 10.8l6.3 2.1 2.1 6.3L15.3 15l4.2 3.3z"/><path d="m9.8 12.9 5.5-4.4"/></symbol>
+    <symbol id="i-dua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="5" width="7.5" height="14" rx="1.8"/><rect x="13" y="5" width="7.5" height="14" rx="1.8"/></symbol>
+    <symbol id="i-saring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+    <symbol id="i-titik" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="18.5" cy="12" r="1.7" fill="currentColor"/></symbol>
+    <symbol id="i-ulang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></symbol>
+    <symbol id="i-jam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-tren" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16.5 9 11l3.5 3.5 8-8"/><path d="M15 6.5h5.5V12"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-orang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+    <symbol id="i-dokumen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3.5V8h4.5M9 12.5h6M9 16h6"/></symbol>
+    <symbol id="i-perisai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.2"/></symbol>
+    <symbol id="i-keluar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 20.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5h3.5M15.5 16.5 20 12l-4.5-4.5M20 12H9.5"/></symbol>
+    <symbol id="i-hapus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></symbol>
+    <symbol id="i-peringatan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.3 2.8 17.5A2 2 0 0 0 4.5 20.5h15a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.5M12 17v.2"/></symbol>
+    <symbol id="i-centang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.4 4.4L19 7.4"/></symbol>
+    <symbol id="i-silang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-salin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></symbol>
+    <symbol id="i-tempel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 11h6M9 15h4"/></symbol>
+    <symbol id="i-bintang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+    <symbol id="i-lapis" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3.5 8.5 4.5L12 12.5 3.5 8z"/><path d="m3.5 12 8.5 4.5 8.5-4.5M3.5 16l8.5 4.5 8.5-4.5"/></symbol>
+    <symbol id="i-google" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 5.9 12 5.9z"/></symbol>
+    <symbol id="i-status" viewBox="0 0 62 13"><g fill="currentColor"><rect x="0" y="8" width="3" height="4.5" rx=".8"/><rect x="4.6" y="6" width="3" height="6.5" rx=".8"/><rect x="9.2" y="3.6" width="3" height="8.9" rx=".8"/><rect x="13.8" y="1" width="3" height="11.5" rx=".8"/></g><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22.5 5.2a9.5 9.5 0 0 1 12.4 0"/><path d="M25 7.9a5.6 5.6 0 0 1 7.4 0"/></g><circle cx="28.7" cy="10.6" r="1.5" fill="currentColor"/><rect x="40.5" y="1.2" width="18.5" height="10.6" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.1"/><rect x="42.3" y="3" width="12.6" height="7" rx="1.6" fill="currentColor"/><rect x="60" y="4.6" width="1.6" height="3.8" rx=".8" fill="currentColor" fill-opacity=".5"/></symbol>
+  </defs>
+</svg>
+<script src="data.js"></script>
+<script src="semua.js"></script>
+</body>
+</html>

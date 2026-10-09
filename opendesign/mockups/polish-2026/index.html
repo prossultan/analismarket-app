@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polish App 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Palet = landing live 9 Okt ("Obsidian + warm amber"), bukan token.ts app yang lama. */
+:root{
+  --bg:#080706; --surface:#14120F; --raised:#201C16; --line:#343029;
+  --text:#F4F1EB; --muted:#BDB5A9; --samar:#8C8479; --redup:#625B52;
+  --amber:#E5AD51; --amber2:#F0BF6B; --tinta:#1B1207; --amberTepi:#70542D;
+  --naik:#10B981; --turun:#F43F5E;
+  --kaca:linear-gradient(180deg,rgba(255,236,206,.078),rgba(255,236,206,.024));
+  --tepi:inset 0 0 0 1px rgba(255,232,196,.085), inset 0 1px 0 rgba(255,236,206,.14);
+  --bayang:0 18px 40px -18px rgba(0,0,0,.85);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#050403}
+body{font-family:Inter,system-ui,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;font-feature-settings:'tnum' 1,'cv11' 1;padding:40px;display:flex;flex-direction:column;gap:40px;align-items:flex-start}
+svg{display:block}
+.mono{font-family:var(--mono);letter-spacing:.16em;font-weight:500}
+.amber{color:var(--amber)}
+
+/* ── papan usulan ─────────────────────────────────────────── */
+.papan{width:1600px;height:1000px;position:relative;overflow:hidden;display:flex;gap:56px;padding:52px 72px;flex:none;
+  background:radial-gradient(1000px 620px at 52% -8%,rgba(76,51,27,.60),rgba(30,21,12,.35) 55%,rgba(8,7,6,0) 82%),#080706;
+  border-radius:28px;box-shadow:inset 0 0 0 1px #1d1914}
+.teks{width:500px;flex:none;display:flex;flex-direction:column}
+.teks .no{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--amber)}
+.teks .angka{font-size:96px;font-weight:700;line-height:.86;color:transparent;-webkit-text-stroke:2px var(--amber);letter-spacing:-.04em;margin:16px 0 14px}
+.teks h2{font-size:40px;line-height:1.07;letter-spacing:-.028em;font-weight:600}
+.teks .pitch{font-size:16.5px;line-height:1.55;color:var(--muted);margin-top:16px}
+.teks h4{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--samar);margin:24px 0 10px;font-weight:500}
+.teks ul{list-style:none;display:grid;gap:8px}
+.teks li{font-size:14.5px;line-height:1.45;padding-left:22px;position:relative;color:#E9E4DB}
+.teks li::before{content:'';position:absolute;left:3px;top:7px;width:6px;height:6px;border-radius:1.5px;background:var(--amber);transform:rotate(45deg)}
+.teks .data{font-size:13.5px;color:var(--muted);line-height:1.6}
+.teks code{font-family:var(--mono);font-size:11.5px;color:#EBD6AA;background:rgba(229,173,81,.09);padding:2px 6px;border-radius:5px;white-space:nowrap}
+.teks .chips{display:flex;flex-wrap:wrap;gap:8px}
+.teks .chips span{font-size:12.5px;padding:6px 11px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line);color:var(--muted)}
+.teks .chips .ok{box-shadow:inset 0 0 0 1px rgba(16,185,129,.38);color:#86E3C1}
+.teks .chips .perlu{box-shadow:inset 0 0 0 1px var(--amberTepi);color:var(--amber)}
+.teks .catatan{margin-top:auto;font-size:13px;line-height:1.5;color:var(--samar);border-left:2px solid var(--amberTepi);padding-left:12px}
+.teks .catatan b{color:var(--muted);font-weight:600}
+.kolom-hp{display:flex;flex-direction:column;align-items:center;gap:14px;flex:none}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--samar)}
+.label b{color:var(--amber);font-weight:500}
+.kanan{flex:1;display:flex;flex-direction:column;gap:14px;padding-top:0;min-width:0}
+.sebelum{display:flex;flex-direction:column;gap:14px}
+.sebelum img{width:236px;border-radius:30px;box-shadow:0 0 0 1px #2a251f,0 0 0 6px #0d0b09,0 0 0 7px #3a332a;filter:saturate(.9)}
+.sebelum p{font-size:13px;color:var(--samar);line-height:1.5;max-width:330px}
+.sebelum p b{color:var(--muted);font-weight:600}
+
+/* ── HP ───────────────────────────────────────────────────── */
+.hp{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;background:var(--bg);flex:none;
+  box-shadow:0 0 0 1.5px #2b251e,0 0 0 9px #0d0b09,0 0 0 10.5px #3b332a,0 60px 120px -40px rgba(0,0,0,.95),0 0 140px -30px rgba(229,173,81,.16)}
+.cahaya{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 125% 430px at 50% -70px,#4c331b 0%,#2e2114 32%,#161009 62%,rgba(8,7,6,0) 100%)}
+.cahaya.dua::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 90% 300px at 85% 78%,rgba(76,51,27,.38),rgba(8,7,6,0) 70%)}
+.cahaya.redup{opacity:.7}
+.kamera{position:absolute;top:13px;left:50%;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:#000;box-shadow:0 0 0 1.5px #16130f;z-index:5}
+.sb{position:relative;height:46px;display:flex;justify-content:space-between;align-items:center;padding:4px 26px 0 30px;font-weight:600;font-size:14px;letter-spacing:-.01em;z-index:4}
+.sb svg{width:62px;height:13px;color:var(--text)}
+.kaca{background:var(--kaca);box-shadow:var(--tepi),var(--bayang);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%)}
+.kilap{border:1px solid transparent;
+  background:linear-gradient(180deg,rgba(32,25,17,.80),rgba(16,13,10,.82)) padding-box,
+             linear-gradient(150deg,rgba(240,191,107,.70),rgba(229,173,81,.10) 30%,rgba(255,236,206,.06) 62%,rgba(229,173,81,.38)) border-box;
+  box-shadow:inset 0 1px 0 rgba(255,236,206,.10),0 26px 60px -26px rgba(229,173,81,.30),var(--bayang);
+  backdrop-filter:blur(22px) saturate(140%)}
+.bulat{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative;flex:none}
+.bulat svg{width:20px;height:20px;color:var(--text)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(255,236,206,.07);box-shadow:inset 0 0 0 1px rgba(255,232,196,.08);color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:44px;border-radius:14px;font-size:14.5px;font-weight:600;letter-spacing:-.01em;padding:0 16px}
+.btn svg{width:17px;height:17px}
+.btn.amber{background:linear-gradient(180deg,#F0BF6B,#E1A645);color:var(--tinta);box-shadow:inset 0 1px 0 rgba(255,245,220,.55),0 10px 24px -10px rgba(229,173,81,.6)}
+.btn.kaca{color:var(--text)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex:none}
+.dot.hijau{background:var(--naik);box-shadow:0 0 0 3px rgba(16,185,129,.16)}
+.dot.krem{background:#CDBFA6}
+.dot.redup{background:#5E574E}
+.chev{width:18px;height:18px;color:var(--samar);flex:none}
+.lmb{width:22px;height:22px;border-radius:50%;flex:none}
+
+/* bilah tab pil */
+.bilah{position:absolute;left:14px;right:14px;bottom:16px;height:68px;border-radius:34px;display:flex;align-items:center;justify-content:space-between;padding:0 7px;z-index:6;
+  background:linear-gradient(180deg,rgba(38,31,23,.66),rgba(18,15,11,.84));backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);
+  box-shadow:inset 0 0 0 1px rgba(255,232,196,.10),inset 0 1px 0 rgba(255,236,206,.16),0 24px 50px -16px rgba(0,0,0,.95)}
+.bilah .t{width:68px;height:54px;border-radius:27px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10.5px;font-weight:500;color:var(--samar);position:relative}
+.bilah .t svg{width:22px;height:22px}
+.bilah .t.on{color:var(--text);background:linear-gradient(180deg,rgba(255,236,206,.14),rgba(255,236,206,.05));box-shadow:inset 0 1px 0 rgba(255,236,206,.18),inset 0 0 0 1px rgba(255,232,196,.09)}
+.bilah .t.on svg{color:var(--amber)}
+.bilah .t.plus{color:var(--amber)}
+.bilah .t.plus.on{color:var(--text)}
+.lencana{position:absolute;top:5px;right:15px;min-width:17px;height:17px;border-radius:9px;background:var(--amber);color:var(--tinta);font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px #17130e}
+.isi{position:relative;padding:0 16px;z-index:2}
+.hp.berbilah::after{content:'';position:absolute;left:0;right:0;bottom:0;height:150px;z-index:5;pointer-events:none;background:linear-gradient(180deg,rgba(8,7,6,0),rgba(8,7,6,.80) 52%,rgba(8,7,6,.96))}
+
+/* ── HP1 Home ── */
+.kepala{position:relative;z-index:3;display:flex;align-items:center;gap:11px;padding:6px 16px 12px}
+.ava{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:16px;color:var(--tinta);flex:none;
+  background:linear-gradient(145deg,#F6D392,#D99A3A);box-shadow:0 0 0 2px #120e0a,0 0 0 3.5px rgba(229,173,81,.55)}
+.sapa{display:flex;flex-direction:column;gap:1px}
+.sapa small{font-size:12px;color:var(--muted)}
+.sapa b{font-size:19px;font-weight:600;letter-spacing:-.02em}
+.kepala .kanan-k{margin-left:auto;display:flex;align-items:center;gap:8px}
+.lencana-am{font-size:11.5px;font-weight:600;color:var(--amber);padding:6px 10px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--amberTepi);background:rgba(229,173,81,.07)}
+.hero{border-radius:26px;padding:16px 16px 14px}
+.hero .b1{display:flex;align-items:center;gap:8px}
+.hero .b1 b{font-size:15px;font-weight:600}
+.hero .b1 .ket{margin-left:auto;font-size:9.5px;color:var(--samar)}
+.harga{font-size:40px;font-weight:600;letter-spacing:-.035em;margin-top:10px;line-height:1}
+.harga span{color:var(--muted);font-size:26px}
+.ubah{font-size:13px;font-weight:600;margin-top:6px;display:flex;gap:8px;align-items:center}
+.ubah.naik{color:var(--naik)}
+.ubah em{font-style:normal;color:var(--samar);font-weight:500}
+.spark-hero{width:100%;height:62px;margin-top:6px}
+.keadaan{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-top:8px}
+.keadaan span{margin-left:auto;color:var(--samar);font-weight:500;font-size:12px}
+.tombol2{display:flex;gap:8px;margin-top:12px}
+.tombol2 .btn.amber{flex:1}
+.lanjut{display:flex;align-items:center;gap:12px;border-radius:20px;padding:10px 12px 10px 10px;margin-top:12px}
+.thumb{position:relative;width:104px;height:58px;border-radius:11px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(255,232,196,.1)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.mini-putar{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.35))}
+.mini-putar svg{width:22px;height:22px;color:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.lanjut .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.lanjut small{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--amber)}
+.lanjut b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:4px;border-radius:2px;background:rgba(255,236,206,.1);overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;background:var(--amber);border-radius:2px}
+.lanjut em{font-style:normal;font-size:11px;color:var(--samar)}
+.pintu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.pintu .p{border-radius:18px;padding:12px 11px 11px;height:88px;display:flex;flex-direction:column;position:relative}
+.pintu .ik{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(229,173,81,.12);box-shadow:inset 0 0 0 1px rgba(229,173,81,.18);color:var(--amber)}
+.pintu .ik svg{width:18px;height:18px}
+.pintu b{font-size:12.5px;font-weight:600;margin-top:auto;letter-spacing:-.01em}
+.pintu em{font-style:normal;font-size:10.5px;color:var(--samar);margin-top:1px}
+.pintu .am{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;color:var(--amber);letter-spacing:.04em}
+.seksi{display:flex;align-items:baseline;justify-content:space-between;margin:16px 2px 10px}
+.seksi b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.seksi span,.seksi a{font-size:12px;color:var(--samar)}
+.favorit{display:flex;gap:10px}
+.fav{width:150px;flex:none;border-radius:18px;padding:12px}
+.fav .f1{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600}
+.fav .f1 .lmb{width:18px;height:18px}
+.fav .fh{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-top:8px}
+.fav .fu{font-size:11px;font-weight:600;margin-top:2px}
+.fav svg{width:100%;height:30px;margin-top:6px}
+
+/* ── HP2 Akademi ── */
+.kepala-ak{position:relative;z-index:3;display:flex;align-items:flex-start;padding:8px 18px 14px}
+.kepala-ak small{font-size:10px}
+.kepala-ak h1{font-size:30px;font-weight:600;letter-spacing:-.03em;margin-top:6px;line-height:1.05}
+.kepala-ak h1 span{color:var(--amber)}
+.kepala-ak p{font-size:12.5px;color:var(--muted);margin-top:6px}
+.kepala-ak .aksi{margin-left:auto;display:flex;gap:8px;margin-top:4px}
+.lanjutkan{border-radius:24px;overflow:hidden;padding:0}
+.sampul{position:relative;height:200px;overflow:hidden}
+.sampul img{width:100%;height:100%;object-fit:cover;display:block}
+.sampul .gelap{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,7,6,0) 45%,rgba(8,7,6,.75))}
+.putar-besar{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(20,16,11,.45);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(255,236,206,.28),0 10px 30px rgba(0,0,0,.5)}
+.putar-besar svg{width:24px;height:24px;color:#fff;margin-left:3px}
+.putar-besar.jeda svg{margin-left:0}
+.jejak{position:absolute;left:12px;right:12px;bottom:12px;height:4px;border-radius:2px;background:rgba(255,255,255,.22)}
+.jejak i{display:block;height:100%;border-radius:2px;background:var(--amber);box-shadow:0 0 10px rgba(229,173,81,.7)}
+.lanjutkan .putar-besar{left:auto;top:auto;right:16px;bottom:24px;margin:0;width:52px;height:52px}
+.sampul .sisa{position:absolute;right:12px;top:12px;font-size:11px;font-weight:600;color:#fff;background:rgba(0,0,0,.45);padding:2px 7px;border-radius:6px}
+.lanjutkan .ket{padding:12px 16px 14px;display:flex;flex-direction:column;gap:4px}
+.lanjutkan .ket small{font-size:9.5px}
+.lanjutkan .ket b{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.lanjutkan .ket em{font-style:normal;font-size:12px;color:var(--samar)}
+.akses{font-size:11px !important;font-weight:600;color:var(--amber) !important;padding:4px 9px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--amberTepi)}
+.jalur{position:relative;display:flex;flex-direction:column;gap:8px}
+.jalur::before{content:'';position:absolute;left:33px;top:26px;bottom:26px;width:1.5px;background:linear-gradient(180deg,var(--amber),rgba(229,173,81,.30) 30%,rgba(255,236,206,.10) 60%);z-index:0}
+.bab{position:relative;z-index:1;display:flex;align-items:center;gap:12px;border-radius:18px;padding:10px 12px 10px 14px;min-height:62px}
+.simpul{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--muted);
+  background:#17130e;box-shadow:inset 0 0 0 1.5px rgba(229,173,81,.35)}
+.simpul svg{width:16px;height:16px;color:var(--samar)}
+.simpul.cincin{background:conic-gradient(var(--amber) calc(var(--p)*1%),rgba(255,236,206,.12) 0);box-shadow:none}
+.simpul.cincin span{width:31px;height:31px;border-radius:50%;background:#1a150f;display:grid;place-items:center;color:var(--amber)}
+.bab .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.bab .tx b{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.bab .tx em{font-style:normal;font-size:11.5px;color:var(--samar);display:flex;align-items:center;gap:6px}
+.lg{font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:5px;text-transform:uppercase}
+.lg.gratis{color:#7FE0BC;background:rgba(16,185,129,.12)}
+.lg.am{color:var(--amber);background:rgba(229,173,81,.12)}
+.lg.penuh{color:var(--muted);background:rgba(255,236,206,.08)}
+.segmen{display:flex;gap:3px;margin-top:3px}
+.segmen i{flex:1;height:4px;border-radius:2px;background:rgba(255,236,206,.18)}
+.segmen i.s{background:var(--amber)}
+.segmen i.h{background:linear-gradient(90deg,var(--amber) 62%,rgba(255,236,206,.18) 0)}
+.segmen i.g{background:none;box-shadow:inset 0 0 0 1px rgba(255,236,206,.16)}
+.bab.kunci .tx b{color:#CFC7BB}
+.bab.kunci{opacity:.82}
+
+/* ── HP3 Pelajaran ── */
+.nav-atas{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:4px 14px 10px}
+.nav-atas .mono{font-size:10.5px;color:var(--muted)}
+.nav-judul{display:flex;flex-direction:column;align-items:center;gap:2px}
+.nav-judul b{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.nav-judul small{font-size:11px;color:var(--amber);font-weight:600}
+.pemutar{position:relative;margin:0 12px;height:206px;border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,232,196,.12),0 30px 60px -30px rgba(0,0,0,.9);z-index:2}
+.pemutar img{width:100%;height:100%;object-fit:cover}
+.pemutar .gelap2{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.04) 35%,rgba(0,0,0,.6) 72%,rgba(0,0,0,.92))}
+.kontrol{position:absolute;left:14px;right:14px;bottom:12px;display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:#fff}
+.rel{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.25);position:relative}
+.rel i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--amber)}
+.rel b{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(229,173,81,.45)}
+.pelajaran{padding:14px 18px 0}
+.pelajaran small{font-size:9.5px}
+.pelajaran h2{font-size:22px;font-weight:600;letter-spacing:-.025em;margin-top:6px;line-height:1.15}
+.pelajaran .ringkas{font-size:13px;line-height:1.5;color:var(--muted);margin-top:6px}
+.coba{border-radius:22px;padding:13px 13px 13px;margin:14px 12px 0}
+.coba-kepala{display:flex;align-items:center;gap:10px}
+.coba-kepala .ik{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:rgba(229,173,81,.14);color:var(--amber);box-shadow:inset 0 0 0 1px rgba(229,173,81,.22)}
+.coba-kepala .ik svg{width:18px;height:18px}
+.coba-kepala b{font-size:14px;font-weight:600;display:block}
+.coba-kepala em{font-style:normal;font-size:11.5px;color:var(--samar)}
+.coba-kepala .chip{margin-left:auto}
+.lilin{width:100%;height:118px;margin-top:8px}
+.coba .btn{width:100%;margin-top:8px}
+.istilah{padding:12px 18px 0}
+.istilah small{font-size:9.5px;color:var(--samar)}
+.istilah .cc{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.istilah .chip{font-size:12px;padding:6px 11px;color:var(--text);background:rgba(255,236,206,.06)}
+.istilah .chip svg{width:13px;height:13px;color:var(--amber)}
+.berikut{display:flex;align-items:center;gap:11px;border-radius:18px;padding:9px 12px 9px 9px;margin:12px 12px 0}
+.berikut img{width:84px;height:47px;border-radius:9px;object-fit:cover;flex:none}
+.berikut div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.berikut small{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--amber)}
+.berikut b{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.berikut em{font-style:normal;font-size:11px;color:var(--samar)}
+
+/* ── HP4 PLUS+ ── */
+.kepala-plus{position:relative;z-index:3;padding:8px 18px 14px;display:flex;align-items:flex-end}
+.kepala-plus h1{font-size:30px;font-weight:600;letter-spacing:-.03em}
+.kepala-plus h1 span{color:var(--amber)}
+.kepala-plus small{margin-left:auto;font-size:12px;color:var(--samar);margin-bottom:6px}
+.kartu-member{position:relative;height:214px;border-radius:24px;overflow:hidden;padding:18px 18px 16px;display:flex;flex-direction:column;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(240,191,107,.30),rgba(240,191,107,0) 55%),linear-gradient(135deg,#3b2a14 0%,#1d150c 48%,#2a1e0f 100%);
+  box-shadow:inset 0 0 0 1px rgba(240,191,107,.38),inset 0 1px 0 rgba(255,236,206,.28),0 30px 60px -24px rgba(229,173,81,.35),0 20px 40px -20px rgba(0,0,0,.9)}
+.kartu-member .kilau{position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 28%,rgba(255,226,170,.16) 42%,rgba(255,255,255,0) 56%);pointer-events:none}
+.kartu-member .garis-km{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(135deg,rgba(255,236,206,.18) 0 1px,transparent 1px 9px);mask-image:linear-gradient(90deg,transparent 40%,#000);-webkit-mask-image:linear-gradient(90deg,transparent 40%,#000)}
+.km-atas{display:flex;align-items:center;gap:9px;position:relative}
+.km-logo{width:26px;height:26px;border-radius:50%}
+.km-atas .mono{font-size:10.5px;color:#F3D69C;letter-spacing:.2em}
+.km-aktif{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#F7E7C6;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.25);box-shadow:inset 0 0 0 1px rgba(240,191,107,.35)}
+.km-aktif i{width:6px;height:6px;border-radius:50%;background:var(--naik);box-shadow:0 0 0 3px rgba(16,185,129,.2)}
+.km-tengah{display:flex;align-items:center;margin-top:14px;position:relative}
+.km-angka{font-size:62px;font-weight:600;letter-spacing:-.05em;line-height:.9;color:#FFF6E6;display:flex;align-items:baseline;gap:10px}
+.km-angka small{font-size:14px;letter-spacing:0;color:#E9D3A6;font-weight:500}
+.km-cincin{margin-left:auto;width:66px;height:66px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#F0BF6B calc(var(--p)*1%),rgba(255,236,206,.14) 0)}
+.km-cincin span{width:54px;height:54px;border-radius:50%;background:#24190d;display:grid;place-items:center;font-size:12px;font-weight:700;color:#F7E7C6}
+.km-bawah{margin-top:auto;display:flex;align-items:flex-end;position:relative}
+.km-bawah small{display:block;font-size:10.5px;color:#D9C29A}
+.km-bawah b{font-size:14px;font-weight:600;color:#FFF6E6}
+.km-plat{margin-left:auto;display:flex;align-items:center;gap:6px;color:#F0D9A8;font-size:10.5px}
+.km-plat svg{width:15px;height:15px}
+.fitur{border-radius:20px;padding:4px 0}
+.fr{display:flex;align-items:center;gap:12px;padding:10px 14px;position:relative}
+.fr + .fr::before{content:'';position:absolute;top:0;left:60px;right:14px;height:1px;background:rgba(255,232,196,.07)}
+.fr .ik{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:rgba(229,173,81,.12);color:var(--amber);box-shadow:inset 0 0 0 1px rgba(229,173,81,.18);flex:none}
+.fr .ik svg{width:17px;height:17px}
+.fr .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fr b{font-size:13.5px;font-weight:600;letter-spacing:-.01em}
+.fr em{font-style:normal;font-size:11.5px;color:var(--samar)}
+.fr .tag{font-size:10px;font-weight:600;color:var(--samar);padding:3px 7px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--line)}
+.fr .hidup{font-size:11px;font-weight:600;color:var(--naik);display:flex;align-items:center;gap:5px}
+.kaki{font-size:11.5px;color:var(--samar);text-align:center;margin-top:12px}
+
+/* ── HP5 Cek banyak ── */
+.kontrol-cb{display:flex;align-items:center;gap:7px}
+.kontrol-cb .chip{font-size:12px;padding:8px 11px;font-weight:500;color:var(--muted)}
+.kontrol-cb .chip b{color:var(--text);font-weight:600}
+.kontrol-cb .chip svg{width:12px;height:12px}
+.kontrol-cb .btn{margin-left:auto;height:36px;border-radius:12px;font-size:13px;padding:0 13px}
+.ringkasan{border-radius:16px;padding:11px 13px;margin-top:10px}
+.rbar{display:flex;gap:3px;height:6px}
+.rbar i{border-radius:3px}
+.rbar .s{background:var(--naik)} .rbar .p{background:#CDBFA6} .rbar .t{background:#4A443C}
+.rleg{display:flex;align-items:center;gap:12px;margin-top:9px;font-size:11.5px;color:var(--muted)}
+.rleg span{display:flex;align-items:center;gap:6px}
+.rleg b{color:var(--text);font-weight:700}
+.rleg em{margin-left:auto;font-style:normal;color:var(--samar);font-size:11px}
+.papan-cb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.slot{border-radius:16px;padding:10px 11px 9px;height:96px;display:flex;flex-direction:column}
+.slot.setup{box-shadow:inset 0 0 0 1px rgba(16,185,129,.38),inset 0 1px 0 rgba(160,255,220,.14),0 14px 30px -18px rgba(16,185,129,.45),var(--bayang);
+  background:linear-gradient(180deg,rgba(16,185,129,.11),rgba(255,236,206,.02))}
+.slot.tidak{opacity:.72}
+.s1{display:flex;align-items:center;gap:6px}
+.s1 img{width:18px;height:18px;border-radius:50%}
+.s1 b{font-size:12.5px;font-weight:600;letter-spacing:-.01em}
+.s2{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin-top:7px}
+.s2 em{font-style:normal;color:var(--samar);font-weight:500;margin-left:auto;font-size:11px}
+.meter{position:relative;height:4px;border-radius:2px;margin-top:12px;background:linear-gradient(90deg,rgba(229,173,81,.55),rgba(255,236,206,.10))}
+.meter b{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--text);box-shadow:0 0 0 3px rgba(229,173,81,.35)}
+.slot.setup .meter b{background:var(--naik);box-shadow:0 0 0 3px rgba(16,185,129,.28)}
+.meter.kosong{background:none;box-shadow:inset 0 0 0 1px rgba(255,236,206,.14)}
+.s1 .mesin{margin-left:auto;font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--muted);padding:2px 6px;border-radius:5px;background:rgba(255,236,206,.08);letter-spacing:.02em}
+.s3{font-size:10.5px;color:var(--samar);margin-top:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot.setup .s3{color:#9FE6CB}
+
+/* ── kanan: tambahan per papan ── */
+.palet{display:flex;flex-direction:column;gap:10px}
+.palet .baris{display:flex;align-items:center;gap:10px}
+.palet .baris > span{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--samar);width:58px}
+.sw{width:58px;height:44px;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);display:flex;align-items:flex-end;padding:4px 6px;font-family:var(--mono);font-size:8.5px;color:rgba(255,255,255,.7)}
+.sw.gelap{color:rgba(0,0,0,.65)}
+.panah-palet{font-size:12px;color:var(--samar);padding-left:68px}
+.peta{display:flex;flex-direction:column;gap:8px}
+.peta .r{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;background:rgba(255,236,206,.04);box-shadow:inset 0 0 0 1px rgba(255,232,196,.07)}
+.peta img{width:72px;height:40px;border-radius:7px;object-fit:cover;flex:none}
+.peta .r div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.peta b{font-size:12.5px;font-weight:600}
+.peta em{font-style:normal;font-size:11.5px;color:var(--amber)}
+.anatomi{position:relative;width:265px;height:150px;margin-top:6px}
+.anatomi .besar{zoom:1.55;width:171px}
+.tanda{position:absolute;left:278px;width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--amber);color:var(--amber);font:700 10.5px var(--mono);display:grid;place-items:center}
+.tanda::before{content:'';position:absolute;right:21px;top:9.5px;width:12px;height:1px;background:var(--amberTepi)}
+ol.legenda{list-style:none;display:grid;gap:13px;margin-top:18px;max-width:410px}
+ol.legenda li{display:flex;gap:12px;font-size:13px;line-height:1.45;color:var(--muted)}
+ol.legenda li .tanda{position:static;flex:none}
+ol.legenda li .tanda::before{display:none}
+ol.legenda b{color:var(--text);font-weight:600;display:block}
+
+/* ── ringkasan semua ── */
+#ringkas{width:2160px;height:1030px;position:relative;overflow:hidden;border-radius:28px;padding:56px 70px;flex:none;
+  background:radial-gradient(1400px 700px at 50% -10%,rgba(76,51,27,.65),rgba(30,21,12,.35) 55%,rgba(8,7,6,0) 82%),#080706;box-shadow:inset 0 0 0 1px #1d1914}
+#ringkas .atas{display:flex;align-items:flex-end;justify-content:space-between}
+#ringkas .atas h1{font-size:44px;font-weight:600;letter-spacing:-.03em;line-height:1.05}
+#ringkas .atas h1 span{color:var(--amber)}
+#ringkas .atas p{font-size:15px;color:var(--muted);max-width:620px;text-align:right;line-height:1.5}
+#ringkas .deret{display:flex;justify-content:space-between;margin-top:46px}
+#ringkas .sel{display:flex;flex-direction:column;gap:22px;align-items:center}
+#ringkas .bingkai{width:328px;height:710px;position:relative}
+#ringkas .bingkai .hp{transform:scale(.84);transform-origin:top left;position:absolute;left:0;top:0}
+#ringkas .cap{text-align:center}
+#ringkas .cap small{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--amber)}
+#ringkas .cap b{display:block;font-size:17px;font-weight:600;letter-spacing:-.015em;margin-top:6px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.2v-5.8H9.2v5.8H5A1.5 1.5 0 0 1 3.5 19z"/></symbol>
+    <symbol id="i-pasar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5v3M8 17.5v3M16 4.5V7M16 15v5.5"/><rect x="5.5" y="6.5" width="5" height="11" rx="1.2"/><rect x="13.5" y="7" width="5" height="8" rx="1.2"/></symbol>
+    <symbol id="i-akademi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.2 12 4.5l9.5 4.7L12 14z"/><path d="M6.5 11.4v4.5c0 1.6 2.5 3.1 5.5 3.1s5.5-1.5 5.5-3.1v-4.5"/><path d="M21.5 9.2v5.3"/></symbol>
+    <symbol id="i-kabar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5v-5a6 6 0 1 1 12 0v5l1.6 2.2H4.4z"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.2l1.9 5.3 5.3 1.9-5.3 1.9L11 17.6l-1.9-5.3-5.3-1.9 5.3-1.9z"/><path d="M18.6 14.6l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/></symbol>
+    <symbol id="i-cari" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+    <symbol id="i-putar" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L9.2 4.5A.8.8 0 0 0 8 5.2z" fill="currentColor"/></symbol>
+    <symbol id="i-jeda" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.8" height="14" rx="1.1" fill="currentColor"/><rect x="13.7" y="5" width="3.8" height="14" rx="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-gembok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.4"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5"/></symbol>
+    <symbol id="i-kanan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></symbol>
+    <symbol id="i-kiri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
+    <symbol id="i-panah" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></symbol>
+    <symbol id="i-mata" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+    <symbol id="i-tambah" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-kisi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></symbol>
+    <symbol id="i-kalender" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+    <symbol id="i-bulan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.2 6.2 0 0 0 10.1 10.1z"/></symbol>
+    <symbol id="i-kilat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2.8 5 13.5h6l-1 7.7 8-10.7h-6z"/></symbol>
+    <symbol id="i-buku" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 5.5a2 2 0 0 1 2-2h12v14h-12a2 2 0 0 0-2 2z"/><path d="M4.5 19.5a2 2 0 0 0 2 2h12v-4"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol>
+    <symbol id="i-hp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.8" width="10" height="18.4" rx="2.4"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-kirim" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 4 3.5 10.8l6.3 2.1 2.1 6.3L15.3 15l4.2 3.3z"/><path d="m9.8 12.9 5.5-4.4"/></symbol>
+    <symbol id="i-dua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="5" width="7.5" height="14" rx="1.8"/><rect x="13" y="5" width="7.5" height="14" rx="1.8"/></symbol>
+    <symbol id="i-saring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+    <symbol id="i-titik" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="18.5" cy="12" r="1.7" fill="currentColor"/></symbol>
+    <symbol id="i-ulang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></symbol>
+    <symbol id="i-jam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-bawah" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></symbol>
+    <symbol id="i-status" viewBox="0 0 62 13"><g fill="currentColor"><rect x="0" y="8" width="3" height="4.5" rx=".8"/><rect x="4.6" y="6" width="3" height="6.5" rx=".8"/><rect x="9.2" y="3.6" width="3" height="8.9" rx=".8"/><rect x="13.8" y="1" width="3" height="11.5" rx=".8"/></g><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22.5 5.2a9.5 9.5 0 0 1 12.4 0"/><path d="M25 7.9a5.6 5.6 0 0 1 7.4 0"/></g><circle cx="28.7" cy="10.6" r="1.5" fill="currentColor"/><rect x="40.5" y="1.2" width="18.5" height="10.6" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.1"/><rect x="42.3" y="3" width="12.6" height="7" rx="1.6" fill="currentColor"/><rect x="60" y="4.6" width="1.6" height="3.8" rx=".8" fill="currentColor" fill-opacity=".5"/></symbol>
+  </defs>
+</svg>
+
+<!-- ═════════════ 01 · FONDASI ═════════════ -->
+<section class="papan" id="papan-1">
+  <div class="teks">
+    <div class="no">USULAN 01 / 05 · FONDASI</div>
+    <div class="angka">01</div>
+    <h2>Kaca obsidian, satu keluarga dengan landing</h2>
+    <p class="pitch">Warna app masih emas pudar di atas coklat-hitam, padahal landing sudah pindah ke obsidian + amber. App ikut pindah. Kacanya juga dapat sesuatu untuk dibiaskan: cahaya amber di belakang layar, sama seperti hero landing.</p>
+    <h4>YANG BERUBAH</h4>
+    <ul>
+      <li>Palet landing: obsidian <code>#080706</code>, amber <code>#E5AD51</code> untuk tombol utama dan tab aktif, krem <code>#F4F1EB</code> untuk teks</li>
+      <li>Resep kaca: isian hangat 8%→2%, tepi 1 px, kilau di sisi atas. Kartu utama dapat bingkai amber berkilap</li>
+      <li>Home cuma berisi yang dipakai: chart terakhir dibuka (hidup), lanjut belajar, dan 6 pintu berangka (4/10, 12 slot)</li>
+      <li>Tab: Home · Pasar · <b>Akademi</b> · Kabar · PLUS+. Isi "Lainnya" pindah ke avatar</li>
+    </ul>
+    <h4>DATANYA</h4>
+    <p class="data"><code>/api/saya</code> setelan, sisa hari, pantauan 4/10, kabar belum dibaca · <code>/api/bacaan</code> untuk pasar &amp; tf di setelan (antrean + cache 20 dtk yang sama) · lanjut belajar dari kemajuan lokal</p>
+    <h4>UKURAN KERJA</h4>
+    <div class="chips"><span class="ok">Tanpa endpoint baru</span><span>token.ts + Kaca.tsx</span><span>Inter lewat expo-font</span></div>
+    <p class="catatan"><b>Android:</b> kalau blur gagal diam-diam, isian dipekatkan (aturan 19 Sep). Tepi berkilap dan cahaya di belakang tetap membuatnya terbaca sebagai kaca.</p>
+  </div>
+
+  <div class="kolom-hp">
+    <div class="label"><b>SESUDAH</b> · HOME</div>
+    <div class="hp berbilah" id="hp1">
+      <div class="cahaya dua"></div><div class="kamera"></div>
+      <div class="sb"><span>9:41</span><svg><use href="#i-status"/></svg></div>
+      <div class="kepala">
+        <div class="ava">Y</div>
+        <div class="sapa"><small>Jumat, 9 Okt</small><b>Halo, Yudi</b></div>
+        <div class="kanan-k">
+          <span class="lencana-am">AM+ · 23 hari</span>
+          <span class="bulat kaca"><svg><use href="#i-kabar"/></svg><i class="lencana" style="top:-3px;right:-3px">3</i></span>
+        </div>
+      </div>
+      <div class="isi">
+        <div class="hero kilap">
+          <div class="b1"><img class="lmb" src="aset/btc.png" alt=""><b>BTCUSDT</b><span class="chip">h4</span><span class="chip">SnR</span><span class="ket mono">TERAKHIR DIBUKA</span></div>
+          <div class="harga">83.863<span>,97</span></div>
+          <div class="ubah naik">+0,98% <em>24 jam</em></div>
+          <svg class="spark-hero" data-spark="7|0.12|#10B981|.30" data-w="326" data-h="62"></svg>
+          <div class="keadaan"><i class="dot hijau"></i>Setup · 8 dari 8 syarat <span>RR bersih 2,65 · biaya 9%</span></div>
+          <div class="tombol2"><span class="btn amber">Buka chart <svg><use href="#i-panah"/></svg></span><span class="btn kaca">Bacaan</span></div>
+        </div>
+        <div class="lanjut kaca">
+          <div class="thumb"><img src="aset/v05k.jpg" alt=""><span class="mini-putar"><svg><use href="#i-putar"/></svg></span></div>
+          <div class="tx"><small>AKADEMI · BAB 1 · 05/60</small><b>Timeframe M1 sampai D1</b><div class="bar"><i style="width:40%"></i></div><em>4 dari 10 selesai di bab ini</em></div>
+          <svg class="chev"><use href="#i-kanan"/></svg>
+        </div>
+        <div class="pintu">
+          <div class="p kaca"><span class="ik"><svg><use href="#i-mata"/></svg></span><b>Pantauan</b><em>4 dari 10 aktif</em></div>
+          <div class="p kaca"><span class="ik"><svg><use href="#i-tambah"/></svg></span><b>Pantau baru</b><em>pasar × tf</em></div>
+          <div class="p kaca"><span class="am">AM+</span><span class="ik"><svg><use href="#i-kilat"/></svg></span><b>Kabar otomatis</b><em>rangkuman pagi</em></div>
+          <div class="p kaca"><span class="am">AM+</span><span class="ik"><svg><use href="#i-kisi"/></svg></span><b>Cek banyak</b><em>12 slot</em></div>
+          <div class="p kaca"><span class="ik"><svg><use href="#i-kalender"/></svg></span><b>Kalender</b><em>30 hari ke depan</em></div>
+          <div class="p kaca"><span class="ik"><svg><use href="#i-buku"/></svg></span><b>Istilah</b><em>16 istilah</em></div>
+        </div>
+        <div class="seksi"><b>Pasar favorit</b><a>Atur</a></div>
+        <div class="favorit">
+          <div class="fav kaca"><div class="f1"><img class="lmb" src="aset/xau.png" alt="">XAU/USD</div><div class="fh">4.193,75</div><div class="fu" style="color:var(--naik)">+1,56%</div><svg data-spark="21|0.10|#10B981|.25" data-w="126" data-h="30"></svg></div>
+          <div class="fav kaca"><div class="f1"><img class="lmb" src="aset/eth.png" alt="">ETHUSDT</div><div class="fh">2.707,63</div><div class="fu" style="color:var(--naik)">+2,12%</div><svg data-spark="33|0.08|#10B981|.25" data-w="126" data-h="30"></svg></div>
+          <div class="fav kaca"><div class="f1"><img class="lmb" src="aset/sol.png" alt="">SOLUSDT</div><div class="fh">118,96</div><div class="fu" style="color:var(--turun)">−0,40%</div><svg data-spark="5|-0.06|#F43F5E|.22" data-w="126" data-h="30"></svg></div>
+        </div>
+      </div>
+      <nav class="bilah">
+        <div class="t on"><svg><use href="#i-home"/></svg>Home</div>
+        <div class="t"><svg><use href="#i-pasar"/></svg>Pasar</div>
+        <div class="t"><svg><use href="#i-akademi"/></svg>Akademi</div>
+        <div class="t"><svg><use href="#i-kabar"/></svg>Kabar<i class="lencana">3</i></div>
+        <div class="t plus"><svg><use href="#i-plus"/></svg>PLUS+</div>
+      </nav>
+    </div>
+  </div>
+
+  <div class="kanan">
+    <div class="label">SEBELUM · HOME SEKARANG</div>
+    <div class="sebelum">
+      <img src="aset/sebelum-home.png" alt="">
+      <p>Sepertiga kisi 12 ikon (Chart, Kabar, AM+, Lainnya) dobel dengan tab. Status AM+ muncul dua kali di satu layar. Kacanya tidak terlihat karena di belakangnya tidak ada apa-apa untuk dibiaskan.</p>
+    </div>
+    <div class="palet">
+      <div class="label" style="margin-bottom:2px">PALET</div>
+      <div class="baris"><span>LAMA</span><div class="sw" style="background:#0C0B09">0C0B09</div><div class="sw gelap" style="background:#C9A961">C9A961</div><div class="sw gelap" style="background:#CFCECB">CFCECB</div></div>
+      <div class="baris"><span>BARU</span><div class="sw" style="background:#080706">080706</div><div class="sw gelap" style="background:#E5AD51">E5AD51</div><div class="sw gelap" style="background:#F4F1EB">F4F1EB</div><div class="sw gelap" style="background:#BDB5A9">BDB5A9</div><div class="sw" style="background:radial-gradient(circle at 50% 0,#4c331b,#161009)">cahaya</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 02 · AKADEMI TAB ═════════════ -->
+<section class="papan" id="papan-2">
+  <div class="teks">
+    <div class="no">USULAN 02 / 05 · AKADEMI</div>
+    <div class="angka">02</div>
+    <h2>Akademi jadi tab sendiri</h2>
+    <p class="pitch">"Belajar" di app sekarang berisi 16 istilah dan cara baca kartu, semuanya teks. Akademi sudah punya 60 pelajaran, 7 di antaranya sudah tayang, dan app belum menyebutnya sama sekali. Ia layak dapat satu tab, dengan jalur bab yang sama seperti di web.</p>
+    <h4>YANG BERUBAH</h4>
+    <ul>
+      <li>Kartu Lanjutkan memakai sampul studio asli, dengan bilah kemajuan di atas sampulnya</li>
+      <li>Jalur 6 bab: simpul bernomor, cincin kemajuan, dan lencana Gratis / AM+ / Akses penuh</li>
+      <li>Bab yang belum tayang disebut "segera tayang", bukan dikunci. Judul bab yang terkunci tetap terbaca</li>
+      <li>16 istilah lama tetap ada sebagai tombol buku di kepala Akademi</li>
+    </ul>
+    <h4>DATANYA</h4>
+    <p class="data"><code>/api/saya/akademi</code> sudah hidup: 6 bab · 60 video · 7 tayang · akses per tier. Kemajuan disimpan di perangkat, sama seperti web ("tersimpan di perangkat ini").</p>
+    <h4>UKURAN KERJA</h4>
+    <div class="chips"><span class="ok">Tanpa endpoint baru</span><span>1 layar + 1 tab</span><span>Belajar.tsx dilebur</span></div>
+    <p class="catatan"><b>Build Play:</b> harga Akses penuh tidak dicetak. Baris terkunci cukup berbunyi "terbuka dengan Akses penuh", tanpa jalan beli.</p>
+  </div>
+
+  <div class="kolom-hp">
+    <div class="label"><b>SESUDAH</b> · TAB AKADEMI</div>
+    <div class="hp berbilah" id="hp2">
+      <div class="cahaya"></div><div class="kamera"></div>
+      <div class="sb"><span>9:41</span><svg><use href="#i-status"/></svg></div>
+      <div class="kepala-ak">
+        <div><small class="mono amber">AKADEMI ANALISMARKET</small><h1>Belajar dari <span>nol.</span></h1><p>6 bab · 60 pelajaran · 7 sudah tayang</p></div>
+        <div class="aksi"><span class="bulat kaca"><svg><use href="#i-buku"/></svg></span><span class="bulat kaca"><svg><use href="#i-cari"/></svg></span></div>
+      </div>
+      <div class="isi">
+        <div class="lanjutkan kilap">
+          <div class="sampul"><img src="aset/v04b.jpg" alt=""><div class="gelap"></div><span class="putar-besar"><svg><use href="#i-putar"/></svg></span><span class="sisa">sisa 1:52</span><div class="jejak"><i style="width:62%"></i></div></div>
+          <div class="ket"><small class="mono amber">LANJUTKAN · VIDEO 04 DARI 60</small><b>Membaca candlestick (OHLC)</b><em>Bab 1 · Kenalan dengan Pasar &amp; Chart</em></div>
+        </div>
+        <div class="seksi"><b>Jalur belajar</b><span class="akses">Akses kamu · Bab 1–3</span></div>
+        <div class="jalur">
+          <div class="bab kaca">
+            <div class="simpul cincin" style="--p:36"><span>1</span></div>
+            <div class="tx"><b>Kenalan dengan Pasar &amp; Chart</b><em><span class="lg gratis">Gratis</span>3 dari 10 selesai · 7 tayang</em>
+              <div class="segmen"><i class="s"></i><i class="s"></i><i class="s"></i><i class="h"></i><i></i><i></i><i></i><i class="g"></i><i class="g"></i><i class="g"></i></div></div>
+            <svg class="chev"><use href="#i-kanan"/></svg>
+          </div>
+          <div class="bab kaca">
+            <div class="simpul"><span>2</span></div>
+            <div class="tx"><b>Struktur Pasar &amp; Level</b><em><span class="lg am">AM+</span>Terbuka · segera tayang</em></div>
+            <svg class="chev"><use href="#i-kanan"/></svg>
+          </div>
+          <div class="bab kaca">
+            <div class="simpul"><span>3</span></div>
+            <div class="tx"><b>Indikator dengan Benar</b><em><span class="lg am">AM+</span>Terbuka · segera tayang</em></div>
+            <svg class="chev"><use href="#i-kanan"/></svg>
+          </div>
+          <div class="bab kaca kunci">
+            <div class="simpul"><svg><use href="#i-gembok"/></svg></div>
+            <div class="tx"><b>Smart Money &amp; Setup Lengkap</b><em><span class="lg penuh">Akses penuh</span>10 video · terkunci</em></div>
+            <svg class="chev"><use href="#i-kanan"/></svg>
+          </div>
+          <div class="bab kaca kunci">
+            <div class="simpul"><svg><use href="#i-gembok"/></svg></div>
+            <div class="tx"><b>Risiko &amp; Rencana Trading</b><em><span class="lg penuh">Akses penuh</span>10 video · terkunci</em></div>
+            <svg class="chev"><use href="#i-kanan"/></svg>
+          </div>
+        </div>
+      </div>
+      <nav class="bilah">
+        <div class="t"><svg><use href="#i-home"/></svg>Home</div>
+        <div class="t"><svg><use href="#i-pasar"/></svg>Pasar</div>
+        <div class="t on"><svg><use href="#i-akademi"/></svg>Akademi</div>
+        <div class="t"><svg><use href="#i-kabar"/></svg>Kabar<i class="lencana">3</i></div>
+        <div class="t plus"><svg><use href="#i-plus"/></svg>PLUS+</div>
+      </nav>
+    </div>
+  </div>
+
+  <div class="kanan">
+    <div class="label">SEBELUM · BELAJAR SEKARANG</div>
+    <div class="sebelum">
+      <img src="aset/sebelum-belajar.png" alt="">
+      <p><b>Belajar sekarang:</b> 16 istilah dan cara baca kartu, semuanya teks. Tanpa video, tanpa kemajuan. Orang yang datang dari tombol "Jelajahi Akademi" di landing tidak menemukan Akademi di app.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 03 · PELAJARAN × CHART ═════════════ -->
+<section class="papan" id="papan-3">
+  <div class="teks">
+    <div class="no">USULAN 03 / 05 · AKADEMI × PASAR</div>
+    <div class="angka">03</div>
+    <h2>Pelajaran yang langsung dibuka di chart</h2>
+    <p class="pitch">Halaman Akademi menjanjikan "istilah yang bisa kamu lihat langsung di chart". App satu-satunya tempat janji itu bisa ditepati dengan satu ketukan: pelajaran OHLC membuka BTCUSDT h1, pelajaran support &amp; resistance membuka mesin SnR.</p>
+    <h4>YANG BERUBAH</h4>
+    <ul>
+      <li>Pemutar video di dalam app. Ditandai selesai di 90% seperti web, dan posisi terakhir tersimpan</li>
+      <li>Kartu "Coba di chart": lilin yang dibahas ditandai, satu tombol ke layar Pasar dengan pasar, tf, dan mesin yang pas</li>
+      <li>Chip istilah membuka lembar istilah yang sudah ada</li>
+      <li>"Berikutnya" menyeberang bab, mengikuti urutan kursus di web</li>
+    </ul>
+    <h4>DATANYA</h4>
+    <p class="data"><code>/api/saya/akademi/putar?id=</code> alamat bertanda tangan · lilin dari <code>/api/bacaan</code> (permintaan yang sama dengan membuka chart-nya) · layar Pasar yang sudah ada</p>
+    <h4>UKURAN KERJA</h4>
+    <div class="chips"><span class="perlu">Build baru: expo-video</span><span>Peta video → contoh chart</span><span class="perlu">Ideal: 1 kolom di API bot</span></div>
+    <p class="catatan"><b>expo-video modul native.</b> Sesudah build, jalankan <code style="font-size:11px">periksa-apk</code>: pustaka di proyek ini sudah tiga kali menyelundupkan izin.</p>
+  </div>
+
+  <div class="kolom-hp">
+    <div class="label"><b>SESUDAH</b> · PELAJARAN</div>
+    <div class="hp" id="hp3">
+      <div class="cahaya redup"></div><div class="kamera"></div>
+      <div class="sb"><span>9:41</span><svg><use href="#i-status"/></svg></div>
+      <div class="nav-atas"><span class="bulat kaca"><svg><use href="#i-kiri"/></svg></span><span class="mono">BAB 1 · 04 / 60</span><span class="bulat kaca"><svg><use href="#i-titik"/></svg></span></div>
+      <div class="pemutar"><img src="aset/v04b.jpg" alt=""><div class="gelap2"></div><span class="putar-besar jeda"><svg><use href="#i-jeda"/></svg></span>
+        <div class="kontrol"><span>1:46</span><div class="rel"><i style="width:36%"></i><b style="left:36%"></b></div><span>4:54</span></div></div>
+      <div class="pelajaran" style="position:relative;z-index:2">
+        <small class="mono amber">VIDEO 04 DARI 60 · BAB 1</small>
+        <h2>Membaca candlestick (OHLC)</h2>
+        <p class="ringkas">Satu lilin merangkum harga buka, tertinggi, terendah, dan tutup dalam satu periode.</p>
+      </div>
+      <div class="coba kilap" style="position:relative;z-index:2">
+        <div class="coba-kepala"><span class="ik"><svg><use href="#i-pasar"/></svg></span><div><b>Coba di chart</b><em>Lilin terakhir BTCUSDT, dibedah</em></div><span class="chip">h1</span></div>
+        <svg class="lilin" id="lilin" data-w="330" data-h="118"></svg>
+        <span class="btn amber">Buka BTCUSDT h1 di Pasar <svg><use href="#i-panah"/></svg></span>
+      </div>
+      <div class="istilah" style="position:relative;z-index:2"><small class="mono">ISTILAH DI PELAJARAN INI</small>
+        <div class="cc"><span class="chip"><svg><use href="#i-buku"/></svg>OHLC</span><span class="chip">Body</span><span class="chip">Sumbu (wick)</span><span class="chip">Timeframe</span></div></div>
+      <div class="berikut kaca" style="position:relative;z-index:2"><img src="aset/v05k.jpg" alt=""><div><small>BERIKUTNYA · 05</small><b>Timeframe M1 sampai D1, dan kenapa pemula mulai di H1</b><em>5 mnt</em></div><svg class="chev"><use href="#i-kanan"/></svg></div>
+    </div>
+  </div>
+
+  <div class="kanan">
+    <div class="label">PETA CONTOH · VIDEO → CHART</div>
+    <div class="peta">
+      <div class="r"><img src="aset/v04k.jpg" alt=""><div><b>04 · Membaca candlestick</b><em>BTCUSDT · h1 · tanpa mesin</em></div></div>
+      <div class="r"><img src="aset/v05k.jpg" alt=""><div><b>05 · Timeframe M1 sampai D1</b><em>BTCUSDT · m15 → h1 · tanpa mesin</em></div></div>
+      <div class="r"><img src="aset/v13k.jpg" alt=""><div><b>13 · Support &amp; resistance</b><em>XAU/USD · h4 · SnR</em></div></div>
+      <div class="r"><img src="aset/v33k.jpg" alt=""><div><b>33 · Order block</b><em>BTCUSDT · h1 · SMC</em></div></div>
+      <div class="r"><img src="aset/v41k.jpg" alt=""><div><b>41 · Risiko per trade</b><em>bacaan: biaya &amp; RR bersih</em></div></div>
+    </div>
+    <div class="sebelum"><p>Peta ini bisa dimulai statis di app (5 baris di atas). Kalau tim bot menambah kolom <b>contohChart</b> di API Akademi, peta itu pindah ke server dan ikut tiap video baru tanpa rilis app.</p></div>
+  </div>
+</section>
+
+<!-- ═════════════ 04 · PLUS+ ═════════════ -->
+<section class="papan" id="papan-4">
+  <div class="teks">
+    <div class="no">USULAN 04 / 05 · ANALISMARKET+</div>
+    <div class="angka">04</div>
+    <h2>PLUS+ jadi kartu member, bukan brosur</h2>
+    <p class="pitch">Tab PLUS+ sekarang berisi daftar centang "terbuka" dan FAQ. Pelanggan cuma bertanya dua hal: masih berapa lama, dan apa yang sedang jalan. Kartu ini menjawab keduanya dengan angka dari akunnya sendiri.</p>
+    <h4>YANG BERUBAH</h4>
+    <ul>
+      <li>Kartu member amber: sisa hari ditulis besar, cincin masa aktif, tanggal dari <code>plusBerakhirPada</code></li>
+      <li>Tiap fitur jadi baris dengan keadaan hidup: 4 pasangan kabar otomatis, jendela kirim, 12 slot</li>
+      <li>Akademi Bab 2–3 masuk daftar fitur, dengan pintu langsung ke tab Akademi</li>
+      <li>Baris yang tidak bisa diketuk (m1/m5, multi-chart web) tidak bergambar ›, sesuai aturan panah</li>
+    </ul>
+    <h4>DATANYA</h4>
+    <p class="data"><code>/api/saya</code> · <code>/api/saya/kabar-otomatis</code> (dipilih, jam) · akses dari <code>/api/saya/akademi</code></p>
+    <h4>UKURAN KERJA</h4>
+    <div class="chips"><span class="ok">Tanpa endpoint baru</span><span>1 layar</span><span class="ok">Aman untuk Play</span></div>
+    <p class="catatan"><b>Akun gratis</b> melihat kartu grafit "Gratis" dan daftar yang sama dengan gembok. Di build Play tanpa harga dan tanpa jalan beli lewat bot; di build tautan unduhan, harga dari <code style="font-size:11px">hargaPlus()</code>.</p>
+  </div>
+
+  <div class="kolom-hp">
+    <div class="label"><b>SESUDAH</b> · TAB PLUS+</div>
+    <div class="hp berbilah" id="hp4">
+      <div class="cahaya dua"></div><div class="kamera"></div>
+      <div class="sb"><span>9:41</span><svg><use href="#i-status"/></svg></div>
+      <div class="kepala-plus"><h1>AnalisMarket<span>+</span></h1><small>Akun Yudi</small></div>
+      <div class="isi">
+        <div class="kartu-member">
+          <div class="garis-km"></div><div class="kilau"></div>
+          <div class="km-atas"><img class="km-logo" src="aset/mark.png" alt=""><span class="mono">ANALISMARKET+</span><span class="km-aktif"><i></i>Aktif</span></div>
+          <div class="km-tengah"><div class="km-angka">23<small>hari tersisa</small></div><div class="km-cincin" style="--p:77"><span>23/30</span></div></div>
+          <div class="km-bawah"><div><small>Berlaku sampai</small><b>1 Nov 2026</b></div><div class="km-plat"><svg><use href="#i-monitor"/></svg><svg><use href="#i-hp"/></svg><svg><use href="#i-kirim"/></svg><span>satu akun</span></div></div>
+        </div>
+        <div class="seksi"><b>Yang sedang jalan</b><span>dari akunmu</span></div>
+        <div class="fitur kaca">
+          <div class="fr"><span class="ik"><svg><use href="#i-kilat"/></svg></span><div class="tx"><b>Kabar otomatis</b><em>4 pasangan · kirim 07.00–22.00</em></div><span class="hidup"><i class="dot hijau"></i></span><svg class="chev"><use href="#i-kanan"/></svg></div>
+          <div class="fr"><span class="ik"><svg><use href="#i-kisi"/></svg></span><div class="tx"><b>Cek banyak</b><em>Hingga 12 slot pasar × timeframe</em></div><svg class="chev"><use href="#i-kanan"/></svg></div>
+          <div class="fr"><span class="ik"><svg><use href="#i-bulan"/></svg></span><div class="tx"><b>Jam sunyi</b><em>Diam 22.00–07.00</em></div><svg class="chev"><use href="#i-kanan"/></svg></div>
+          <div class="fr"><span class="ik"><svg><use href="#i-akademi"/></svg></span><div class="tx"><b>Akademi Bab 2–3</b><em>Terbuka · tayang bertahap</em></div><svg class="chev"><use href="#i-kanan"/></svg></div>
+          <div class="fr"><span class="ik"><svg><use href="#i-jam"/></svg></span><div class="tx"><b>m1 &amp; m5 emas/forex</b><em>20 analisa per hari</em></div></div>
+          <div class="fr"><span class="ik"><svg><use href="#i-dua"/></svg></span><div class="tx"><b>Multi-chart 2 atau 4</b><em>Di Terminal web</em></div><span class="tag">web</span></div>
+          <div class="fr"><span class="ik"><svg><use href="#i-kirim"/></svg></span><div class="tx"><b>Antrean prioritas</b><em>Kartu bot didahulukan</em></div></div>
+        </div>
+        <p class="kaki">Berakhir sendiri di tanggalnya. Tidak ada potong otomatis.</p>
+      </div>
+      <nav class="bilah">
+        <div class="t"><svg><use href="#i-home"/></svg>Home</div>
+        <div class="t"><svg><use href="#i-pasar"/></svg>Pasar</div>
+        <div class="t"><svg><use href="#i-akademi"/></svg>Akademi</div>
+        <div class="t"><svg><use href="#i-kabar"/></svg>Kabar<i class="lencana">3</i></div>
+        <div class="t plus on"><svg><use href="#i-plus"/></svg>PLUS+</div>
+      </nav>
+    </div>
+  </div>
+
+  <div class="kanan">
+    <div class="label">SEBELUM · PLUS+ SEKARANG</div>
+    <div class="sebelum">
+      <img src="aset/sebelum-plus.png" alt="">
+      <p>Enam baris "— terbuka" yang tidak bisa diketuk, lalu FAQ. Pelanggan tidak bisa langsung ke fitur yang sudah dibayarnya dari sini, dan Akademi Bab 2–3 tidak disebut sama sekali.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ 05 · CEK BANYAK ═════════════ -->
+<section class="papan" id="papan-5">
+  <div class="teks">
+    <div class="no">USULAN 05 / 05 · ANALISMARKET+</div>
+    <div class="angka">05</div>
+    <h2>Cek banyak sebagai papan 12 pasar</h2>
+    <p class="pitch">Hasil fitur AM+ yang paling terasa masih berupa tabel teks empat kolom. Jadikan papan: dua belas pasar terlihat sekaligus, yang Setup naik ke atas, dan satu ketukan membuka bacaannya di tab Pasar.</p>
+    <h4>YANG BERUBAH</h4>
+    <ul>
+      <li>Ringkasan di atas: berapa Setup, Pantau, dan Tidak dicetak. App sudah menghitungnya, tinggal digambar jadi bilah</li>
+      <li>Pasar jadi ubin kaca: mesin terbaik, keadaan, dan jarak ke entry sebagai meteran ATR</li>
+      <li>Ubin Setup bertepi hijau tipis. Kolom <code>arah</code> sengaja tidak dicetak, cuma keadaan</li>
+      <li>Set pasar tersimpan ("Pagi", "Emas &amp; forex") supaya tidak perlu memilih 12 chip setiap kali</li>
+    </ul>
+    <h4>DATANYA</h4>
+    <p class="data"><code>cekBanyak()</code> yang sudah ada. Per baris: <code>mesin</code>, <code>ideal</code>, <code>jarakAtr</code>, <code>sebab</code>. Pilihan terbaik per pasar memakai urutan app sekarang · set pasar disimpan di AsyncStorage</p>
+    <h4>UKURAN KERJA</h4>
+    <div class="chips"><span class="ok">Tanpa endpoint baru</span><span>1 layar</span><span>simpanan lokal</span></div>
+    <p class="catatan"><b>Sparkline per ubin sengaja tidak ada:</b> 12 × <code style="font-size:11px">/api/bacaan</code> berarti ±900 KB dan ±12 detik antrean di zona 1 r/s. Meteran ATR gratis karena datang dari jawaban yang sama.</p>
+  </div>
+
+  <div class="kolom-hp">
+    <div class="label"><b>SESUDAH</b> · CEK BANYAK</div>
+    <div class="hp" id="hp5">
+      <div class="cahaya redup"></div><div class="kamera"></div>
+      <div class="sb"><span>9:41</span><svg><use href="#i-status"/></svg></div>
+      <div class="nav-atas"><span class="bulat kaca"><svg><use href="#i-kiri"/></svg></span><div class="nav-judul"><b>Cek banyak</b><small>AnalisMarket+ · 12 pasar · 5 mesin</small></div><span class="bulat kaca"><svg><use href="#i-saring"/></svg></span></div>
+      <div class="isi">
+        <div class="kontrol-cb"><span class="chip kaca">Set <b>Pagi</b><svg><use href="#i-bawah"/></svg></span><span class="chip kaca">Timeframe <b>h1</b><svg><use href="#i-bawah"/></svg></span><span class="btn amber"><svg><use href="#i-ulang"/></svg>Jalankan</span></div>
+        <div class="ringkasan kaca">
+          <div class="rbar"><i class="s" style="flex:2"></i><i class="p" style="flex:6"></i><i class="t" style="flex:4"></i></div>
+          <div class="rleg"><span><i class="dot hijau"></i><b>2</b>Setup</span><span><i class="dot krem"></i><b>6</b>Pantau</span><span><i class="dot redup"></i><b>4</b>Tidak dicetak</span><em>3,4 dtk</em></div>
+        </div>
+        <div class="papan-cb" id="papan-cb"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kanan">
+    <div class="label">ANATOMI SATU UBIN</div>
+    <div class="anatomi" id="anatomi">
+      <span class="tanda" style="top:20px">1</span><span class="tanda" style="top:57px">2</span><span class="tanda" style="top:91px">3</span><span class="tanda" style="top:118px">4</span>
+    </div>
+    <ol class="legenda">
+      <li><span class="tanda">1</span><div><b>Pasar + mesin terbaik</b>dari 5 mesin: yang Setup dulu, lalu yang paling dekat ke entry (urutan <code style="font-size:11px">terbaik()</code> sekarang)</div></li>
+      <li><span class="tanda">2</span><div><b>Keadaan</b>Setup · Pantau · Tidak dicetak · Pasar tutup · Jatah habis, dari <code style="font-size:11px">ideal</code> + <code style="font-size:11px">sebab</code></div></li>
+      <li><span class="tanda">3</span><div><b>Meteran jarak</b><code style="font-size:11px">jarakAtr</code>; bilah penuh = 3 ATR</div></li>
+      <li><span class="tanda">4</span><div><b>Angka jaraknya</b>ditulis, bukan cuma digambar; "—" kalau tidak ada rencana</div></li>
+    </ol>
+    <div class="sebelum"><p><b>Ketuk ubin</b> → tab Pasar dengan pasar itu, tf yang sama, dan mesin terbaiknya. Tidak ada layar bacaan kedua yang bisa beda pendapat dengan yang pertama.</p></div>
+  </div>
+</section>
+
+<!-- ═════════════ RINGKASAN ═════════════ -->
+<section id="ringkas">
+  <div class="atas">
+    <div><div class="mono amber" style="font-size:12px;letter-spacing:.22em">ANALISMARKET APP · USULAN POLISH · OKT 2026</div>
+      <h1 style="margin-top:14px">Kaca obsidian, Akademi di saku,<br><span>AM+ yang terasa dipakai.</span></h1></div>
+    <p>Lima layar, satu bahasa visual dengan landing yang live sekarang. Kelimanya memakai API yang sudah ada; cuma pemutar video yang butuh satu modul native (build baru).</p>
+  </div>
+  <div class="deret" id="deret"></div>
+</section>
+
+<script>
+function acak(seed){let s=(seed*9301+49297)%233280||1;return()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
+function jalan(n,seed,drift,vol){const r=acak(seed);let v=0;const a=[];for(let i=0;i<n;i++){v+=(r()-0.5)*vol+drift;a.push(v)}return a}
+function spark(svg){
+  const [seed,drift,warna,isi]=svg.dataset.spark.split('|');
+  const W=+svg.dataset.w||100,H=+svg.dataset.h||30;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');
+  const a=jalan(48,+seed,+drift,1.6);const mn=Math.min(...a),mx=Math.max(...a);
+  const pts=a.map((v,i)=>[i/(a.length-1)*W,H-2-(v-mn)/((mx-mn)||1)*(H-5)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const id='g'+Math.random().toString(36).slice(2);
+  const akhir=pts[pts.length-1];
+  svg.innerHTML=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${warna}" stop-opacity="${isi||.28}"/><stop offset="1" stop-color="${warna}" stop-opacity="0"/></linearGradient></defs><path d="${d} L${W} ${H} L0 ${H} Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${warna}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>`+(H>40?`<circle cx="${akhir[0]-2}" cy="${akhir[1]}" r="3.2" fill="${warna}"/><circle cx="${akhir[0]-2}" cy="${akhir[1]}" r="7" fill="${warna}" opacity=".18"/>`:'');
+}
+
+function lilin(svg){
+  const W=330,H=118;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const r=acak(4);let c=60;const data=[];
+  for(let i=0;i<19;i++){const o=c;c=o+(r()-0.47)*5;const h=Math.max(o,c)+r()*2.6;const l=Math.min(o,c)-r()*2.6;data.push({o,h,l,c})}
+  const ak={o:c-0.5,c:c+5.2,h:c+7.4,l:c-3.1};data.push(ak);
+  const nil=data.flatMap(d=>[d.h,d.l]);const mn=Math.min(...nil),mx=Math.max(...nil);
+  const areaW=176,y=v=>8+(mx-v)/(mx-mn)*(H-16),cw=areaW/data.length;
+  let s='';
+  for(let g=0;g<4;g++){const yy=8+g*(H-16)/3;s+=`<line x1="0" x2="${areaW+6}" y1="${yy}" y2="${yy}" stroke="rgba(255,236,206,.06)"/>`}
+  data.forEach((d,i)=>{const x=i*cw+cw/2,up=d.c>=d.o,col=up?'#10B981':'#F43F5E',akhir=i===data.length-1;
+    s+=`<line x1="${x}" x2="${x}" y1="${y(d.h)}" y2="${y(d.l)}" stroke="${col}" stroke-width="1" opacity="${akhir?1:.75}"/>`;
+    s+=`<rect x="${x-cw*.32}" y="${y(Math.max(d.o,d.c))}" width="${cw*.64}" height="${Math.max(1,Math.abs(y(d.o)-y(d.c)))}" fill="${col}" rx=".6" opacity="${akhir?1:.75}"/>`;
+    if(akhir)s+=`<rect x="${x-cw*.75}" y="${y(d.h)-4}" width="${cw*1.5}" height="${y(d.l)-y(d.h)+8}" rx="3" fill="rgba(229,173,81,.08)" stroke="#E5AD51" stroke-width="1.1" stroke-dasharray="2.5 2"/>`});
+  const zx=214,top=10,bot=H-10,zy=v=>top+(ak.h-v)/(ak.h-ak.l)*(bot-top);
+  const xa=(data.length-1)*cw+cw/2;
+  s+=`<path d="M${xa+cw*.75} ${y(ak.h)-4} L${zx-14} ${top-2}" stroke="rgba(229,173,81,.45)" stroke-dasharray="2 3" fill="none"/>`;
+  s+=`<path d="M${xa+cw*.75} ${y(ak.l)+4} L${zx-14} ${bot+2}" stroke="rgba(229,173,81,.45)" stroke-dasharray="2 3" fill="none"/>`;
+  s+=`<rect x="${zx-24}" y="${top-6}" width="48" height="${bot-top+12}" rx="9" fill="rgba(255,236,206,.04)" stroke="rgba(255,232,196,.1)"/>`;
+  s+=`<line x1="${zx}" x2="${zx}" y1="${zy(ak.h)}" y2="${zy(ak.l)}" stroke="#10B981" stroke-width="2.2" stroke-linecap="round"/>`;
+  s+=`<rect x="${zx-10}" y="${zy(ak.c)}" width="20" height="${zy(ak.o)-zy(ak.c)}" rx="2.5" fill="#10B981"/>`;
+  const lab=[[zy(ak.h),'H','tertinggi'],[zy(ak.c),'C','tutup'],[zy(ak.o),'O','buka'],[zy(ak.l),'L','terendah']];
+  lab.forEach(([yy,k,t])=>{s+=`<line x1="${zx+12}" x2="${zx+30}" y1="${yy}" y2="${yy}" stroke="rgba(229,173,81,.6)"/><text x="${zx+35}" y="${yy+3.6}" font-family="JetBrains Mono" font-size="10.5" font-weight="700" fill="#E5AD51">${k}</text><text x="${zx+49}" y="${yy+3.6}" font-family="Inter" font-size="10.5" fill="#BDB5A9">${t}</text>`});
+  svg.innerHTML=s;
+}
+
+const SLOT=[
+  ['btc','BTCUSDT','snr','setup','Setup',0.3],
+  ['xau','XAU/USD','smc','setup','Setup',0.5],
+  ['eth','ETHUSDT','ema200','pantau','Pantau',0.8],
+  ['sol','SOLUSDT','snr','pantau','Pantau',1.1],
+  ['bnb','BNBUSDT','fibonacci','pantau','Pantau',1.4],
+  ['xrp','XRPUSDT','ichimoku','pantau','Pantau',1.7],
+  ['eur','EUR/USD','snr','pantau','Pantau',2.0],
+  ['link','LINKUSDT','smc','pantau','Pantau',2.6],
+  ['doge','DOGEUSDT',null,'tidak','Tidak dicetak',null],
+  ['sui','SUIUSDT',null,'tidak','Tidak dicetak',null],
+  ['ada','ADAUSDT',null,'tidak','Tidak dicetak',null],
+  ['avax','AVAXUSDT',null,'tidak','Tidak dicetak',null],
+];
+const koma=(x)=>x.toFixed(1).replace('.',',');
+function ubin([lg,nama,mesin,k,lab,j]){
+  const dot=k==='setup'?'hijau':k==='pantau'?'krem':'redup';
+  const meter=j===null?'<div class="meter kosong"></div>':`<div class="meter"><b style="left:${Math.min(j/3,1)*100}%"></b></div>`;
+  const ket=j===null?'jarak —':`${koma(j)} ATR ke entry`;
+  return `<div class="slot kaca ${k}"><div class="s1"><img src="aset/${lg}.png" alt=""><b>${nama}</b>${mesin?`<span class="mesin">${mesin}</span>`:''}</div><div class="s2"><i class="dot ${dot}"></i>${lab}</div>${meter}<div class="s3">${ket}</div></div>`;
+}
+document.getElementById('papan-cb').innerHTML=SLOT.map(ubin).join('');
+document.getElementById('anatomi').insertAdjacentHTML('afterbegin',`<div class="besar">${ubin(SLOT[0])}</div>`);
+
+document.querySelectorAll('svg[data-spark]').forEach(spark);
+lilin(document.getElementById('lilin'));
+
+const JUDUL=['Kaca obsidian · Home','Akademi jadi tab','Pelajaran × chart','PLUS+ kartu member','Cek banyak 12 pasar'];
+const deret=document.getElementById('deret');
+document.querySelectorAll('.papan .hp').forEach((hp,i)=>{
+  const sel=document.createElement('div');sel.className='sel';
+  const b=document.createElement('div');b.className='bingkai';const k=hp.cloneNode(true);k.removeAttribute('id');
+  k.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));b.appendChild(k);
+  sel.appendChild(b);
+  sel.insertAdjacentHTML('beforeend',`<div class="cap"><small>${String(i+1).padStart(2,'0')}</small><b>${JUDUL[i]}</b></div>`);
+  deret.appendChild(sel);
+});
+document.fonts.ready.then(()=>{document.body.dataset.siap='1'});
+</script>
+</body>
+</html>
