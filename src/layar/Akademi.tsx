@@ -17,7 +17,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { gayaTema } from '../gaya/tema';
-import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
 import { useMuat } from '../data/muat';
@@ -33,6 +33,7 @@ import { PemutarVideo } from '../komponen/PemutarVideo';
 import { detikLanjut } from '../data/pemutar';
 import { LilinMini } from '../komponen/LilinMini';
 import { Blok, Chip, Kosong, Lbl, Menu, Mikro, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
+import { beliAksesPenuh, SEBUT_BAYAR } from '../data/amplus';
 import { W, R, TALANG } from '../gaya/token';
 
 const SANGKALAN = 'Materi edukasi, bukan nasihat investasi. Trading berisiko kehilangan modal.';
@@ -210,7 +211,8 @@ export function LayarBab({ n, bukaPelajaran }: { n: number; bukaPelajaran: (id: 
               <Menu>
                 {b.video.map((v, i) => <BarisVideo key={v.id} v={v} kv={keadaanVideo(v, k)} posisi={k.posisi[v.id] ?? 0} pertama={i === 0} onPress={() => { bukaPelajaran(v.id); }} />)}
               </Menu>
-              {!b.terbuka && <Mikro>{b.tier === 'plus' ? 'Bab ini terbuka dengan AnalisMarket+ atau Akses penuh.' : 'Bab ini terbuka dengan Akses penuh — belum bisa dibeli di app.'}</Mikro>}
+              {!b.terbuka && <Mikro>{b.tier === 'plus' ? 'Bab ini terbuka dengan AnalisMarket+ atau Akses penuh.' : `Bab ini ${beliAksesPenuh(SEBUT_BAYAR).ket.charAt(0).toLowerCase()}${beliAksesPenuh(SEBUT_BAYAR).ket.slice(1)}`}</Mikro>}
+              {!b.terbuka && b.tier !== 'plus' && <TombolBeliPenuh />}
               <Mikro>{SANGKALAN}</Mikro>
             </>
           );
@@ -379,13 +381,26 @@ export function LayarPelajaran({ id, gantiJudul, bukaPelajaran, bukaIstilah, buk
   );
 }
 
+/**
+ * Beli Akses penuh di web — hanya kalau cara bayar boleh disebut di build ini
+ * (keputusan pemilik 10 Okt, `CARA_BAYAR_DI_PLAY`; tanpa itu build Play
+ * (TOKO_PLAY) tidak mendapat tombol apa pun, cuma kalimat "segera hadir").
+ */
+function TombolBeliPenuh() {
+  const b = beliAksesPenuh(SEBUT_BAYAR);
+  if (b.tautan === null) return null;
+  const tautan = b.tautan;
+  return <View style={{ marginTop: 8 }}><Chip teks="Beli Akses penuh di web" emas onPress={() => { void Linking.openURL(tautan); }} /></View>;
+}
+
 function PanelKunci({ tier, bab, bukaPlus }: { tier: 'plus' | 'penuh'; bab: number; bukaPlus: () => void }) {
   return (
     <View style={g.panel}>
       <Ikon nama="gembok" warna={W.plus} ukuran={24} />
       <Text style={g.panelJudul}>Video ini bagian Bab {bab}</Text>
-      <Text style={g.panelKet}>{tier === 'plus' ? 'Terbuka dengan AnalisMarket+ atau Akses penuh.' : 'Terbuka dengan Akses penuh — belum bisa dibeli di app.'}</Text>
+      <Text style={g.panelKet}>{tier === 'plus' ? 'Terbuka dengan AnalisMarket+ atau Akses penuh.' : beliAksesPenuh(SEBUT_BAYAR).ket}</Text>
       {tier === 'plus' && <View style={{ marginTop: 8 }}><Chip teks="Lihat AnalisMarket+" emas onPress={bukaPlus} /></View>}
+      {tier === 'penuh' && <TombolBeliPenuh />}
     </View>
   );
 }

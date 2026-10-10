@@ -7,17 +7,29 @@
  * di luar app. AM+ ditagih lewat bot Telegram, jadi build Play diam soal
  * angka dan caranya; build tautan unduhan tetap menyebut keduanya.
  *
- * Yang dijaga di sini TIGA, dan ketiganya pernah bisa bocor:
+ * KEPUTUSAN PEMILIK 10 Okt 2026: build Play BOLEH menyebut CARA bayar (web,
+ * bot, app "segera hadir") lewat saklar `CARA_BAYAR_DI_PLAY` di amplus.ts —
+ * "satu app untuk semua", sampai Google Play Billing jadi. HARGA tetap tidak.
+ * Risikonya kebijakan pembayaran Play (ditolak / diturunkan); jalan pulangnya
+ * saklar itu ke `false`, dan uji-keputusan menuntut saklar mundur itu
+ * benar-benar membungkam seluruh permukaan.
+ *
+ * Yang dijaga di sini EMPAT, dan keempatnya pernah bisa bocor:
  *
  * 1. `rupiah(` hanya boleh dipanggil di `src/data/amplus.ts` dan di layar
  *    Berlangganan. Satu pemanggilan baru di layar lain akan mencetak angka
  *    yang tidak ikut saklar, dan tidak ada yang tahu sampai Play menolaknya.
  * 2. Kalimat yang mengarahkan pembelian hanya boleh hidup di berkas yang juga
- *    mengimpor `TOKO_PLAY` — artinya penulisnya sudah memikirkan saklarnya.
+ *    menyebut `TOKO_PLAY` atau `SEBUT_BAYAR` — artinya penulisnya sudah
+ *    memikirkan saklarnya.
  * 3. Profil build `produksi` di `eas.json` WAJIB memasang
  *    `EXPO_PUBLIC_TOKO=play`. Tanpa itu seluruh saklar di atas mati dan
  *    build Play keluar dengan harga terpampang — gagal yang paling mahal,
  *    karena semua kodenya benar dan cuma envnya yang hilang.
+ * 4. Tautan halaman bayar (`/bayar/…`, `t.me/…`) cuma lahir di
+ *    `src/data/amplus.ts` (`jalurBayar`, `beliAksesPenuh`). Tautan yang
+ *    diketik di layar tidak ikut saklar mundur, dan saklar yang tidak
+ *    menutup semuanya bukan jalan pulang.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 
@@ -47,10 +59,17 @@ const MENGARAHKAN = [
   /\/plus ke @/i,
   /cara berlangganan/i,
   /cara bayar/i,
+  /lewat web/i,
+  /beli[^'"`]*di web/i,
 ];
+
+/** Satu-satunya berkas yang boleh merakit tautan bayar. */
+const PINTU_TAUTAN = 'src/data/amplus.ts';
+const TAUTAN_BAYAR = /\/bayar\/|t\.me\//;
 
 let adaRupiah = 0;
 let adaArah = 0;
+let adaTautan = 0;
 for (const jalur of berkas) {
   const isi = readFileSync(jalur, 'utf8');
   const kode = isi.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -65,9 +84,14 @@ for (const jalur of berkas) {
   for (const pola of MENGARAHKAN) {
     if (!pola.test(kode)) continue;
     adaArah += 1;
-    if (!/TOKO_PLAY/.test(kode)) {
-      masalah.push(`${jalur} memuat kalimat yang mengarahkan pembelian (${String(pola)}) tapi tidak menyebut TOKO_PLAY`);
+    if (!/TOKO_PLAY|SEBUT_BAYAR/.test(kode)) {
+      masalah.push(`${jalur} memuat kalimat yang mengarahkan pembelian (${String(pola)}) tapi tidak menyebut TOKO_PLAY/SEBUT_BAYAR`);
     }
+  }
+
+  if (TAUTAN_BAYAR.test(kode)) {
+    adaTautan += 1;
+    if (jalur !== PINTU_TAUTAN) masalah.push(`${jalur} merakit tautan bayar sendiri — tautan bayar cuma lahir di ${PINTU_TAUTAN} (jalurBayar/beliAksesPenuh), supaya saklar CARA_BAYAR_DI_PLAY menutup semuanya`);
   }
 }
 
@@ -75,6 +99,7 @@ for (const jalur of berkas) {
    tidak pernah cocok, sapuan ini lulus tanpa memeriksa satu kalimat pun. */
 if (adaRupiah === 0) masalah.push('nol pemanggilan rupiah() ditemukan — polanya berubah, penjaga ini tidak memeriksa apa pun');
 if (adaArah === 0) masalah.push('nol kalimat pengarah pembelian ditemukan — polanya berubah, penjaga ini tidak memeriksa apa pun');
+if (adaTautan === 0) masalah.push(`nol tautan bayar ditemukan — ${PINTU_TAUTAN} pun tidak cocok, penjaga ini tidak memeriksa apa pun`);
 
 /* Saklar di eas.json. */
 const eas = JSON.parse(readFileSync('eas.json', 'utf8'));
@@ -119,4 +144,4 @@ if (masalah.length > 0) {
   process.stderr.write(`GAGAL — ${masalah.length} masalah toko:\n${masalah.map((m) => `  - ${m}`).join('\n')}\n`);
   process.exit(1);
 }
-process.stdout.write(`  ${berkas.length} berkas · ${adaRupiah} pemanggil harga · ${adaArah} kalimat pengarah, semuanya di balik saklar · eas produksi memasang EXPO_PUBLIC_TOKO=play\n`);
+process.stdout.write(`  ${berkas.length} berkas · ${adaRupiah} pemanggil harga · ${adaArah} kalimat pengarah, semuanya di balik saklar · tautan bayar cuma di ${PINTU_TAUTAN} · eas produksi memasang EXPO_PUBLIC_TOKO=play\n`);

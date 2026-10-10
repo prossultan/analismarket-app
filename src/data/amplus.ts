@@ -167,6 +167,58 @@ export function rupiah(n: number): string {
  */
 export const TOKO_PLAY = process.env.EXPO_PUBLIC_TOKO === 'play';
 
+/**
+ * KEPUTUSAN PEMILIK 10 Okt 2026 — app versi Play (satu app untuk semua)
+ * MENYEBUT cara bayar lewat web dan bot Telegram untuk sementara, sampai
+ * Google Play Billing dipasang di update berikutnya.
+ *
+ * Pemilik sudah diberi tahu risikonya, dua kali, sebelum memutuskan: kebijakan
+ * pembayaran Play melarang mengarahkan pembelian barang digital ke luar app.
+ * Update bisa ditolak saat review, app bisa diturunkan, dan pelanggaran
+ * berulang bisa membekukan akun developer. KALAU DITOLAK: ubah ke `false`,
+ * build ulang, kirim ulang — app kembali ke wajah lama (status saja, tanpa
+ * cara bayar). Harga TETAP tidak dicetak di build Play (`hargaPlus`): yang
+ * disebut cuma jalannya, angkanya ada di web.
+ */
+export const CARA_BAYAR_DI_PLAY = true;
+
+/** Boleh menyebut cara bayar di build ini? Build tautan unduhan selalu boleh. */
+export function bolehSebutBayar(tokoPlay: boolean, izinPlay: boolean): boolean {
+  return !tokoPlay || izinPlay;
+}
+export const SEBUT_BAYAR = bolehSebutBayar(TOKO_PLAY, CARA_BAYAR_DI_PLAY);
+
+const WEB_BAYAR = 'https://analismarket.com';
+/**
+ * `tautan` cuma untuk halaman kita sendiri (periksa-teks: app tidak membuka tautan keluar),
+ * jadi jalur bot berupa petunjuk tanpa tautan. `segera` = belum bisa dipakai.
+ */
+export type JalurBayar = { kode: 'web' | 'bot' | 'app'; judul: string; ket: string; tautan: string | null; segera: boolean };
+
+/**
+ * Jalur bayar AM+ yang ditampilkan — SATU sumber untuk layar Berlangganan,
+ * AnalisMarket+, dan Akademi. `paketKode` membawa masa aktif yang dipilih ke
+ * halaman bayar web (/bayar/plus?paket=3B); null = biar dipilih di web.
+ * "Langsung di app" selalu ada dan selalu belum aktif: itu janji Play Billing
+ * yang sedang dikerjakan, bukan tombol.
+ */
+export function jalurBayar(boleh: boolean, bot: string, paketKode: string | null): JalurBayar[] {
+  const app: JalurBayar = { kode: 'app', judul: 'Langsung di app', ket: 'Segera hadir', tautan: null, segera: true };
+  if (!boleh) return [app];
+  return [
+    { kode: 'web', judul: 'Lewat web', ket: 'analismarket.com · masuk dengan akun yang sama', segera: false, tautan: `${WEB_BAYAR}/bayar/plus${paketKode === null ? '' : `?paket=${encodeURIComponent(paketKode)}`}` },
+    { kode: 'bot', judul: 'Lewat bot Telegram', ket: `Kirim /plus ke @${bot}`, tautan: null, segera: false },
+    app,
+  ];
+}
+
+/** Kunci bab Akses penuh: kalimatnya dan, kalau boleh, halaman belinya di web. */
+export function beliAksesPenuh(boleh: boolean): { ket: string; tautan: string | null } {
+  return boleh
+    ? { ket: 'Terbuka dengan Akses penuh — sekali bayar, beli lewat web.', tautan: `${WEB_BAYAR}/bayar/akademi` }
+    : { ket: 'Terbuka dengan Akses penuh — pembelian di app segera hadir.', tautan: null };
+}
+
 const SATU_PAKET = PAKET_PLUS[0] as PaketPlus;
 
 /**

@@ -73,8 +73,10 @@ process.stdout.write(`\nUJI E2E terhadap ${ASAL}\n\n── Endpoint anonim (dipa
      hurufnya sendiri dijaga di `skrip/periksa-lambang.mjs`. */
   /* Diperbarui 20 Sep: BANK, PROVE, ZAMA masuk 20 teratas dan sama-sama tidak
      ada di `@web3icons/core` 4.0.55 maupun `cryptocurrency-icons` 0.18.1
-     (diperiksa dari daftar berkas kedua paket, bukan diduga). */
-  const TANPA_LOGO_HULU = new Set(['ENAUSDT', 'WLDUSDT', 'CRCLBUSDT', 'MARSCOINUSDT', 'BANKUSDT', 'PROVEUSDT', 'ZAMAUSDT']);
+     (diperiksa dari daftar berkas kedua paket, bukan diduga).
+     10 Okt: ONDO dan SPCXB ditambahkan atas dasar yang sama — RLC, OGN, QNT
+     yang ada di hulu sudah dipasang lambangnya. */
+  const TANPA_LOGO_HULU = new Set(['ENAUSDT', 'WLDUSDT', 'CRCLBUSDT', 'MARSCOINUSDT', 'BANKUSDT', 'PROVEUSDT', 'ZAMAUSDT', 'ONDOUSDT', 'SPCXBUSDT']);
   {
     const teratas = [...pasar].sort((a, b) => b.volume24hUsd - a.volume24hUsd).slice(0, 20);
     const tanpa = teratas.filter((p) => !adaLambang(p.simbol)).map((p) => p.simbol);

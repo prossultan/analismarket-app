@@ -433,7 +433,9 @@ await uji('KEPUTUSAN: AM+ sekali bayar, tanpa potong otomatis — tidak ada kata
  * Hasilnya: setiap string dan teks JSX yang bisa tercetak di build itu.
  */
 const ts = (await import('typescript')).default;
-function teksTercetak(jalur, { toko, fungsi }) {
+function teksTercetak(jalur, { toko, fungsi, izin = amplus.CARA_BAYAR_DI_PLAY }) {
+  /* Dua saklar yang nilainya diketahui per build: TOKO_PLAY, dan SEBUT_BAYAR yang diturunkan darinya + keputusan pemilik. */
+  const TETAP = new Map([['TOKO_PLAY', toko], ['SEBUT_BAYAR', amplus.bolehSebutBayar(toko, izin)]]);
   const sf = ts.createSourceFile(jalur, readFileSync(jalur, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let akar = sf;
   if (fungsi !== undefined) {
@@ -446,7 +448,7 @@ function teksTercetak(jalur, { toko, fungsi }) {
   const ATAU = ts.SyntaxKind.BarBarToken;
   const nilai = (e, a) => {
     if (ts.isParenthesizedExpression(e)) return nilai(e.expression, a);
-    if (ts.isIdentifier(e)) return e.text === 'TOKO_PLAY' ? toko : a.get(e.text);
+    if (ts.isIdentifier(e)) return TETAP.has(e.text) ? TETAP.get(e.text) : a.get(e.text);
     if (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.ExclamationToken) { const v = nilai(e.operand, a); return v === undefined ? undefined : !v; }
     if (ts.isBinaryExpression(e) && (e.operatorToken.kind === DAN || e.operatorToken.kind === ATAU)) {
       const x = nilai(e.left, a); const y = nilai(e.right, a);
@@ -458,7 +460,7 @@ function teksTercetak(jalur, { toko, fungsi }) {
   /** Nilai pengenal yang berlaku TANPA KECUALI kalau `e` bernilai `benar`. */
   const asumsikan = (e, benar, a) => {
     if (ts.isParenthesizedExpression(e)) return asumsikan(e.expression, benar, a);
-    if (ts.isIdentifier(e)) return e.text === 'TOKO_PLAY' ? a : new Map([...a, [e.text, benar]]);
+    if (ts.isIdentifier(e)) return TETAP.has(e.text) ? a : new Map([...a, [e.text, benar]]);
     if (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.ExclamationToken) return asumsikan(e.operand, !benar, a);
     if (ts.isBinaryExpression(e)) {
       const dan = e.operatorToken.kind === DAN; const atau = e.operatorToken.kind === ATAU;
@@ -503,14 +505,43 @@ const PERMUKAAN_PLUS = [
 /** Harga, cara bayar, dan jalur beli — pola `periksa-toko.mjs` ditambah kata pembayarannya. */
 const SOAL_BAYAR = /Rp|bayar|potong otomatis|\/plus|@|lewat bot|berlangganan lewat|cara berlangganan|\bbeli|pembelian/i;
 
-await uji('KEPUTUSAN: build Play tidak mencetak satu kalimat pun soal pembayaran di kartu AM+, kartu Home, dan layar Berlangganan', async () => {
+await uji('KEPUTUSAN: saklar mundur CARA_BAYAR_DI_PLAY=false membuat build Play diam total soal pembayaran (kalau Play menolak)', async () => {
   for (const p of PERMUKAAN_PLUS) {
-    const play = teksTercetak(p.jalur, { toko: true, fungsi: p.fungsi });
+    const play = teksTercetak(p.jalur, { toko: true, fungsi: p.fungsi, izin: false });
     tegas(play.length >= 15, `cuma ${play.length} teks terbaca dari ${p.jalur} ${p.fungsi ?? ''} — pemindaian ini tidak menguji apa pun`);
     tegas(play.includes(p.jangkar), `"${p.jangkar}" tidak terbaca dari ${p.jalur} — pemindai memangkas cabang yang salah`);
     const langgar = play.filter((t) => SOAL_BAYAR.test(t));
-    tegas(langgar.length === 0, `${p.jalur} ${p.fungsi ?? ''} di build Play bisa mencetak: ${langgar.map((t) => `"${t}"`).join(', ')} — kebijakan pembayaran Play, dan tanyaPlus(true) sudah diam`);
+    tegas(langgar.length === 0, `${p.jalur} ${p.fungsi ?? ''} masih bisa mencetak ${langgar.map((t) => `"${t}"`).join(', ')} dengan saklar mundur — jalan pulang kalau Play menolak tidak menutup apa pun`);
   }
+  tegas(amplus.jalurBayar(false, 'x', null).every((j) => j.tautan === null), 'jalurBayar(false) masih membawa tautan bayar');
+  tegas(amplus.jalurBayar(false, 'x', null).length === 1, 'jalurBayar(false) menyebut lebih dari "segera hadir"');
+  tegas(amplus.beliAksesPenuh(false).tautan === null, 'beliAksesPenuh(false) masih membawa tautan web');
+  tegas(!/web|lewat/i.test(amplus.beliAksesPenuh(false).ket), `beliAksesPenuh(false) masih menyebut jalur: "${amplus.beliAksesPenuh(false).ket}"`);
+});
+
+await uji('KEPUTUSAN PEMILIK 10 Okt: build Play menyebut CARA bayar (web, bot, app segera) tapi TIDAK PERNAH harganya', async () => {
+  tegas(amplus.CARA_BAYAR_DI_PLAY === true, 'CARA_BAYAR_DI_PLAY bukan true — pemilik 10 Okt: "satu app untuk semua… kasih cara bayar lewat web atau bot untuk sementara" (risiko: kebijakan pembayaran Play; jalan pulangnya saklar ini)');
+  tegas(amplus.bolehSebutBayar(true, true) && !amplus.bolehSebutBayar(true, false) && amplus.bolehSebutBayar(false, false), 'bolehSebutBayar: unduhan selalu boleh, Play hanya dengan izin pemilik');
+  const jalur = amplus.jalurBayar(true, 'analismarketbot', '3B');
+  tegas(jalur.map((j) => j.kode).join() === 'web,bot,app', `urutan jalur bukan web,bot,app: ${jalur.map((j) => j.kode).join()}`);
+  tegas(jalur[0].tautan === 'https://analismarket.com/bayar/plus?paket=3B', `tautan web tidak membawa paket: ${jalur[0].tautan}`);
+  tegas(amplus.jalurBayar(true, 'b', null)[0].tautan === 'https://analismarket.com/bayar/plus', 'tanpa paket, tautan web tidak polos');
+  tegas(jalur[1].tautan === null && jalur[1].ket.includes('/plus ke @analismarketbot'), 'jalur bot bukan petunjuk /plus tanpa tautan (periksa-teks: app tidak membuka tautan keluar)');
+  tegas(jalur[2].tautan === null && jalur[2].segera && !jalur[0].segera && !jalur[1].segera, 'cuma jalur app yang "segera hadir"');
+  tegas(amplus.beliAksesPenuh(true).tautan === 'https://analismarket.com/bayar/akademi', 'Akses penuh tidak menunjuk /bayar/akademi');
+  const HARGA = /Rp\s?\d|rupiah|\d{2,3}\.\d{3}/i;
+  for (const j of jalur) tegas(!HARGA.test(`${j.judul} ${j.ket}`), `jalur "${j.judul}" mencetak angka harga`);
+  for (const p of PERMUKAAN_PLUS) {
+    const play = teksTercetak(p.jalur, { toko: true, fungsi: p.fungsi, izin: true });
+    const harga = play.filter((t) => HARGA.test(t));
+    tegas(harga.length === 0, `${p.jalur} ${p.fungsi ?? ''} di build Play mencetak harga: ${harga.map((t) => `"${t}"`).join(', ')}`);
+  }
+  /* Cabang lawan: dengan izin, kalimat caranya BENAR-BENAR tercetak — tanpa ini, menghapus blok cara bayar tetap hijau. */
+  const am = teksTercetak('src/layar/AmPlus.tsx', { toko: true, izin: true });
+  tegas(am.includes('Cara berlangganan'), 'tab PLUS+ build Play tidak menjelaskan cara berlangganan ke akun gratis — permintaan pemilik 10 Okt');
+  tegas(am.includes('Lihat cara berlangganan'), 'tombol "Lihat cara berlangganan" hilang dari build Play');
+  tegas(teksTercetak('src/layar/Akun.tsx', { toko: true, fungsi: 'LayarBerlangganan', izin: true }).includes('Cara memperpanjang'), 'pelanggan di build Play tidak diberi tahu cara memperpanjang');
+  tegas(am.includes('Berakhir sendiri di tanggalnya.'), 'wajah pelanggan di tab PLUS+ ikut berubah — pemilik: "yang udah berlangganan beda tampilannya"');
 });
 
 await uji('teks build Play, cabang lawan: build tautan unduhan TETAP menyebut sekali bayar tanpa potong otomatis (pemindai bisa merah)', async () => {

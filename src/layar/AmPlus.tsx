@@ -16,10 +16,11 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { gayaTema } from '../gaya/tema';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
-import { FITUR_GRATIS, FITUR_PLUS, JUDUL_PLUS, hargaPlus, tanyaPlus, TOKO_PLAY } from '../data/amplus';
+import { FITUR_GRATIS, FITUR_PLUS, JUDUL_PLUS, hargaPlus, jalurBayar, SEBUT_BAYAR, tanyaPlus, TOKO_PLAY } from '../data/amplus';
+import { BOT } from '../komponen/FormulirSambung';
 import { Blok, Butir, Istilah, Lbl, Menu, Mikro, PitaBasi, Rangka, Tombol } from '../komponen/mockup';
 import { ambilKabarOtomatis, ambilRingkas, MAKS_SLOT_CEK_BANYAK, type KabarOtomatis, type Ringkas } from '../data/saya';
 import { ambilAkademi } from '../data/akademi';
@@ -34,7 +35,9 @@ import { W, R, TALANG } from '../gaya/token';
 
 /* FAQ di `amplus.ts` (`tanyaPlus`), bukan di sini — di berkas data
    jawabannya bisa dijaga uji. */
-const TANYA = tanyaPlus(TOKO_PLAY);
+/* FAQ pembayaran ikut keputusan CARA_BAYAR_DI_PLAY (amplus.ts), bukan saklar toko mentah. */
+const TANYA = tanyaPlus(!SEBUT_BAYAR);
+const IKON_JALUR = { web: 'dokumen', bot: 'kirim', app: 'jam' } as const;
 
 type Props = {
   bukaLangganan?: () => void;
@@ -137,18 +140,19 @@ export function LayarAmPlus({ bukaLangganan, buka, bukaAkademi }: Props) {
           </View>
         )}
 
-        {/* BUILD PLAY: yang belum berlangganan tidak diberi tombol menuju cara
-            membeli. Pelanggan tetap punya tombol status. */}
-        {(plus || !TOKO_PLAY) && (
+        {/* Pelanggan: tombol status. Akun gratis: tombol cara berlangganan —
+            di build Play juga, sejak keputusan pemilik 10 Okt (SEBUT_BAYAR). */}
+        {(plus || SEBUT_BAYAR) && (
           <Tombol
-            teks={plus ? 'Kelola langganan' : bukaLangganan === undefined ? 'Berlangganan lewat web' : 'Lihat cara berlangganan'}
+            teks={plus ? 'Kelola langganan' : 'Lihat cara berlangganan'}
             jenis={plus ? 'kedua' : 'emas'} mati={bukaLangganan === undefined || menunggu} onPress={bukaLangganan} />
         )}
         {/* BUILD PLAY: cukup tanggalnya — "tanpa potong otomatis" menyebut
             model pembayaran, dan build Play tidak menyebut pembayaran sama sekali. */}
         <Mikro tengah>{plus
           ? (TOKO_PLAY ? 'Berakhir sendiri di tanggalnya.' : 'Berakhir sendiri di tanggalnya. Tidak ada potong otomatis.')
-          : TOKO_PLAY ? 'AnalisMarket+ belum aktif di akun ini.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
+          : SEBUT_BAYAR ? 'Bayar lewat web atau bot Telegram. Pembelian langsung di app segera hadir.'
+            : TOKO_PLAY ? 'AnalisMarket+ belum aktif di akun ini.' : 'Pembelian belum tersedia di dalam app.'}</Mikro>
 
         {plus ? (
           <>
@@ -172,6 +176,21 @@ export function LayarAmPlus({ bukaLangganan, buka, bukaAkademi }: Props) {
           </>
         ) : (
           <>
+            {/* AKUN GRATIS — cara berlangganan langsung di layar ini (pemilik 10 Okt:
+                "tombol plus, jelasin cara berlangganan aja dulu"). Jalurnya dari
+                jalurBayar, satu sumber dengan layar Berlangganan. */}
+            {SEBUT_BAYAR && (
+              <>
+                <Lbl gaya={{ marginTop: 6 }}>Cara berlangganan</Lbl>
+                <Menu>
+                  {jalurBayar(SEBUT_BAYAR, BOT, null).map((j, i) => (
+                    <Butir key={j.kode} ikon={IKON_JALUR[j.kode]} nama={j.judul} sub={j.ket} pertama={i === 0}
+                      ket={j.segera ? 'segera' : undefined}
+                      onPress={j.tautan === null ? undefined : () => { void Linking.openURL(j.tautan as string); }} />
+                  ))}
+                </Menu>
+              </>
+            )}
             <Lbl gaya={{ marginTop: 6 }}>Terbuka dengan AnalisMarket+</Lbl>
             <Menu>
               {FITUR_PLUS.map((f, i) => (

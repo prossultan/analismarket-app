@@ -31,7 +31,7 @@ import { useMuat, type Hasil, type Jenis } from '../data/muat';
 import { volumeRingkas } from '../data/tampil';
 /* Harga diturunkan dari satu tempat — lihat `periksa-harga.mjs`. Layar ini
    sempat mengetiknya sendiri di TIGA baris, dan ketiganya salah. */
-import { PAKET_PLUS, hargaPlus, rupiah, terbukaSekarang, TOKO_PLAY } from '../data/amplus';
+import { PAKET_PLUS, hargaPlus, jalurBayar, rupiah, SEBUT_BAYAR, terbukaSekarang, TOKO_PLAY } from '../data/amplus';
 import { KALIMAT_JAM_SUNYI, bacaJendela, bacaPilihanJam, labelKirim, labelSunyi, samaJendela, tanpaSunyi } from '../data/jamSunyi';
 import { labelStatus, statusTampil, layarAjakanPlus } from '../data/statusPlus';
 import { useSisaBilah, useTinggiKepala } from '../gaya/jarak';
@@ -157,7 +157,7 @@ function KartuButuhPlus({ apa, manfaat, bukaPlus }: { apa: string; manfaat: stri
       </View>
       {hargaPlus() !== null && <Text style={[g.harga, { marginTop: 10 }]}>{hargaPlus()?.harga} <Text style={g.dari}>/ {hargaPlus()?.hari} hari</Text></Text>}
       <View style={{ marginTop: 10 }}><Tombol teks="Lihat AnalisMarket+" jenis="emas" onPress={bukaPlus} /></View>
-      {!TOKO_PLAY && <Mikro>Langganan dibeli lewat bot Telegram. App ini tidak memproses pembayaran.</Mikro>}
+      {SEBUT_BAYAR && <Mikro>Bayar lewat web atau bot Telegram. Pembelian langsung di app segera hadir.</Mikro>}
     </Blok>
   );
 }
@@ -887,6 +887,20 @@ export function LayarCekBanyak({ bukaSambung, bukaPlus, tf }: { bukaSambung: () 
   );
 }
 
+/** Jalur bayar sebagai daftar ketuk — satu sumber (`jalurBayar`) untuk build Play dan tautan unduhan. */
+function JalurBayarMenu({ paketKode }: { paketKode: string | null }) {
+  const ikon = { web: 'dokumen', bot: 'kirim', app: 'jam' } as const;
+  return (
+    <Menu>
+      {jalurBayar(SEBUT_BAYAR, BOT, paketKode).map((j, i) => (
+        <Butir key={j.kode} ikon={ikon[j.kode]} nama={j.judul} sub={j.ket} pertama={i === 0}
+          ket={j.segera ? 'segera' : undefined}
+          onPress={j.tautan === null ? undefined : () => { void Linking.openURL(j.tautan as string); }} />
+      ))}
+    </Menu>
+  );
+}
+
 /* ══ 27 · BERLANGGANAN ══════════════════════════════════════════════════ */
 export function LayarBerlangganan() {
   const sesi = useSesi();
@@ -952,17 +966,20 @@ export function LayarBerlangganan() {
           </View>
 
           <Lbl>Cara bayar</Lbl>
-          <Menu>
-            <View style={g.pilih}><Radio on /><View style={{ flex: 1 }}>
-              <Text style={g.pilihJudul}>Lewat bot Telegram</Text><Lbl polos>Satu-satunya jalur yang aktif</Lbl></View></View>
-            <View style={[g.pilih, g.garis, { opacity: 0.45 }]}><Radio on={false} /><View style={{ flex: 1 }}>
-              <Text style={g.pilihJudul}>Pembelian dalam app</Text><Lbl polos>Belum tersedia</Lbl></View></View>
-          </Menu>
+          <JalurBayarMenu paketKode={paket.kode} />
         </>
       )}
 
       {TOKO_PLAY ? (
         <>
+          {/* Keputusan pemilik 10 Okt: build Play menyebut JALANNYA (web, bot,
+              app segera), tanpa angka harga — harganya di halaman bayar web. */}
+          {SEBUT_BAYAR && (
+            <>
+              <Lbl>{aktif ? 'Cara memperpanjang' : 'Cara berlangganan'}</Lbl>
+              <JalurBayarMenu paketKode={null} />
+            </>
+          )}
           <View style={{ flex: 1 }} />
           <Mikro tengah>Status langganan mengikuti akunmu, di app maupun di web.</Mikro>
         </>
@@ -975,12 +992,12 @@ export function LayarBerlangganan() {
             <BarisPakai kiri="PPN" kanan="Termasuk" />
             <BarisPakai kiri="Total" kanan={rupiah(paket.hargaRp)} tebal />
           </View>
-          <Mikro>Dibayar sekali di muka untuk {String(paket.bulan * 30)} hari. Tidak ada potong otomatis: sesudah tanggal berakhir, akun kembali ke paket gratis dan setelanmu tetap tersimpan. Masa aktifnya dipilih lagi di bot saat membayar.</Mikro>
+          <Mikro>Dibayar sekali di muka untuk {String(paket.bulan * 30)} hari. Tidak ada potong otomatis: sesudah tanggal berakhir, akun kembali ke paket gratis dan setelanmu tetap tersimpan. Masa aktif yang dipilih di sini ikut ke halaman bayar web; lewat bot, dipilih lagi di sana.</Mikro>
         </Blok>
   
-        {/* Emas terisi — dan ini memang halaman AM+. Mati: pembayaran di bot. */}
-        <Tombol teks="Berlangganan lewat bot Telegram" jenis="emas" mati />
-        <Mikro tengah>Kirim /plus ke @{BOT}. App ini tidak memproses pembayaran.</Mikro>
+        {/* Emas terisi — dan ini memang halaman AM+. Halaman bayar web membawa masa aktif yang dipilih. */}
+        <Tombol teks="Bayar lewat web" jenis="emas" onPress={() => { const w = jalurBayar(SEBUT_BAYAR, BOT, paket.kode).find((j) => j.kode === 'web'); if (w?.tautan) void Linking.openURL(w.tautan); }} />
+        <Mikro tengah>Bisa juga lewat bot: kirim /plus ke @{BOT}. Pembelian langsung di app segera hadir.</Mikro>
         </>
       )}
     </Wadah>
